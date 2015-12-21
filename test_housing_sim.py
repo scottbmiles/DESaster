@@ -48,5 +48,8 @@ nondurables_dict = {"fema assistance": FEMA_ASSISTANCE_BUDGET}
 
 
 # Call simulate_housing function by passing households and resources inputs
-# to produce housing recovery outputs that are joined to original households data
-households_df = simulate_housing(households_df, durables_dict, nondurables_dict)
+# to produce housing recovery outputs dataframe.
+# Join input table and output dataframes inline for easier analysis
+households_df = households_df.join(
+                            simulate_housing(households_df, durables_dict, nondurables_dict)
+                            )

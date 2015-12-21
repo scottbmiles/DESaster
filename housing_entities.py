@@ -240,7 +240,7 @@ class Household:
 
             # Write the household's story
             self.story.append(
-                'With the addition of FEMA assistance, {0} had enough to rebuild. '.format(
+                'With the addition of FEMA assistance {0} had enough to rebuild. '.format(
                 self.name))
 
             yield simulation.process(self.rebuild_house(simulation, resources))

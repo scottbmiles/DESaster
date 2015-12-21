@@ -63,4 +63,4 @@ def simulate_housing(households_df, durables_dict, nondurables_dict):
         households_outputs.loc[i]['rebuild_time'] = house.rebuild_time
         households_outputs.loc[i]['story'] = ''.join(house.story)
 
-    return households_df.join(households_outputs)
+    return households_outputs
