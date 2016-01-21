@@ -33,14 +33,14 @@ for i in structures:
    
 def sell(env):
     yield env.timeout(4)
-    yield housing_stock.put(Structure(a.next(), "House"))
+    yield housing_stock.put(Structure(next(a), "House"))
 #Here i envision this being a method in the household entity class. The bedroom
 #requirements and that stuff would be an attribute of the household's need.
 def search(env, name):
     
     g = yield housing_stock.get(lambda filt: filt.type == "House" and filt.bedrooms >= 2)
     yield env.timeout(0.25)
-    print "{2} recieved {0} at {1}".format(g.uid, env.now, name)
+    print('{2} recieved {0} at {1}'.format(g.uid, env.now, name))
     #print name, g.uid, env.now
     
 names = ["a","b","c","d","e","f","g","h","i","j"]
@@ -59,5 +59,5 @@ for j in housing_stock.get_queue:
     pprint.pprint([j.type, j.value, j.damage, j.bedrooms])    
 #print housing_stock.get_queue"""
 
-print "There are {0} households still waiting for housing".format(len(housing_stock.get_queue))
+print("There are {0} households still waiting for housing".format(len(housing_stock.get_queue)))
 
