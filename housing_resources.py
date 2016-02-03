@@ -18,11 +18,11 @@ class DurableResource:
         self.simulation = simulation
         self.durables = durables_dict
         self.fill()
-    
+
     #Fill is an internal method to fill the dictionary of resource objects
     def fill(self):
         self.category = {}
-        for resource, quantity in self.durables.iteritems():
+        for resource, quantity in self.durables.items():
             self.category[resource] = simpy.Resource(self.simulation, quantity)
             self.quantity = quantity
 
@@ -36,6 +36,6 @@ class NondurableResource:
     #Fill is an internal method to fill the dictionary of resource objects
     def fill(self):
         self.category = {}
-        for resource, quantity in self.nondurables.iteritems():
+        for resource, quantity in self.nondurables.items():
             self.category[resource] = simpy.Container(self.simulation, capacity=1000000000000, init=quantity)
             self.quantity = quantity

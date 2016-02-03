@@ -33,7 +33,7 @@ def simulate_housing(households_df, durables_dict, nondurables_dict):
         households[i] = Household(households_df.loc[i])
 
     # paramaterize households objects and place in simulation environmentl
-    for household in households.iterkeys():
+    for household in households.keys():
         simulation.process(households[household].simulate(simulation, resources))
 
     # Run the simulation
@@ -44,7 +44,7 @@ def simulate_housing(households_df, durables_dict, nondurables_dict):
                                       ,'assistance_time','assistance_request','assistance_payout','claim_put','claim_get',
                                       'claim_time','claim_payout','house_put','house_get','rebuild_time','story'])
 
-    for i, house in households.iteritems():
+    for i, house in households.items():
         households_outputs.loc[i]['response_time'] = house.response_time
         households_outputs.loc[i]['inspection_put'] = house.inspection_put
         households_outputs.loc[i]['inspection_get'] = house.inspection_get
