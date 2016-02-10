@@ -18,6 +18,7 @@ class Capitals():
         ## HUMAN CAPITALS ##
         
         try:
+            self.inspectors = simpy.Resource(simulation, data['inspectors'])
             self.insurance_adjusters = simpy.Resource(simulation, data['insurance adjusters'])
             self.fema_processors = simpy.Resource(simulation, data['fema processors'])
             self.permit_processors = simpy.Resource(simulation, data['permit processors'])
