@@ -18,6 +18,7 @@ class Capitals():
         ## HUMAN CAPITALS ##
         
         try:
+            self.inspectors = simpy.Resource(simulation, data['inspectors'])
             self.insurance_adjusters = simpy.Resource(simulation, data['insurance adjusters'])
             self.fema_processors = simpy.Resource(simulation, data['fema processors'])
             self.permit_processors = simpy.Resource(simulation, data['permit processors'])
@@ -25,6 +26,7 @@ class Capitals():
             self.loan_processors = simpy.Resource(simulation, data['loan processors'])
             self.engineers = simpy.Resource(simulation, data['engineers'])
         except ValueError as e:
+            
             print ("You are missing a config value, or your value is zero. All" 
                     "values must have a positive number, see error: {0}".format(e))
         except KeyError as f:

@@ -3,18 +3,14 @@
 Created on Thu Jan 14 09:14:04 2016
 
 @author: Derek
-
-root-requests
-request_inspection() function
-Inspection is different than an engineering inspection
-
 """
+from desaster.config import inspection_time, adjuster_time, fema_process_time
+from desaster.config import engineering_assessment_time
 
-def request_inspection(entity, 
-                       simulation, 
-                       inspector, 
-                       inspection_time, 
-                       callbacks = None):
+def inspection(entity, 
+               simulation, 
+               resource,
+               callbacks = None):
     """Request an inspection, do inspection, update entity attribute times.
     
     Keyword Arguments:
@@ -24,12 +20,6 @@ def request_inspection(entity,
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    inspector -- A simpy.resource object. can be any type of resource that has a 
-                request() method. 
-                
-    inspection_time -- The time it takes to complete a inspection, in 
-                     simulation time. Usually an integer, but can use decimals.
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -43,7 +33,7 @@ def request_inspection(entity,
     entity.story -- append natural language summary of process
     """
 
-    with inspector.request() as request:
+    with resource.inspectors.request() as request:
 
         # Put in request for an inspector (shared resource)
         entity.inspection_put = simulation.now
@@ -69,8 +59,7 @@ def request_inspection(entity,
 
 def file_insurance_claim(entity, #Entity object (the household usually)
                          simulation, #a simpy.Environment() object
-                         adjuster,
-                         adjuster_time,
+                         resource,
                          callbacks = None):
     """File an insurance claim, assign claim amounts to entity objects.
     
@@ -81,12 +70,6 @@ def file_insurance_claim(entity, #Entity object (the household usually)
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    adjuster -- A simpy.resource object. can be any type of resource that has a 
-                request() method. 
-                
-    adjuster_time -- The time it takes to complete a claims adjustment in 
-                     simulation time. Usually an integer, but can use decimals.
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -105,13 +88,13 @@ def file_insurance_claim(entity, #Entity object (the household usually)
     entity.story -- Append natural language sentences to entities story.
     """
                          
-    with adjuster.request() as request:
+    with resource.insurance_adjusters.request() as request:
         # Record time that claim is put in
         entity.claim_put = simulation.now
         yield request
 
         # Duration of claim processing
-        yield simulation.timeout(entity.claim_time)
+        yield simulation.timeout(adjuster_time)
 
         # Amount of insurance claim payout
         # This is where we'd add actual claims payout logic 
@@ -131,12 +114,10 @@ def file_insurance_claim(entity, #Entity object (the household usually)
     else:
         pass
     
-def request_fema_assistance(entity, 
-                            simulation, 
-                            fema_processors, #people, a simpy.Resource
-                            fema_funds, #money, a simpy.container
-                            fema_process_time, 
-                            callbacks = None):
+def fema_assistance(entity, 
+                    simulation,
+                    resource,
+                    callbacks = None):
     """Request and receive assistance from fema.
     
     entity -- An entity object from the Entity() class. Must have a value for 
@@ -146,16 +127,6 @@ def request_fema_assistance(entity,
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    fema_processors -- A simpy.resource object. can be any type of resource 
-                       that has a request() method. 
-                       
-    fema_funds -- money provided by fema for the purposes of general aid. This
-                  has to be a simpy container, as it needs to have a get()
-                  method and a put() method. 
-                
-    fema_process_time -- The time it takes to complete a claims adjustment in 
-                     simulation time. Usually an integer, but can use decimals.
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -176,13 +147,13 @@ def request_fema_assistance(entity,
     
     entity.assistance_payout -- amount of money given to the entity, equal to 
                                 the request amount, or whatever is left in the
-                                fema_funds container, whichever is higher.
+                                resource.fema_aid container, whichever is higher.
     
     """             
 
     # To process assistance request must request and wait 
     #for a FEMA application processor
-    with fema_processors.request() as request:
+    with resource.fema_processors.request() as request:
         # Put in request for FEMA individual assistance; record time requested
         entity.assistance_put = simulation.now
         yield request
@@ -201,7 +172,7 @@ def request_fema_assistance(entity,
     ## there isn't money left, it just sits in the queue.
     
     if entity.assistance_request > 0: #determine need of assistance, if none, move to else
-        if entity.assistance_request <= fema_funds.level:
+        if entity.assistance_request <= resource.fema_aid.level:
 
             entity.assistance_payout = entity.assistance_request
 
@@ -210,11 +181,11 @@ def request_fema_assistance(entity,
                 '{0} received ${1} from FEMA after a {2} day wait. '.format(
                 entity.name, entity.assistance_payout, entity.assistance_time))
 
-            yield fema_funds.get(entity.assistance_request)
+            yield resource.fema_aid.get(entity.assistance_request)
 
-        elif fema_funds.level > 0: 
+        elif resource.fema_aid.level > 0: 
 
-            entity.assistance_payout = fema_funds.level
+            entity.assistance_payout = resource.fema_aid.level
 
             # Write the household's story
             entity.story.append(
@@ -224,7 +195,7 @@ def request_fema_assistance(entity,
                 'It took {0} days for FEMA to provide the assistance. '.format(
                 entity.assistance_time))
 
-            yield fema_funds.get(fema_funds.level)
+            yield resource.fema_aid.get(resource.fema_aid.level)
 
         else:
             entity.assistance_payout = 0
@@ -247,3 +218,25 @@ def request_fema_assistance(entity,
 
     else:
         pass
+    
+def engineering_assessment(entity, 
+                           simulation, 
+                           resource, 
+                           callbacks = None):
+   """Request an engineering assessment of a rebuilt house.
+   """
+   with resource.engineers.request() as request:
+       entity.assessment_put = simulation.now #time of request
+       yield request
+       
+       yield simulation.timeout(engineering_assessment_time)
+       entity.assessment_get = simulation.now #when assessment is received
+       
+       entity.story.append(
+        '{0} received their engineering assessment after {1} days.'.format(
+        entity.name, entity.assessment_get))
+       
+       if callbacks is not None:
+            yield simulation.process(callbacks)
+       else:
+            pass
