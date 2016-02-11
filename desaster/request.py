@@ -4,7 +4,8 @@ Created on Thu Jan 14 09:14:04 2016
 
 @author: Derek
 """
-from config import inspection_time, adjuster_time, fema_process_time
+from desaster.config import inspection_time, adjuster_time, fema_process_time
+from desaster.config import engineering_assessment_time
 
 def inspection(entity, 
                simulation, 
@@ -19,10 +20,6 @@ def inspection(entity,
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    inspector -- A simpy.resource object. can be any type of resource that has a 
-                request() method. 
-                
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -73,10 +70,6 @@ def file_insurance_claim(entity, #Entity object (the household usually)
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    adjuster -- A simpy.resource object. can be any type of resource that has a 
-                request() method. 
-                
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -134,13 +127,6 @@ def fema_assistance(entity,
     simulation -- A simpy.Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = simpy.Environment().
-                  
-    fema_processors -- A simpy.resource object. can be any type of resource 
-                       that has a request() method. 
-                       
-    resource.fema_aid -- money provided by fema for the purposes of general aid. This
-                  has to be a simpy container, as it needs to have a get()
-                  method and a put() method. 
                      
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not 
@@ -232,3 +218,25 @@ def fema_assistance(entity,
 
     else:
         pass
+    
+def engineering_assessment(entity, 
+                           simulation, 
+                           resource, 
+                           callbacks = None):
+   """Request an engineering assessment of a rebuilt house.
+   """
+   with resource.engineers.request() as request:
+       entity.assessment_put = simulation.now #time of request
+       yield request
+       
+       yield simulation.timeout(engineering_assessment_time)
+       entity.assessment_get = simulation.now #when assessment is received
+       
+       entity.story.append(
+        '{0} received their engineering assessment after {1} days.'.format(
+        entity.name, entity.assessment_get))
+       
+       if callbacks is not None:
+            yield simulation.process(callbacks)
+       else:
+            pass
