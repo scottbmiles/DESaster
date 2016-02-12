@@ -5,7 +5,7 @@ Created on Thu Jan 14 09:14:04 2016
 @author: Derek
 """
 from desaster.config import inspection_time, adjuster_time, fema_process_time
-from desaster.config import engineering_assessment_time
+from desaster.config import engineering_assessment_time, loan_process_time
 
 def inspection(entity, 
                simulation, 
@@ -223,20 +223,39 @@ def engineering_assessment(entity,
                            simulation, 
                            resource, 
                            callbacks = None):
-   """Request an engineering assessment of a rebuilt house.
-   """
-   with resource.engineers.request() as request:
-       entity.assessment_put = simulation.now #time of request
-       yield request
+    """Request an engineering assessment"""
+    with resource.engineers.request() as request:
+        entity.assessment_put = simulation.now #time of request
+        yield request
        
-       yield simulation.timeout(engineering_assessment_time)
-       entity.assessment_get = simulation.now #when assessment is received
+        yield simulation.timeout(engineering_assessment_time)
+        entity.assessment_get = simulation.now #when assessment is received
        
-       entity.story.append(
-        '{0} received their engineering assessment after {1} days.'.format(
-        entity.name, entity.assessment_get))
-       
-       if callbacks is not None:
-            yield simulation.process(callbacks)
-       else:
-            pass
+    entity.story.append(
+    '{0} received their engineering assessment after {1} days.'.format(
+    entity.name, entity.assessment_get))
+   
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+    
+def loan(entity,
+         simulation,
+         resource,
+         callbacks = None):
+    with resource.loan_processors.request() as request:
+        entity.loan_put = simulation.now
+        yield request
+        
+        yield simulation.timeout(loan_process_time)
+        entity.loan_time_get = simulation.now
+        
+        # Need code here to determine how much money the entity gets for their
+        #loan, and which attributes are changed
+        entity.story.append(
+        "{0} received their loan {1} days after event".format(entity.name, entity.loan_time_get))
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
