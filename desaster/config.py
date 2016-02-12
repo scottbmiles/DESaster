@@ -17,3 +17,4 @@ fema_process_time = random.gauss(2, 0)
 
 engineering_assessment_time = random.gauss(1, 0)
 
+loan_process_time = random.gauss(10,0)
