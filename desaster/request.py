@@ -6,6 +6,7 @@ Created on Thu Jan 14 09:14:04 2016
 """
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
+from desaster.config import permit_process_time
 
 def inspection(entity, 
                simulation, 
@@ -189,8 +190,9 @@ def fema_assistance(entity,
 
             # Write the household's story
             entity.story.append(
-                '{0} requested ${1} from FEMA but only received ${2}. '.format(
-                entity.name, entity.assistance_request, entity.assistance_payout))
+             '{0} requested ${1} from FEMA but only received ${2}. '
+             .format(entity.name, entity.assistance_request, entity.assistance_payout))
+            
             entity.story.append(
                 'It took {0} days for FEMA to provide the assistance. '.format(
                 entity.assistance_time))
@@ -202,8 +204,8 @@ def fema_assistance(entity,
 
             # Write the household's story
             entity.story.append(
-                '{0} received no money from FEMA because of inadequate funding. '.format(
-                entity.name))
+            '{0} received no money from FEMA because of inadequate funding.'
+            .format(entity.name))
 
     else:
         entity.assistance_payout = 0
@@ -232,8 +234,8 @@ def engineering_assessment(entity,
         entity.assessment_get = simulation.now #when assessment is received
        
     entity.story.append(
-    '{0} received their engineering assessment after {1} days.'.format(
-    entity.name, entity.assessment_get))
+    '{0} received their engineering assessment after {1} days.'
+    .format(entity.name, entity.assessment_get))
    
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -253,8 +255,32 @@ def loan(entity,
         
         # Need code here to determine how much money the entity gets for their
         #loan, and which attributes are changed
-        entity.story.append(
-        "{0} received their loan {1} days after event".format(entity.name, entity.loan_time_get))
+    entity.story.append(
+    "{0} received their loan {1} days after event"
+    .format(entity.name, entity.loan_time_get))
+    
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+    
+def permit(entity,
+           simulation,
+           resource,
+           callbacks = None):
+
+    """Request a permit for building."""
+    with resource.permit_processors.request() as request:
+        entity.permit_put = simulation.now
+        yield request
+        
+        yield simulation.timeout(permit_process_time)
+        entity.permit_get = simulation.now
+        
+    entity.story.append(
+    "{0} received permit approval {1} days after event."
+    .format(entity.name, entity.permit_get))
+        
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
