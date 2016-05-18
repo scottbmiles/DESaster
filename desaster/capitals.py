@@ -5,6 +5,7 @@ Created on Wed Jan 20 15:08:52 2016
 @author: Derek
 """
 import simpy
+import csv
 
 class Capitals():
     """This is the main resource data structure.
@@ -40,8 +41,9 @@ class Capitals():
         ## FINANCIAL CAPITALS ##
         self.fema_aid = simpy.Container(simulation, data['fema aid'])
         
-        
-        
+        ## Households ##
+        self.housing_stock = self.load_households(simulation) #FILTERSTORE
+            
     def get_capitals_list(self):
         c_list = []
         for i in dir(self):
@@ -51,4 +53,25 @@ class Capitals():
         
     def get_capitals_values(self):
         return self.data
+        
+    def load_households(self, simulation): #this is only used internally
+        #TODO load all input files from the IO file
+        input_file = "C:/Users/Derek/Dropbox/Simulation/SeaGrantSimulation/Inputs/housing_stock.csv"
+        stock = []
+        with open(input_file) as file:
+            reader = csv.reader(file)
+            for i in reader:
+                stock.append(House(i)) #House is a class defined below
+        stock.pop(0)
+        housing_stock = simpy.Store(simulation)
+        for i in stock:
+            housing_stock.put(i)
+        
+        return housing_stock
             
+class House:
+    def __init__(self, inp):
+        self.number = inp[0]
+        self.lat = inp[2]
+        self.long = inp[1]
+        
