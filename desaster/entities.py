@@ -23,9 +23,10 @@ class Household:
         # self.inspection_time = .5# Time it takes to inspect a house
         # self.claim_time = 90 # Time it takes to process insurance claim
         # self.assistance_time = 120 # Time required for FEMA to process assistance request
-        # self.rebuild_time = 60 # Time required to rebuild house
+        # self.rebuild_time = 60 # Time required to rebuild house #### moved to config.py
         self.savings = np.random.normal(5000, 2500) # Pre-event household savings 
-        self.insurance_coverage = np.random.normal(50000, 25000)        
+        # self.insurance_coverage = np.random.normal(0.0, 0.0)  
+        self.insurance_coverage = 0.0      
         
         # Inputs
         self.household = household

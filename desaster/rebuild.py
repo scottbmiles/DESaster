@@ -6,6 +6,7 @@ Created on Mon Jan 25 16:09:02 2016
 
 processes related to rebuilding
 """
+from desaster.config import sfr_rebuild_time
 
 def rebuild_house(entity, simulation, contractors):
         with contractors.request() as request:
@@ -14,7 +15,7 @@ def rebuild_house(entity, simulation, contractors):
             yield request
 
             # Time required to rebuild house
-            yield simulation.timeout(entity.rebuild_time)
+            yield simulation.timeout(sfr_rebuild_time)
 
             # Record time when household gets house
             entity.house_get = simulation.now
@@ -22,4 +23,4 @@ def rebuild_house(entity, simulation, contractors):
         # Write the household's story
         entity.story.append(
             'The house was rebuilt {0} days after the quake, taking {1} days to rebuild. '.format(
-            entity.house_get, entity.rebuild_time))
+            entity.house_get, sfr_rebuild_time))
