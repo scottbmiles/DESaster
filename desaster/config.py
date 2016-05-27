@@ -35,4 +35,6 @@ permit_process_mean = 30.0
 permit_process_std = 0.0
 permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
 
-sfr_rebuild_time = 60
+sfr_rebuild_mean = 30.0
+sfr_rebuild_std = 0.0
+sfr_rebuild_time = abs(random.gauss(sfr_rebuild_mean, sfr_rebuild_std))

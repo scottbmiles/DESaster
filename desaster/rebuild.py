@@ -23,4 +23,4 @@ def rebuild_house(entity, simulation, contractors):
         # Write the household's story
         entity.story.append(
             'The house was rebuilt {0} days after the quake, taking {1} days to rebuild. '.format(
-            entity.house_get, entity.rebuild_time))
+            entity.house_get, sfr_rebuild_time))
