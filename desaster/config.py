@@ -34,3 +34,5 @@ loan_process_time = abs(random.gauss(loan_process_mean, loan_process_std))
 permit_process_mean = 30.0
 permit_process_std = 0.0
 permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
+
+self.sfh_rebuild_time = 60
