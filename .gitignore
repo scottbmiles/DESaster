@@ -3,3 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
+
+tests/.ipynb_checkpoints/Seagrant_Sim_Derek-checkpoint.ipynb
+
+tests/.ipynb_checkpoints/Seagrant_Sim_Scott-checkpoint.ipynb
