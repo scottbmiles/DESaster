@@ -2,7 +2,7 @@
 """
 Created on Wed Feb 10 12:45:29 2016
 
-@author: Derek
+@author: Derek, Scott
 """
 
 #configs
@@ -11,14 +11,26 @@ import random
 
 random.seed(69)
 
-inspection_time = abs(random.gauss(.5, 0.5))
+inspection_mean = 14.0
+inspection_std = 0
+inspection_time = abs(random.gauss(inspection_mean, inspection_std))
 
-adjuster_time = abs(random.gauss(1.0, 1.0))
+adjuster_mean = 90.0
+adjuster_std = 0.0
+adjuster_time = abs(random.gauss(adjuster_mean, adjuster_std))
 
-fema_process_time = abs(random.gauss(1, 1.00))
+fema_process_mean = 60.0
+fema_process_std = 0.0
+fema_process_time = abs(random.gauss(fema_process_mean, fema_process_std))
 
-engineering_assessment_time = abs(random.gauss(1.0, 1.0))
+engineering_mean = 14.0
+engineering_std = 0.0
+engineering_assessment_time = abs(random.gauss(engineering_mean, engineering_std))
 
-loan_process_time = abs(random.gauss(10.0, 10.0))
+loan_process_mean = 90.0
+loan_process_std = 0.0
+loan_process_time = abs(random.gauss(loan_process_mean, loan_process_std))
 
-permit_process_time = abs(random.gauss(3.0, 3.0))
+permit_process_mean = 30.0
+permit_process_std = 0.0
+permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
