@@ -56,7 +56,7 @@ class Capitals():
         
     def load_households(self, simulation): #this is only used internally
         #TODO load all input files from the IO file
-        input_file = "C:/Users/Derek/Dropbox/Simulation/SeaGrantSimulation/Inputs/housing_stock.csv"
+        input_file = "../inputs/housing_stock.csv"
         stock = []
         with open(input_file) as file:
             reader = csv.reader(file)
