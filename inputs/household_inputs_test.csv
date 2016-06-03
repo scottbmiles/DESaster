@@ -1,0 +1,5 @@
+Name,Income,Savings,Insurance,Address,Occupancy,Cost,Bedrooms,Bathrooms,Area,Floors,Year Built,Value,Damage
+Alfred,30000,10000,0,62 That St,House,100,1,1,700,1,1920,100000,None
+Bruce,100000,1000000,1,720 This Rd,House,100000,6,5,5000,3,1920,10000000,Slight
+Selena,10000,100,0,1001 Other Ave,Apartment,10,0,1,250,1,1960,10000,Complete
+Fish,50000,1000,1,26000 Out There Lane,Condo,2000,4,2,2000,2,2010,800000,Moderate
