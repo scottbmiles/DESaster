@@ -2,30 +2,28 @@
 """
 Created on Wed Jan 20 15:08:52 2016
 
-@author: Derek
+@author: Derek, Scott
 """
 import simpy
-import csv
 
-class Capitals():
-    """This is the main resource data structure.
-    
-        Provide a data dictionary. The dictionary MUST include all the
-        resources listed below. 
+class HumanCapital(): # --% created a separate class for just human capitals %--
     """
-    def __init__(self, simulation, data):
+    
+    """
+    def __init__(self, simulation, human_cap_data): # --% changed argument name %--
                 
-        self.data = data
-        ## HUMAN CAPITALS ##
+        self.data = human_cap_data
+        
+        ## HUMAN CAPITALS ## --% changed to make reference to human_cap_data %--
         
         try:
-            self.inspectors = simpy.Resource(simulation, data['inspectors'])
-            self.insurance_adjusters = simpy.Resource(simulation, data['insurance adjusters'])
-            self.fema_processors = simpy.Resource(simulation, data['fema processors'])
-            self.permit_processors = simpy.Resource(simulation, data['permit processors'])
-            self.contractors = simpy.Resource(simulation, data['contractors'])
-            self.loan_processors = simpy.Resource(simulation, data['loan processors'])
-            self.engineers = simpy.Resource(simulation, data['engineers'])
+            self.inspectors = simpy.Resource(simulation, human_cap_data['inspectors'])
+            self.insurance_adjusters = simpy.Resource(simulation, human_cap_data['insurance adjusters'])
+            self.fema_processors = simpy.Resource(simulation, human_cap_data['fema processors'])
+            self.permit_processors = simpy.Resource(simulation, human_cap_data['permit processors'])
+            self.contractors = simpy.Resource(simulation, human_cap_data['contractors'])
+            self.loan_processors = simpy.Resource(simulation, human_cap_data['loan processors'])
+            self.engineers = simpy.Resource(simulation, human_cap_data['engineers'])
         except ValueError as e:
             
             print ("You are missing a config value, or your value is zero. All" 
@@ -38,40 +36,78 @@ class Capitals():
             print ("Something went really wrong, capitals failed to load."
                     " See error {0}".format(g))
 
-        ## FINANCIAL CAPITALS ##
-        self.fema_aid = simpy.Container(simulation, data['fema aid'])
-        
-        ## Households ##
-        self.housing_stock = self.load_households(simulation) #FILTERSTORE
+class FinancialCapital(): # --% created a separate class for just financial capitals %--
+        def __init__(self, simulation, financial_cap_data): # --% changed/added arguments %--
             
-    def get_capitals_list(self):
-        c_list = []
-        for i in dir(self):
-            if "__" not in i:
-                c_list.append(i)
-        return c_list
+            self.fema_aid = simpy.Container(simulation, init=financial_cap_data['fema aid'])
         
-    def get_capitals_values(self):
-        return self.data
+class BuiltCapital(): # --% created a separate class for just financial capitals %--
+        def __init__(self, simulation, asset):
+            self.setYearBuilt(asset)
+            self.setValue(asset)
+            self.setDamageState(asset)  
+            self.setDamageValue(asset) 
+            self.setInspection(simulation, asset)
+        def setYearBuilt(self, asset):
+            self.age = asset['Year Built']
+        def setValue(self, asset):
+            self.value = asset['Value']
+        def setDamageState(self, asset):
+            self.damage_state = asset['Damage State']
+        def setDamageValue(self, asset):
+            self.damage_value = asset['Damage Value']
+        def setInspection(self, simulation, asset):
+            self.inspection = simulation.event()
+            self.inspect_start = None
+            self.inspect_stop = None
+
+class Building(BuiltCapital):
+    def __init__(self, simulation, building):
+        self.setAddress(building)
+#         self.setResident(building)
+        try:
+            self.setOccupancy(building)
+        except AttributeError:
+            print('Invalid occupancy type provided: {0}.'.format(building['occupancy']))
+        self.setMonthlyCost(building)
+        self.setYearBuilt(asset)
+        self.setValue(building)
+        self.setDamageState(building)  
+        self.setDamageValue(building) 
+        self.setInspection(simulation, building)
+    def setAddress(self, building):
+        self.address = building['Address']
+    def setOccupancy(self, building):
+        self.occupancy = building['Occupancy']
+    def setMonthlyCost(self, building):
+        self.cost = building['Cost']
+    def setBuildingArea(self, building):
+        self.cost = building['Area']
+
         
-    def load_households(self, simulation): #this is only used internally
-        #TODO load all input files from the IO file
-        input_file = "../inputs/housing_stock.csv"
-        stock = []
-        with open(input_file) as file:
-            reader = csv.reader(file)
-            for i in reader:
-                stock.append(House(i)) #House is a class defined below
-        stock.pop(0)
-        housing_stock = simpy.Store(simulation)
-        for i in stock:
-            housing_stock.put(i)
-        
-        return housing_stock
-            
-class House:
-    def __init__(self, inp):
-        self.number = inp[0]
-        self.lat = inp[2]
-        self.long = inp[1]
-        
+class Residence(Building):
+    #Can verify that occupancy types only relate to residences
+    def __init__(self, simulation, residence):
+        self.setAddress(residence)
+        self.setBuildingArea(residence)
+        self.setMonthlyCost(residence)
+        self.setOccupancy(residence)
+        self.setBedrooms(residence)
+        self.setBathrooms(residence)
+        self.setYearBuilt(residence)
+        self.setValue(residence)
+        self.setDamageState(residence)  
+        self.setDamageValue(residence) 
+        self.setInspection(simulation, residence)
+    def setOccupancy(self, residence):
+        if residence['Occupancy'] in ('Single Family', 'Multi Family', 'Mobile', 'Condo'):
+            self.occupancy = residence['Occupancy']
+        else:
+            raise AttributeError(residence['Occupancy'])
+    def setBedrooms(self, residence):
+        self.bedrooms = residence['Bedrooms']
+    def setBathrooms(self, residence):
+        self.bathrooms = residence['Bathrooms']
+
+
+
