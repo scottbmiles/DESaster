@@ -9,7 +9,7 @@ processes related to rebuilding
 from desaster.config import sfr_rebuild_time
 from simpy import Interrupt
 
-def rebuild_house(simulation, human_capital, entity): 
+def rebuild_house(simulation, human_capital, entity, story = True): 
         
         if entity.permit_get > 0.0 and entity.money_to_rebuild >= entity.residence.damage_value:
             # Put in request for contractors to repair house
@@ -31,16 +31,20 @@ def rebuild_house(simulation, human_capital, entity):
 
             # Record time when household gets house
             entity.house_get = simulation.now
-
-            # Write the household's story
-            entity.story.append(
-                'The house was rebuilt {0} days after the event, taking {1} days to rebuild. '.format(
-                entity.house_get, sfr_rebuild_time))
+            
+            if story == True:
+                # Write the household's story
+                entity.story.append(
+                    'The house was rebuilt {0} days after the event, taking {1} days to rebuild. '.format(
+                    entity.house_get, sfr_rebuild_time))
+        
         elif entity.money_to_rebuild < entity.residence.damage_value:
-            entity.story.append(
-                '{0} was unable to get enough money to rebuild. '.format(
-                entity.name))
+            if story == True:
+                entity.story.append(
+                    '{0} was unable to get enough money to rebuild. '.format(
+                    entity.name))
         else: 
-            entity.story.append(
-                '{0} was unable to get a permit to rebuild. '.format(
-                entity.name))
+            if story == True:
+                entity.story.append(
+                    '{0} was unable to get a permit to rebuild. '.format(
+                    entity.name))

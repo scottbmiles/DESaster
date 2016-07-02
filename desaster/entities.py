@@ -16,7 +16,7 @@ class Household(object):
         a pandas dataframe and having the ability to show recovery trajectories
         for each household
     """
-    def __init__(self, simulation, household):
+    def __init__(self, simulation, household, story = True):
 
         # Household Attributes
         self.household = household
@@ -48,18 +48,19 @@ class Household(object):
         
         # Function calls
         self.residence = Residence(simulation, household) # Assign residence to the household
-        self.setStory() # Start stories with non-disaster attributes
+        self.setStory(story) # Start stories with non-disaster attributes
     
-    def setStory(self):
+    def setStory(self, story):
         
-        # Start stories with non-disaster attributes
-        self.story.append(
-        '{0} lives in a {1} bedroom {2} Home ({3}). '.format(self.name, 
-                                                        self.residence.bedrooms, 
-                                                        self.residence.occupancy,
-                                                        self.residence.address
-                                                        )
-        )
+        if story == True:
+            # Start stories with non-disaster attributes
+            self.story.append(
+            '{0} lives in a {1} bedroom {2} Home ({3}). '.format(self.name, 
+                                                            self.residence.bedrooms, 
+                                                            self.residence.occupancy,
+                                                            self.residence.address
+                                                            )
+            )
 
     def story_to_text(self): # --% modified %--
         '''

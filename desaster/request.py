@@ -9,7 +9,7 @@ from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
 from desaster.config import permit_process_time
 
-def inspection(simulation, human_capital, entity, callbacks = None):
+def inspection(simulation, human_capital, entity, story = True, callbacks = None):
     """Request an inspection, do inspection, update entity attribute times.
 
     Keyword Arguments:
@@ -20,7 +20,7 @@ def inspection(simulation, human_capital, entity, callbacks = None):
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    callbacks -- a generator function containing any processes you want to start
+    story = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -35,33 +35,26 @@ def inspection(simulation, human_capital, entity, callbacks = None):
     # Put in request for an inspector (shared resource)
     entity.inspection_put = simulation.now
     
-    # ??? the inspection_put attribute can be added after init, ???
     request = human_capital.inspectors.request()
     yield request
 
-    # Duration of inspection
-    yield simulation.timeout(inspection_time)
+    yield simulation.timeout(inspection_time) # Duration of inspection
     
-    # The time that the inspection has been completed
-    entity.inspection_get = simulation.now
+    entity.inspection_get = simulation.now # Inspection completion time
 
-    # --% Added release statement
-    human_capital.inspectors.release(request)
+    human_capital.inspectors.release(request) # Release inspector
 
-    #write their story
-    entity.story.append(
-    "{1}'s house was inspected {0} days after the event. ".format(entity.inspection_get, entity.name))
-    
-    entity.story.append(
-                    'The event caused ${0} of damage to the residence. '.format(entity.residence.damage_value)
-                    )
+    if story == True:
+        #If true, write their story
+        entity.story.append(
+                        "{1}'s house was inspected {0} days after the event. The event caused ${2} of damage to the residence.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
         pass
 
-def insurance_claim(simulation, human_capital, entity, callbacks = None):
+def insurance_claim(simulation, human_capital, entity, story = True, callbacks = None):
     """File an insurance claim, assign claim amounts to entity objects.
 
     Keyword arguments:
@@ -72,7 +65,7 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    callbacks -- a generator function containing any processes you want to start
+    story = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -102,9 +95,11 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
             
             entity.claim_put = simulation.now   # Record time that claim is put in
             
-            entity.story.append(
-                '{0} submitted an insurance claim {1} days after the event. '.format(
-                entity.name, entity.claim_put))
+            if story == True:
+                #If true, write their story
+                entity.story.append(
+                    '{0} submitted an insurance claim {1} days after the event. '.format(
+                    entity.name, entity.claim_put))
             
             request = human_capital.insurance_adjusters.request()
             yield request
@@ -124,15 +119,18 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
 
             entity.money_to_rebuild += entity.claim_payout
 
-            entity.story.append(
-                '{0} received a ${1} insurance payout {2} days after the event. '.format(
-                entity.name, entity.claim_payout, entity.claim_get))
+            if story == True:
+                #If true, write their story
+                entity.story.append(
+                    '{0} received a ${1} insurance payout {2} days after the event. '.format(
+                    entity.name, entity.claim_payout, entity.claim_get))
        
     except Interrupt as i: # Handle any interrupt thrown by a master process
-        
-        entity.story.append(
-                '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
-                entity.name, i.cause))
+        if story == True:
+            #If true, write their story
+            entity.story.append(
+                    '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
+                    entity.name, i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -140,7 +138,7 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
     else:
         pass
 
-def fema_assistance(simulation, human_capital, financial_capital, entity, callbacks = None):
+def fema_assistance(simulation, human_capital, financial_capital, entity, story = True, callbacks = None):
     """Request and receive assistance from fema.
 
     entity -- An entity object from the Entity() class. Must have a value for
@@ -151,7 +149,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    callbacks -- a generator function containing any processes you want to start
+    story = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -181,10 +179,11 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
         else: # Requires FEMA assistance
             
             entity.assistance_put = simulation.now  # Record time household requests FEMA assistance
-
-            entity.story.append(
-                '{0} submitted a request to FEMA {1} days after the event. '.format(
-                entity.name, entity.assistance_put))
+            if story == True:
+                #If true, write their story
+                entity.story.append(
+                    '{0} submitted a request to FEMA {1} days after the event. '.format(
+                    entity.name, entity.assistance_put))
 
             request = human_capital.fema_processors.request()
             yield request
@@ -205,10 +204,11 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
 
                 yield financial_capital.fema_aid.get(entity.assistance_request)
                 
-                # Write the household's story
-                entity.story.append(
-                    '{0} received ${1} from FEMA {2} days after the event. '.format(
-                    entity.name, entity.assistance_payout, entity.assistance_get))
+                if story == True:
+                    #If true, write their story
+                    entity.story.append(
+                        '{0} received ${1} from FEMA {2} days after the event. '.format(
+                        entity.name, entity.assistance_payout, entity.assistance_get))
 
             elif financial_capital.fema_aid.level > 0:  # FEMA has money left but less than requested
                 entity.assistance_payout = financial_capital.fema_aid.level
@@ -216,32 +216,31 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
                 
                 yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
                 
-                # Write the household's story
-                entity.story.append(
-                 '{0} requested ${1} from FEMA but only received ${2}. '
-                 .format(entity.name, entity.assistance_request, entity.assistance_payout))
-
-                entity.story.append(
-                    'They received the assistance {0} days after the event. '.format(
-                    entity.assistance_get))
-    
+                if story == True:
+                    #If true, write their story
+                    entity.story.append(
+                     '{0} requested ${1} from FEMA but only received ${2}, {3} days after the event.. '
+                     .format(entity.name, entity.assistance_request, entity.assistance_payout, entity.assistance_get))
+        
             else:  # FEMA has no money left
                 
                 entity.assistance_payout = 0.0
 
-                # Write the household's story
-                entity.story.append(
-                '{0} received no money from FEMA because of inadequate funding. '
-                .format(entity.name))
+                if story == True:
+                    #If true, write their story
+                    entity.story.append(
+                    '{0} received no money from FEMA because of inadequate funding. '
+                    .format(entity.name))
                 
                 yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
             
     # Catch any interrupt from a master process         
     except Interrupt as i:
-        
-        entity.story.append(
-                '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
-                entity.name, i.cause))
+        if story == True:
+            #If true, write their story
+            entity.story.append(
+                    '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
+                    entity.name, i.cause))
         
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -249,7 +248,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
     else:
         pass
 
-def engineering_assessment(simulation, human_capital, entity, callbacks = None):
+def engineering_assessment(simulation, human_capital, entity, story = True, callbacks = None):
     """Request an engineering assessment"""
 
     entity.assessment_put = simulation.now #time of request
@@ -262,17 +261,19 @@ def engineering_assessment(simulation, human_capital, entity, callbacks = None):
     human_capital.engineers.release(request)
     
     entity.assessment_get = simulation.now #when assessment is received
-
-    entity.story.append(
-    '{0} received an engineering assessment {1} days after the event. '
-    .format(entity.name, entity.assessment_get))
+    
+    if story == True:
+        #If true, write their story
+        entity.story.append(
+        '{0} received an engineering assessment {1} days after the event. '
+        .format(entity.name, entity.assessment_get))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
         pass
 
-def loan(simulation, human_capital, entity, callbacks = None):
+def loan(simulation, human_capital, entity, story = True, callbacks = None):
     
     try:
 
@@ -281,10 +282,12 @@ def loan(simulation, human_capital, entity, callbacks = None):
         
         else:
             entity.loan_put = simulation.now # Record time application submitted
-                 
-            entity.story.append(
-                '{0} submitted a loan application {1} days after the event. '.format(
-                entity.name, entity.loan_put))
+            
+            if story == True:
+                #If true, write their story     
+                entity.story.append(
+                    '{0} submitted a loan application {1} days after the event. '.format(
+                    entity.name, entity.loan_put))
 
             request = human_capital.loan_processors.request()
             yield request
@@ -305,24 +308,27 @@ def loan(simulation, human_capital, entity, callbacks = None):
 
             if entity.loan_amount > 0.0:
                 entity.money_to_rebuild += entity.loan_amount
-
-                entity.story.append(
-                "{0} received a loan for ${1} {2} days after the event. "
-                .format(entity.name, entity.loan_amount, entity.loan_get))
+                
+                if story == True:
+                    #If true, write their story
+                    entity.story.append(
+                    "{0} received a loan for ${1} {2} days after the event. "
+                    .format(entity.name, entity.loan_amount, entity.loan_get))
 
     # Handle any interrupt from a master process
     except Interrupt as i:
-        
-        entity.story.append(
-                '{0} gave up during the loan approval process after a {1} day search for money. '.format(
-                entity.name, i.cause))
+        if story == True:
+            #If true, write their story
+            entity.story.append(
+                    '{0} gave up during the loan approval process after a {1} day search for money. '.format(
+                    entity.name, i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
         pass
 
-def permit(simulation, human_capital, entity, callbacks = None):
+def permit(simulation, human_capital, entity, story = True, callbacks = None):
 
     """Request a permit for building."""
     entity.permit_put = simulation.now
@@ -336,10 +342,12 @@ def permit(simulation, human_capital, entity, callbacks = None):
     human_capital.permit_processors.release(request)
 
     entity.permit_get = simulation.now
-
-    entity.story.append(
-    "{0} received permit approval {1} days after the event. "
-    .format(entity.name, entity.permit_get))
+    
+    if story == True:
+        #If true, write their story
+        entity.story.append(
+        "{0} received permit approval {1} days after the event. "
+        .format(entity.name, entity.permit_get))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
