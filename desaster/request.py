@@ -4,6 +4,7 @@ Created on Thu Jan 14 09:14:04 2016
 
 @author: Derek, Scott
 """
+from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
 from desaster.config import permit_process_time
@@ -15,9 +16,9 @@ def inspection(simulation, human_capital, entity, callbacks = None):
     entity -- An entity object from the Entity() class. Must have a value for
               attribute 'insurance_coverage', which should be set at __init__()
 
-    simulation -- A simpy.Environment() object. This references the simulation
+    simulation -- A Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
+                  simulation, e.g. simulation = Environment().
 
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
@@ -67,9 +68,9 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
     entity -- An entity object from the Entity() class. Must have a value for
               attribute 'insurance_coverage', which should be set at __init__()
 
-    simulation -- A simpy.Environment() object. This references the simulation
+    simulation -- A Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
+                  simulation, e.g. simulation = Environment().
 
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
@@ -97,7 +98,7 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
             
             return
         
-        else # Has insurance and needs to submit a claim
+        else: # Has insurance and needs to submit a claim
             
             entity.claim_put = simulation.now   # Record time that claim is put in
             
@@ -127,7 +128,7 @@ def insurance_claim(simulation, human_capital, entity, callbacks = None):
                 '{0} received a ${1} insurance payout {2} days after the event. '.format(
                 entity.name, entity.claim_payout, entity.claim_get))
        
-    except simpy.Interrupt as i: # Handle any interrupt thrown by a master process
+    except Interrupt as i: # Handle any interrupt thrown by a master process
         
         entity.story.append(
                 '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
@@ -146,9 +147,9 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
               attributes: 'residence.damage_value', 'claim_payout',
               which should be set at __init__()
 
-    simulation -- A simpy.Environment() object. This references the simulation
+    simulation -- A Environment() object. This references the simulation
                   environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
+                  simulation, e.g. simulation = Environment().
 
     callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
@@ -236,7 +237,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, callba
                 yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
             
     # Catch any interrupt from a master process         
-    except simpy.Interrupt as i:
+    except Interrupt as i:
         
         entity.story.append(
                 '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
@@ -310,7 +311,7 @@ def loan(simulation, human_capital, entity, callbacks = None):
                 .format(entity.name, entity.loan_amount, entity.loan_get))
 
     # Handle any interrupt from a master process
-    except simpy.Interrupt as i:
+    except Interrupt as i:
         
         entity.story.append(
                 '{0} gave up during the loan approval process after a {1} day search for money. '.format(

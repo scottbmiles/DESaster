@@ -4,7 +4,7 @@ Created on Wed Jan 20 15:08:52 2016
 
 @author: Derek, Scott
 """
-import simpy
+from simpy import Resource, Container, Interrupt
 
 class HumanCapital(): # --% created a separate class for just human capitals %--
     """
@@ -17,13 +17,13 @@ class HumanCapital(): # --% created a separate class for just human capitals %--
         ## HUMAN CAPITALS ## --% changed to make reference to human_cap_data %--
         
         try:
-            self.inspectors = simpy.Resource(simulation, human_cap_data['inspectors'])
-            self.insurance_adjusters = simpy.Resource(simulation, human_cap_data['insurance adjusters'])
-            self.fema_processors = simpy.Resource(simulation, human_cap_data['fema processors'])
-            self.permit_processors = simpy.Resource(simulation, human_cap_data['permit processors'])
-            self.contractors = simpy.Resource(simulation, human_cap_data['contractors'])
-            self.loan_processors = simpy.Resource(simulation, human_cap_data['loan processors'])
-            self.engineers = simpy.Resource(simulation, human_cap_data['engineers'])
+            self.inspectors = Resource(simulation, human_cap_data['inspectors'])
+            self.insurance_adjusters = Resource(simulation, human_cap_data['insurance adjusters'])
+            self.fema_processors = Resource(simulation, human_cap_data['fema processors'])
+            self.permit_processors = Resource(simulation, human_cap_data['permit processors'])
+            self.contractors = Resource(simulation, human_cap_data['contractors'])
+            self.loan_processors = Resource(simulation, human_cap_data['loan processors'])
+            self.engineers = Resource(simulation, human_cap_data['engineers'])
         except ValueError as e:
             
             print ("You are missing a config value, or your value is zero. All" 
@@ -39,7 +39,7 @@ class HumanCapital(): # --% created a separate class for just human capitals %--
 class FinancialCapital(): # --% created a separate class for just financial capitals %--
         def __init__(self, simulation, financial_cap_data): # --% changed/added arguments %--
             
-            self.fema_aid = simpy.Container(simulation, init=financial_cap_data['fema aid'])
+            self.fema_aid = Container(simulation, init=financial_cap_data['fema aid'])
         
 class BuiltCapital(): # --% created a separate class for just financial capitals %--
         def __init__(self, simulation, asset):

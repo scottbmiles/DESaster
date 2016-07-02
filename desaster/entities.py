@@ -6,11 +6,15 @@ Created on Wed Jan 20 09:54:53 2016
 Entities classes
 
 """
+from simpy import Interrupt
+from desaster.capitals import Residence
 
 class Household(object):
-    """Define a Household class with attributes and methods.
+    """Define a Household class with attributes and visualization methods.
 
-        
+        Methods have yet to be defined, but will likely include putting data into
+        a pandas dataframe and having the ability to show recovery trajectories
+        for each household
     """
     def __init__(self, simulation, household):
 
@@ -50,7 +54,7 @@ class Household(object):
         
         # Start stories with non-disaster attributes
         self.story.append(
-        '{0} lives in a {1} bedroom {2} home ({3}). '.format(self.name, 
+        '{0} lives in a {1} bedroom {2} Home ({3}). '.format(self.name, 
                                                         self.residence.bedrooms, 
                                                         self.residence.occupancy,
                                                         self.residence.address
