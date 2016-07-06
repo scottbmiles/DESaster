@@ -6,7 +6,8 @@ Created on Mon Jan 25 16:09:02 2016
 
 processes related to rebuilding
 """
-from desaster.config import sfr_rebuild_time, mfr_rebuild_time, mobile_rebuild_time
+# from desaster.config import sfr_rebuild_time, mfr_rebuild_time, mobile_rebuild_time
+from desaster.config import building_repair_times
 from simpy import Interrupt
 
 def rebuild_house(simulation, human_capital, entity, story = True): 
@@ -18,13 +19,11 @@ def rebuild_house(simulation, human_capital, entity, story = True):
             request = human_capital.contractors.request()
             yield request
             
-            # Time required to rebuild house
-            if entity.residence.occupancy == 'Single Family':
-                yield simulation.timeout(sfr_rebuild_time)
-            if entity.residence.occupancy == 'Multi Family':
-                yield simulation.timeout(mfr_rebuild_time)
-            if entity.residence.occupancy == 'Mobile':
-                yield simulation.timeout(mobile_rebuild_time)
+            # Get the rebuild time for the entity from config.py which imports the HAZUS repair time look up table
+            rebuild_time = building_repair_times.ix[entity.residence.occupancy][entity.residence.damage_state]
+            
+            yield simulation.timeout(rebuild_time)
+        
 
             human_capital.contractors.release(request)
 
