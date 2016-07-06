@@ -55,7 +55,7 @@ class Household(object):
         if story == True:
             # Start stories with non-disaster attributes
             self.story.append(
-            '{0} lives in a {1} bedroom {2} Home ({3}). '.format(self.name, 
+            '{0} lives in a {1} bedroom {2} ({3}). '.format(self.name, 
                                                             self.residence.bedrooms, 
                                                             self.residence.occupancy,
                                                             self.residence.address
