@@ -4,7 +4,7 @@ Created on Fri Jan 15 11:40:30 2016
 
 @author: Derek, Scott
 """
-from desaster import entities, capitals, request, config, io, movement, search
+from desaster import entities, capitals, request, io, movement, search, config
 from desaster.entities import Household
 from desaster.capitals import HumanCapital
 from desaster.capitals import FinancialCapital

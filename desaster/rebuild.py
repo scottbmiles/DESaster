@@ -2,11 +2,11 @@
 """
 Created on Mon Jan 25 16:09:02 2016
 
-@author: Derek
+@author: Derek, Scott
 
 processes related to rebuilding
 """
-from desaster.config import sfr_rebuild_time
+from desaster.config import sfr_rebuild_time, mfr_rebuild_time, mobile_rebuild_time
 from simpy import Interrupt
 
 def rebuild_house(simulation, human_capital, entity, story = True): 
@@ -36,7 +36,7 @@ def rebuild_house(simulation, human_capital, entity, story = True):
                 # Write the household's story
                 entity.story.append(
                     'The house was rebuilt {0} days after the event, taking {1} days to rebuild. '.format(
-                    entity.house_get, sfr_rebuild_time))
+                    entity.house_get, entity.house_get - entity.house_put))
         
         elif entity.money_to_rebuild < entity.residence.damage_value:
             if story == True:

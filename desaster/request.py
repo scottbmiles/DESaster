@@ -47,7 +47,7 @@ def inspection(simulation, human_capital, entity, story = True, callbacks = None
     if story == True:
         #If true, write their story
         entity.story.append(
-                        "{1}'s house was inspected {0} days after the event. The event caused ${2} of damage to the residence.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+                        "{1}'s house was inspected {0} days after the event and suffered ${2} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)

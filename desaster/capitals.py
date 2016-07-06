@@ -5,6 +5,8 @@ Created on Wed Jan 20 15:08:52 2016
 @author: Derek, Scott
 """
 from simpy import Resource, Container, Interrupt
+import pandas as pd
+from desaster.config import structural_damage_ratios, acceleration_damage_ratios, drift_damage_ratios
 
 class HumanCapital(): # --% created a separate class for just human capitals %--
     """
@@ -70,7 +72,7 @@ class Building(BuiltCapital):
         except AttributeError:
             print('Invalid occupancy type provided: {0}.'.format(building['occupancy']))
         self.setMonthlyCost(building)
-        self.setYearBuilt(asset)
+        self.setYearBuilt(building)
         self.setValue(building)
         self.setDamageState(building)  
         self.setDamageValue(building) 
@@ -83,7 +85,13 @@ class Building(BuiltCapital):
         self.cost = building['Cost']
     def setBuildingArea(self, building):
         self.cost = building['Area']
-
+    def setDamageValue(self, building):
+            struct_repair_ratio = structural_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+            accel_repair_ratio = acceleration_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+            drift_repair_ratio = drift_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+            self.damage_value = building['Value']*(struct_repair_ratio + 
+                                                    accel_repair_ratio + 
+                                                    drift_repair_ratio)
         
 class Residence(Building):
     #Can verify that occupancy types only relate to residences
@@ -100,7 +108,7 @@ class Residence(Building):
         self.setDamageValue(residence) 
         self.setInspection(simulation, residence)
     def setOccupancy(self, residence):
-        if residence['Occupancy'] in ('Single Family', 'Multi Family', 'Mobile', 'Condo'):
+        if residence['Occupancy'] in ('Single Family Dwelling', 'Multi Family Dwelling', 'Mobile Home', 'Condo'):
             self.occupancy = residence['Occupancy']
         else:
             raise AttributeError(residence['Occupancy'])

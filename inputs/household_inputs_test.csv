@@ -1,5 +1,5 @@
-Name,Income,Savings,Insurance,Address,Occupancy,Cost,Bedrooms,Bathrooms,Area,Year Built,Value,Damage State,Damage Value
-Alfred,30000,10000,0,62 That St,Mobile,100,1,1,700,1920,100000,None,20000
-Bruce,100000,1000000,10000000,720 This Rd,Single Family,100000,6,5,5000,1920,10000000,Slight,50000
-Selena,10000,100,0,1001 Other Ave,Multi Family,10,0,1,250,1960,10000,Complete,8000
-Fish,50000,1000,550000,26000 Out There Lane,Single Family,2000,4,2,2000,2010,800000,Moderate,650000
+Name,Income,Savings,Insurance,Address,Occupancy,Cost,Bedrooms,Bathrooms,Area,Year Built,Value,Damage State
+Alfred,30000,10000,0,62 That St,Mobile Home,100,1,1,700,1920,100000,None
+Bruce,100000,1000000,10000000,720 This Rd,Single Family Dwelling,100000,6,5,5000,1920,10000000,Slight
+Selena,10000,100,0,1001 Other Ave,Multi Family Dwelling,10,0,1,250,1960,10000,Complete
+Fish,50000,1000,550000,26000 Out There Lane,Single Family Dwelling,2000,4,2,2000,2010,800000,Moderate
