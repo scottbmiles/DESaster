@@ -45,6 +45,10 @@ class Household(object):
         self.loan_amount = 0.0 # Amount of loan
         self.permit_put = 0.0 # Time put request for building permit
         self.permit_get = 0.0 # Time get requested building permit
+        self.home_search_start = 0.0 # Time started searching for a new home
+        self.home_search_stop = 0.0 # Time found a new home
+        self.money_search_start = 0.0 # Time that household started search for money
+        self.money_search_stop = 0.0 # Time that household found rebuild money
         
         # Function calls
         self.residence = Residence(simulation, household) # Assign residence to the household
@@ -55,7 +59,7 @@ class Household(object):
         if story == True:
             # Start stories with non-disaster attributes
             self.story.append(
-            '{0} lives in a {1} bedroom {2} ({3}). '.format(self.name, 
+            '{0} lives in a {1} bedroom {2} at {3}. '.format(self.name, 
                                                             self.residence.bedrooms, 
                                                             self.residence.occupancy,
                                                             self.residence.address

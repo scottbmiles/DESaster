@@ -1,0 +1,5 @@
+Address,Occupancy,Cost,Bedrooms,Bathrooms,Area,Year Built,Value,Damage State
+99 Growl Ave,Mobile Home,100,1,1,700,1920,100000,None
+1100 Woof Rd,Single Family Dwelling,100000,6,5,5000,1920,10000000,Slight
+32 Meow Blvd,Multi Family Dwelling,10,0,1,250,1960,10000,None
+3400 Moo Lane,Single Family Dwelling,2000,4,2,2000,2010,800000,Slight

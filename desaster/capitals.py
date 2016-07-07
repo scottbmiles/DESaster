@@ -4,11 +4,11 @@ Created on Wed Jan 20 15:08:52 2016
 
 @author: Derek, Scott
 """
-from simpy import Resource, Container, Interrupt
+from simpy import Resource, Container, Interrupt, FilterStore
 import pandas as pd
 from desaster.config import structural_damage_ratios, acceleration_damage_ratios, drift_damage_ratios
 
-class HumanCapital(): # --% created a separate class for just human capitals %--
+class HumanCapital(object): # --% created a separate class for just human capitals %--
     """
     
     """
@@ -38,12 +38,12 @@ class HumanCapital(): # --% created a separate class for just human capitals %--
             print ("Something went really wrong, capitals failed to load."
                     " See error {0}".format(g))
 
-class FinancialCapital(): # --% created a separate class for just financial capitals %--
+class FinancialCapital(object): # --% created a separate class for just financial capitals %--
         def __init__(self, simulation, financial_cap_data): # --% changed/added arguments %--
             
             self.fema_aid = Container(simulation, init=financial_cap_data['fema aid'])
         
-class BuiltCapital(): # --% created a separate class for just financial capitals %--
+class BuiltCapital(object): # --% created a separate class for just financial capitals %--
         def __init__(self, simulation, asset):
             self.setYearBuilt(asset)
             self.setValue(asset)
@@ -116,6 +116,14 @@ class Residence(Building):
         self.bedrooms = residence['Bedrooms']
     def setBathrooms(self, residence):
         self.bathrooms = residence['Bathrooms']
+        
+def setHousingStock(simulation, stock_df):
+    stock_fs = FilterStore(simulation)
+
+    for i in stock_df.index:
+        stock_fs.put(Residence(simulation, stock_df.loc[i]))
+    
+    return stock_fs
 
 
 
