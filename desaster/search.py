@@ -14,7 +14,7 @@ def permanent_housing(simulation, entity, search_patience, housing_stock, human_
     
     if write_story == True:
         entity.story.append(
-                                '{0} started searching for a {1} with a value under ${2:,.0f} on day {3:,.0f}. '.format(
+                                '{0} started searching for a {1} with a value under ${2:,.0f} {3:,.0f} days after the event. '.format(
                                 entity.name, entity.residence.occupancy, 
                                 entity.residence.value, entity.home_search_start)
                                 )
@@ -38,8 +38,8 @@ def permanent_housing(simulation, entity, search_patience, housing_stock, human_
         
         if write_story == True:
             entity.story.append(
-                                    '{0:,.0f} days after the event, {1} gave up searching for a new home in the local area. '.format(
-                                    simulation.now, entity.name)
+                                    'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
+                                    simulation.now, simulation.now - entity.home_search_start, entity.name)
                                     )
         return 'Gave up'
     
@@ -63,6 +63,13 @@ def rebuild_money(simulation, human_capital, financial_capital, entity, search_p
     entity.money_search_start = simulation.now
     patience_end = entity.money_search_start + search_patience
     
+    if entity.money_to_rebuild >= entity.residence.damage_value and entity.insurance == 0.0:
+        
+        if write_story == True:    
+            entity.story.append(
+                                    '{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. '.format(
+                                    entity.name, entity.money_to_rebuild))
+
     if entity.insurance > 0.0:
         
         find_search_patience = simulation.timeout(patience_end - simulation.now, value='Gave up')
@@ -73,7 +80,6 @@ def rebuild_money(simulation, human_capital, financial_capital, entity, search_p
         if money_search_outcome == {find_search_patience: 'Gave up'}:
             
             try_insurance.interrupt(simulation.now - entity.money_search_start)
-
 
             return
     

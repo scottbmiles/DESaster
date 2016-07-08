@@ -87,12 +87,8 @@ def insurance_claim(simulation, human_capital, entity, story = False, callbacks 
     """
     try: # in case a process interrupt is thrown in a master process
         
-        if entity.money_to_rebuild >= entity.residence.damage_value:  # Doesn't need to make a claim
-            
-            return
+        if entity.insurance <= 0.0:  # Has no insurance
         
-        elif entity.insurance == 0.0:  # Has no insurance
-            
             return
         
         else: # Has insurance and needs to submit a claim

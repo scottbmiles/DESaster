@@ -15,8 +15,8 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
     try: # in case a process interrupt is thrown in a master process
         
 
-        # With a permit and enough money, can rebuild
-        if entity.permit_get > 0.0 and entity.money_to_rebuild >= entity.residence.damage_value:
+        # With enough money, can rebuild
+        if entity.money_to_rebuild >= entity.residence.damage_value:
             # Put in request for contractors to repair house
             entity.house_put = simulation.now
 
@@ -41,8 +41,8 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
             if write_story == True:
                 # Write the household's story
                 entity.story.append(
-                    'The house was rebuilt {0:,.0f} days after the event, taking {1:.0f} days to rebuild. '.format(
-                    entity.house_get, entity.house_get - entity.house_put))
+                    '{0}\'s home was rebuilt {1:,.0f} days after the event, taking {2:.0f} days to rebuild. '.format(
+                    entity.name, entity.house_get, entity.house_get - entity.house_put))
         
         elif entity.money_to_rebuild < entity.residence.damage_value:
             if story == True:
@@ -84,6 +84,8 @@ def stock(simulation, structure_stock, fix_probability, fix_schedule, human_capi
         
         structures_list.append(get_structure)                                  
     
+    num_fixed = 0
+    
     # Iterate through list of structures, do processing, put them back into the FilterStore
     for put_structure in structures_list:
         
@@ -92,29 +94,17 @@ def stock(simulation, structure_stock, fix_probability, fix_schedule, human_capi
             
             if random.uniform(0, 1.0) <= fix_probability:
                 
-                contractors_request = human_capital.contractors.request()
-                yield contractors_request
-               
-                # Get the rebuild time for the entity from config.py 
-                # which imports the HAZUS repair time look up table.
-                # Rebuild time is based on occupancy type and damage state.
-                rebuild_time = building_repair_times.ix[put_structure.occupancy][put_structure.damage_state]
-               
-                yield simulation.timeout(rebuild_time)
-           
-                human_capital.contractors.release(contractors_request)
-                
                 put_structure.damage_state = 'None'
                 put_structure.damage_value = 0.0
-                print(put_structure.address, put_structure.damage_state, put_structure.damage_value)
-                
+
                 structure_stock.put(put_structure)
+                
+                num_fixed += 1
             
             else:
                 structure_stock.put(put_structure)
                 
         else:
             structure_stock.put(put_structure)
-
-
-            
+        
+    print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, simulation.now))
