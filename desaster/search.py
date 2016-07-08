@@ -113,6 +113,6 @@ def rebuild_money(simulation, human_capital, financial_capital, entity, search_p
     
     if write_story == True:    
         entity.story.append(
-                                'It took {0} {1:.0f} days to exhaust the search for money and now has ${2:,.0f} to rebuild. '.format(
+                                'It took {0} {1:.0f} days to receive enough financial assistance and now has ${2:,.0f} to rebuild. '.format(
                                 entity.name, search_duration, entity.money_to_rebuild))
 

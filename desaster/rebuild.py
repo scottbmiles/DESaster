@@ -41,7 +41,7 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
             if write_story == True:
                 # Write the household's story
                 entity.story.append(
-                    '{0}\'s home was rebuilt {1:,.0f} days after the event, taking {2:.0f} days to rebuild. '.format(
+                    '{0}\'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. '.format(
                     entity.name, entity.house_get, entity.house_get - entity.house_put))
         
         elif entity.money_to_rebuild < entity.residence.damage_value:
