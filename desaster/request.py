@@ -51,7 +51,7 @@ def inspection(simulation, human_capital, structure, entity = None, story = Fals
     if story == True:
         #If true, write their story
         entity.story.append(
-                        "{1}'s house was inspected {0} days after the event and suffered ${2} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+                        "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -102,7 +102,7 @@ def insurance_claim(simulation, human_capital, entity, story = False, callbacks 
             if story == True:
                 #If true, write their story
                 entity.story.append(
-                    '{0} submitted an insurance claim {1} days after the event. '.format(
+                    '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
                     entity.name, entity.claim_put))
             
             request = human_capital.insurance_adjusters.request()
@@ -126,7 +126,7 @@ def insurance_claim(simulation, human_capital, entity, story = False, callbacks 
             if story == True:
                 #If true, write their story
                 entity.story.append(
-                    '{0} received a ${1} insurance payout {2} days after the event. '.format(
+                    '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
                     entity.name, entity.claim_payout, entity.claim_get))
        
     except Interrupt as i: # Handle any interrupt thrown by a master process
@@ -186,7 +186,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, story 
             if story == True:
                 #If true, write their story
                 entity.story.append(
-                    '{0} submitted a request to FEMA {1} days after the event. '.format(
+                    '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
                     entity.name, entity.assistance_put))
 
             request = human_capital.fema_processors.request()
@@ -211,7 +211,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, story 
                 if story == True:
                     #If true, write their story
                     entity.story.append(
-                        '{0} received ${1} from FEMA {2} days after the event. '.format(
+                        '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
                         entity.name, entity.assistance_payout, entity.assistance_get))
 
             elif financial_capital.fema_aid.level > 0:  # FEMA has money left but less than requested
@@ -223,7 +223,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, story 
                 if story == True:
                     #If true, write their story
                     entity.story.append(
-                     '{0} requested ${1} from FEMA but only received ${2}, {3} days after the event.. '
+                     '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
                      .format(entity.name, entity.assistance_request, entity.assistance_payout, entity.assistance_get))
         
             else:  # FEMA has no money left
@@ -269,7 +269,7 @@ def engineering_assessment(simulation, human_capital, entity, story = False, cal
     if story == True:
         #If true, write their story
         entity.story.append(
-        '{0} received an engineering assessment {1} days after the event. '
+        '{0} received an engineering assessment {1:.0f} days after the event. '
         .format(entity.name, entity.assessment_get))
 
     if callbacks is not None:
@@ -290,7 +290,7 @@ def loan(simulation, human_capital, entity, story = False, callbacks = None):
             if story == True:
                 #If true, write their story     
                 entity.story.append(
-                    '{0} submitted a loan application {1} days after the event. '.format(
+                    '{0} submitted a loan application {1:.0f} days after the event. '.format(
                     entity.name, entity.loan_put))
 
             request = human_capital.loan_processors.request()
@@ -316,7 +316,7 @@ def loan(simulation, human_capital, entity, story = False, callbacks = None):
                 if story == True:
                     #If true, write their story
                     entity.story.append(
-                    "{0} received a loan for ${1} {2} days after the event. "
+                    "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
                     .format(entity.name, entity.loan_amount, entity.loan_get))
 
     # Handle any interrupt from a master process
@@ -350,7 +350,7 @@ def permit(simulation, human_capital, entity, story = False, callbacks = None):
     if story == True:
         #If true, write their story
         entity.story.append(
-        "{0} received permit approval {1} days after the event. "
+        "{0} received permit approval {1:.0f} days after the event. "
         .format(entity.name, entity.permit_get))
 
     if callbacks is not None:

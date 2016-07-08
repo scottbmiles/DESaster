@@ -14,7 +14,7 @@ def permanent_housing(simulation, entity, search_patience, housing_stock, human_
     
     if write_story == True:
         entity.story.append(
-                                '{0} started searching for a {1} with a value under ${2} on day {3}. '.format(
+                                '{0} started searching for a {1} with a value under ${2:,.0f} on day {3:,.0f}. '.format(
                                 entity.name, entity.residence.occupancy, 
                                 entity.residence.value, entity.home_search_start)
                                 )
@@ -38,9 +38,8 @@ def permanent_housing(simulation, entity, search_patience, housing_stock, human_
         
         if write_story == True:
             entity.story.append(
-                                    '{0} days after the event, {1} gave up searching for a new home in the local area. '.format(
-                                    simulation.now, entity.name, entity.residence.occupancy, 
-                                    entity.residence.address, entity.residence.value)
+                                    '{0:,.0f} days after the event, {1} gave up searching for a new home in the local area. '.format(
+                                    simulation.now, entity.name)
                                     )
         return 'Gave up'
     
@@ -55,9 +54,9 @@ def permanent_housing(simulation, entity, search_patience, housing_stock, human_
     
     if write_story == True:
         entity.story.append(
-                                'On day {0}, {1} received a {2} at {3} with a value of ${4}. '.format(
+                                'On day {0:,.0f}, {1} received a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
                                 entity.home_search_stop, entity.name, entity.residence.occupancy, 
-                                entity.residence.address, entity.residence.value)
+                                entity.residence.address, entity.residence.value, entity.residence.damage_value)
                                 )
 
 def rebuild_money(simulation, human_capital, financial_capital, entity, search_patience, write_story):
@@ -104,9 +103,10 @@ def rebuild_money(simulation, human_capital, financial_capital, entity, search_p
             return
     
     entity.money_search_stop = simulation.now
+    search_duration = entity.money_search_stop - entity.money_search_start
     
     if write_story == True:    
         entity.story.append(
-                                'It took {0} {1} days to exhaust the search for money. '.format(
-                                entity.name, entity.money_search_stop - entity.money_search_start))
+                                'It took {0} {1:.0f} days to exhaust the search for money and now has ${2:,.0f} to rebuild. '.format(
+                                entity.name, search_duration, entity.money_to_rebuild))
 
