@@ -9,7 +9,7 @@ from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
 from desaster.config import permit_process_time
 
-def inspection(simulation, human_capital, entity, story = True, callbacks = None):
+def inspection(simulation, human_capital, structure, entity = None, story = False, callbacks = None):
     """Request an inspection, do inspection, update entity attribute times.
 
     Keyword Arguments:
@@ -20,7 +20,7 @@ def inspection(simulation, human_capital, entity, story = True, callbacks = None
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    story = True, callbacks -- a generator function containing any processes you want to start
+    callbacks = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -32,17 +32,21 @@ def inspection(simulation, human_capital, entity, story = True, callbacks = None
     entity.story -- append natural language summary of process
     """
 
-    # Put in request for an inspector (shared resource)
-    entity.inspection_put = simulation.now
+    if entity != None:
+        # Put in request for an inspector (shared resource)
+        entity.inspection_put = simulation.now
     
-    request = human_capital.inspectors.request()
-    yield request
+    inspectors_request = human_capital.inspectors.request()
+    yield inspectors_request
 
     yield simulation.timeout(inspection_time) # Duration of inspection
     
-    entity.inspection_get = simulation.now # Inspection completion time
+    structure.inspected = True
+    
+    if entity != None:
+        entity.inspection_get = simulation.now # Inspection completion time
 
-    human_capital.inspectors.release(request) # Release inspector
+    human_capital.inspectors.release(inspectors_request) # Release inspector
 
     if story == True:
         #If true, write their story
@@ -54,7 +58,7 @@ def inspection(simulation, human_capital, entity, story = True, callbacks = None
     else:
         pass
 
-def insurance_claim(simulation, human_capital, entity, story = True, callbacks = None):
+def insurance_claim(simulation, human_capital, entity, story = False, callbacks = None):
     """File an insurance claim, assign claim amounts to entity objects.
 
     Keyword arguments:
@@ -65,7 +69,7 @@ def insurance_claim(simulation, human_capital, entity, story = True, callbacks =
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    story = True, callbacks -- a generator function containing any processes you want to start
+    callbacks = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -138,7 +142,7 @@ def insurance_claim(simulation, human_capital, entity, story = True, callbacks =
     else:
         pass
 
-def fema_assistance(simulation, human_capital, financial_capital, entity, story = True, callbacks = None):
+def fema_assistance(simulation, human_capital, financial_capital, entity, story = False, callbacks = None):
     """Request and receive assistance from fema.
 
     entity -- An entity object from the Entity() class. Must have a value for
@@ -149,7 +153,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, story 
                   environment, and is usually set as the first variable in a
                   simulation, e.g. simulation = Environment().
 
-    story = True, callbacks -- a generator function containing any processes you want to start
+    callbacks = True, callbacks -- a generator function containing any processes you want to start
                  after the completion of the insurance claim. If this does not
                  contain a yield (therefore isn't a generator), simpy will throw
                  an error. Defaults to None.
@@ -248,7 +252,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity, story 
     else:
         pass
 
-def engineering_assessment(simulation, human_capital, entity, story = True, callbacks = None):
+def engineering_assessment(simulation, human_capital, entity, story = False, callbacks = None):
     """Request an engineering assessment"""
 
     entity.assessment_put = simulation.now #time of request
@@ -273,7 +277,7 @@ def engineering_assessment(simulation, human_capital, entity, story = True, call
     else:
         pass
 
-def loan(simulation, human_capital, entity, story = True, callbacks = None):
+def loan(simulation, human_capital, entity, story = False, callbacks = None):
     
     try:
 
@@ -328,7 +332,7 @@ def loan(simulation, human_capital, entity, story = True, callbacks = None):
     else:
         pass
 
-def permit(simulation, human_capital, entity, story = True, callbacks = None):
+def permit(simulation, human_capital, entity, story = False, callbacks = None):
 
     """Request a permit for building."""
     entity.permit_put = simulation.now

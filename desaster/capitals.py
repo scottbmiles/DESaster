@@ -7,6 +7,7 @@ Created on Wed Jan 20 15:08:52 2016
 from simpy import Resource, Container, Interrupt, FilterStore
 import pandas as pd
 from desaster.config import structural_damage_ratios, acceleration_damage_ratios, drift_damage_ratios
+from desaster import request
 
 class HumanCapital(object): # --% created a separate class for just human capitals %--
     """
@@ -49,7 +50,7 @@ class BuiltCapital(object): # --% created a separate class for just financial ca
             self.setValue(asset)
             self.setDamageState(asset)  
             self.setDamageValue(asset) 
-            self.setInspection(simulation, asset)
+            self.setInspection(asset)
         def setYearBuilt(self, asset):
             self.age = asset['Year Built']
         def setValue(self, asset):
@@ -58,10 +59,8 @@ class BuiltCapital(object): # --% created a separate class for just financial ca
             self.damage_state = asset['Damage State']
         def setDamageValue(self, asset):
             self.damage_value = asset['Damage Value']
-        def setInspection(self, simulation, asset):
-            self.inspection = simulation.event()
-            self.inspect_start = None
-            self.inspect_stop = None
+        def setInspection(self, asset):
+            self.inspected = False
 
 class Building(BuiltCapital):
     def __init__(self, simulation, building):
@@ -76,7 +75,7 @@ class Building(BuiltCapital):
         self.setValue(building)
         self.setDamageState(building)  
         self.setDamageValue(building) 
-        self.setInspection(simulation, building)
+        self.setInspection(building)
     def setAddress(self, building):
         self.address = building['Address']
     def setOccupancy(self, building):
@@ -106,7 +105,7 @@ class Residence(Building):
         self.setValue(residence)
         self.setDamageState(residence)  
         self.setDamageValue(residence) 
-        self.setInspection(simulation, residence)
+        self.setInspection(residence)
     def setOccupancy(self, residence):
         if residence['Occupancy'] in ('Single Family Dwelling', 'Multi Family Dwelling', 'Mobile Home', 'Condo'):
             self.occupancy = residence['Occupancy']
@@ -119,7 +118,7 @@ class Residence(Building):
         
 def setHousingStock(simulation, stock_df):
     stock_fs = FilterStore(simulation)
-
+    
     for i in stock_df.index:
         stock_fs.put(Residence(simulation, stock_df.loc[i]))
     
