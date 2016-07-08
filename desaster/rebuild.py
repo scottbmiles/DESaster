@@ -68,13 +68,53 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
     else:
         pass
         
-def demolish(simulation, structure_stock, structure_address, schedule, human_capital):
+def stock(simulation, structure_stock, fix_probability, fix_schedule, human_capital):
     random.seed(15)
     
-    yield simulation.timeout(schedule)
+    yield simulation.timeout(fix_schedule)
     
+    structures_list = []
+    
+    # Remove all structures from the FilterStore and put them in a list to do processing on them
+    while len(structure_stock.items) > 0:
         
-    get_structure = yield structure_stock.get(lambda getStructure: 
-                                                    getStructure.value = structure_address
-                                            )                                  
+        get_structure = yield structure_stock.get(lambda getStructure: 
+                                                        getStructure.value >= 0.0
+                                                )                                  
+        
+        structures_list.append(get_structure)                                  
+    
+    # Iterate through list of structures, do processing, put them back into the FilterStore
+    for put_structure in structures_list:
+        
+        if put_structure.inspected == True and \
+        (put_structure.damage_state == 'Moderate' or put_structure.damage_state == 'Complete'):
+            
+            if random.uniform(0, 1.0) <= fix_probability:
+                
+                contractors_request = human_capital.contractors.request()
+                yield contractors_request
+               
+                # Get the rebuild time for the entity from config.py 
+                # which imports the HAZUS repair time look up table.
+                # Rebuild time is based on occupancy type and damage state.
+                rebuild_time = building_repair_times.ix[put_structure.occupancy][put_structure.damage_state]
+               
+                yield simulation.timeout(rebuild_time)
+           
+                human_capital.contractors.release(contractors_request)
+                
+                put_structure.damage_state = 'None'
+                put_structure.damage_value = 0.0
+                print(put_structure.address, put_structure.damage_state, put_structure.damage_value)
+                
+                structure_stock.put(put_structure)
+            
+            else:
+                structure_stock.put(put_structure)
+                
+        else:
+            structure_stock.put(put_structure)
+
+
             
