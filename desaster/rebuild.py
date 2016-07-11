@@ -68,10 +68,9 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
     else:
         pass
         
-def stock(simulation, structure_stock, fix_probability, fix_schedule, human_capital):
+def stock(simulation, structure_stock, fix_probability, human_capital):
     random.seed(15)
-    
-    yield simulation.timeout(fix_schedule)
+
     
     structures_list = []
     
