@@ -43,6 +43,7 @@ class FinancialCapital(object): # --% created a separate class for just financia
         def __init__(self, simulation, financial_cap_data): # --% changed/added arguments %--
             
             self.fema_aid = Container(simulation, init=financial_cap_data['fema aid'])
+            self.building_materials = Container(simulation, init=financial_cap_data['building materials'])
         
 class BuiltCapital(object): # --% created a separate class for just financial capitals %--
         def __init__(self, simulation, asset):

@@ -11,12 +11,13 @@ from desaster import request
 from simpy import Interrupt
 import random
 
-def home(simulation, human_capital, entity, write_story = True, callbacks = None): 
+def home(simulation, human_capital, financial_capital, entity, write_story = True, callbacks = None): 
     try: # in case a process interrupt is thrown in a master process
         
 
-        # With enough money, can rebuild
-        if entity.money_to_rebuild >= entity.residence.damage_value:
+        # With enough money and enough construction materials, can rebuild
+        if entity.money_to_rebuild >= entity.residence.damage_value and \
+        entity.residence.damage_value <= financial_capital.building_materials.level:
             # Put in request for contractors to repair house
             entity.house_put = simulation.now
 
@@ -24,9 +25,12 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
             yield contractors_request
             
             # Get the rebuild time for the entity from config.py 
-            # which imports the HAZUS repair time look up table.
+            # which imports the HAZUS repair time look up table .
             # Rebuild time is based on occupancy type and damage state.
             rebuild_time = building_repair_times.ix[entity.residence.occupancy][entity.residence.damage_state]
+            
+            #Obtain necessary construction materials from regional inventory
+            yield financial_capital.building_materials.get(entity.residence.damage_value)
             
             yield simulation.timeout(rebuild_time)
         
@@ -43,16 +47,19 @@ def home(simulation, human_capital, entity, write_story = True, callbacks = None
                 entity.story.append(
                     '{0}\'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. '.format(
                     entity.name, entity.house_get, entity.house_get - entity.house_put))
+                    
+        if entity.residence.damage_value > financial_capital.building_materials.level:
+            
+            if write_story == True:
+                #If true, write their story
+                entity.story.append(
+                'There were insufficient construction materials available in the area for {0} to rebuild. '
+                .format(entity.name))
         
-        elif entity.money_to_rebuild < entity.residence.damage_value:
+        if entity.money_to_rebuild < entity.residence.damage_value:
             if story == True:
                 entity.story.append(
                     '{0} was unable to get enough money to rebuild. '.format(
-                    entity.name))
-        else: 
-            if write_story == True:
-                entity.story.append(
-                    '{0} was unable to get a permit to rebuild. '.format(
                     entity.name))
 
     except Interrupt as i: # Handle any interrupt thrown by a master process
