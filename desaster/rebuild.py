@@ -30,7 +30,8 @@ def home(simulation, human_capital, financial_capital, entity, write_story = Tru
             rebuild_time = building_repair_times.ix[entity.residence.occupancy][entity.residence.damage_state]
             
             #Obtain necessary construction materials from regional inventory
-            yield financial_capital.building_materials.get(entity.residence.damage_value)
+            materials_cost_pct = 0.5 # Percentage of damage value to count as cost of building materials (vs. labor and profit)
+            yield financial_capital.building_materials.get(entity.residence.damage_value * materials_cost_pct)
             
             yield simulation.timeout(rebuild_time)
         
