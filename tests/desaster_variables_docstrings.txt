@@ -1,0 +1,12 @@
+simulation -- Pointer to SimPy simulation environment.
+household_df -- Dataframe row w/ household input attributes.
+write_story -- Boolean indicating whether to track a households story.
+household -- A single entities.Household() object.
+search_patience -- The search duration in which the household is willing to wait
+                    to find a new home. Does not include the process of
+                    securing money.
+housing_stock -- A SimPy FilterStore that contains one or more
+                capitals.Residence() objects that represent vacant homes for
+                purchase.
+human_capital -- A capitals.HumanCapital() object.
+financial_capital -- A capitals.FinancialCapital() object.

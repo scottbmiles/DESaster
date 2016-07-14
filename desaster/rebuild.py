@@ -11,9 +11,9 @@ from desaster import request
 from simpy import Interrupt
 import random
 
-def home(simulation, human_capital, financial_capital, entity, write_story = True, callbacks = None): 
+def home(simulation, human_capital, financial_capital, entity, write_story = True, callbacks = None):
     try: # in case a process interrupt is thrown in a master process
-        
+
 
         # With enough money and enough construction materials, can rebuild
         if entity.money_to_rebuild >= entity.residence.damage_value and \
@@ -23,40 +23,40 @@ def home(simulation, human_capital, financial_capital, entity, write_story = Tru
 
             contractors_request = human_capital.contractors.request()
             yield contractors_request
-            
-            # Get the rebuild time for the entity from config.py 
+
+            # Get the rebuild time for the entity from config.py
             # which imports the HAZUS repair time look up table .
             # Rebuild time is based on occupancy type and damage state.
             rebuild_time = building_repair_times.ix[entity.residence.occupancy][entity.residence.damage_state]
-            
+
             #Obtain necessary construction materials from regional inventory
-            materials_cost_pct = 0.5 # Percentage of damage value to count as cost of building materials (vs. labor and profit)
+            materials_cost_pct = 1.0 # Percentage of damage value to count as cost of building materials (vs. labor and profit)
             yield financial_capital.building_materials.get(entity.residence.damage_value * materials_cost_pct)
-            
+
             yield simulation.timeout(rebuild_time)
-        
+
             human_capital.contractors.release(contractors_request)
-            
+
             entity.residence.damage_state = 'None'
             entity.residence.damage_value = 0.0
 
             # Record time when household gets house
             entity.house_get = simulation.now
-            
+
             if write_story == True:
                 # Write the household's story
                 entity.story.append(
                     '{0}\'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. '.format(
                     entity.name, entity.house_get, entity.house_get - entity.house_put))
-                    
+
         if entity.residence.damage_value > financial_capital.building_materials.level:
-            
+
             if write_story == True:
                 #If true, write their story
                 entity.story.append(
                 'There were insufficient construction materials available in the area for {0} to rebuild. '
                 .format(entity.name))
-        
+
         if entity.money_to_rebuild < entity.residence.damage_value:
             if story == True:
                 entity.story.append(
@@ -69,49 +69,49 @@ def home(simulation, human_capital, financial_capital, entity, write_story = Tru
             entity.story.append(
                     '{0} gave up {1:.0f} days into the home rebuilding process. '.format(
                     entity.name, i.cause))
-    
+
     if callbacks is not None:
         yield simulation.process(callbacks)
 
     else:
         pass
-        
+
 def stock(simulation, structure_stock, fix_probability, human_capital):
     random.seed(15)
 
-    
+
     structures_list = []
-    
+
     # Remove all structures from the FilterStore and put them in a list to do processing on them
     while len(structure_stock.items) > 0:
-        
-        get_structure = yield structure_stock.get(lambda getStructure: 
+
+        get_structure = yield structure_stock.get(lambda getStructure:
                                                         getStructure.value >= 0.0
-                                                )                                  
-        
-        structures_list.append(get_structure)                                  
-    
+                                                )
+
+        structures_list.append(get_structure)
+
     num_fixed = 0
-    
+
     # Iterate through list of structures, do processing, put them back into the FilterStore
     for put_structure in structures_list:
-        
+
         if put_structure.inspected == True and \
         (put_structure.damage_state == 'Moderate' or put_structure.damage_state == 'Complete'):
-            
+
             if random.uniform(0, 1.0) <= fix_probability:
-                
+
                 put_structure.damage_state = 'None'
                 put_structure.damage_value = 0.0
 
                 structure_stock.put(put_structure)
-                
+
                 num_fixed += 1
-            
+
             else:
                 structure_stock.put(put_structure)
-                
+
         else:
             structure_stock.put(put_structure)
-        
+
     print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, simulation.now))
