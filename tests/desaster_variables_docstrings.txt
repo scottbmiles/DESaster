@@ -10,3 +10,7 @@ housing_stock -- A SimPy FilterStore that contains one or more
                 purchase.
 human_capital -- A capitals.HumanCapital() object.
 financial_capital -- A capitals.FinancialCapital() object.
+callbacks -- a generator function containing processes to start after the 
+                  completion of this process.
+entity -- An entity object from the entity.py module, for example
+              entities.Household()

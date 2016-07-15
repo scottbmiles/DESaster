@@ -17,8 +17,9 @@ from desaster import request
 
 def permanent_housing(simulation, household, search_patience, housing_stock, 
                         human_capital, write_story = False):
-    """Household search for permanent housing based on housing preferences,
-    available housing stock, and patience finding a new home.
+    """A process (generator) representing household search for permanent housing
+    based on housing preferences, available housing stock, and patience finding 
+    a new home.
     
     simulation -- Pointer to SimPy simulation environment.
     household -- A single entities.Household() object.
@@ -106,7 +107,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
 
 def rebuild_money(simulation, human_capital, financial_capital, entity, 
                     search_patience, write_story = False):
-    """Entity search for money to rebuild or repair home based on requests
+    """A process (generator) representing entity search for money to rebuild or repair home based on requests
     for insurance and/or FEMA aid and/or loan.
     
     simulation -- Pointer to SimPy simulation environment.

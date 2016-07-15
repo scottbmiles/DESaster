@@ -52,6 +52,9 @@ permit_process_mean = 35.0
 permit_process_std = 0.0
 permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
 
+# % of damage value related to building materials (vs. labor and profit)
+materials_cost_pct = 1.0 
+
 # Building repair time lookup table from HAZUS-MH earthquake model technical
 # manual Table 15.9 (http://www.fema.gov/media-library/assets/documents/24609)
 building_repair_times = pd.read_excel(hazus_parameters_file, 

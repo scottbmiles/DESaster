@@ -42,8 +42,8 @@ class Household(object):
         self.assistance_request = 0.0  # Amount of money requested from FEMA
         self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
         self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
-        self.house_put = 0.0  # Time put request in for house rebuild
-        self.house_get = 0.0  # Time get house rebuild completed
+        self.home_put = 0.0  # Time put request in for house rebuild
+        self.home_get = 0.0  # Time get house rebuild completed
         self.loan_put = 0.0  # Time put request for loan
         self.loan_get = 0.0  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
