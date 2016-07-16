@@ -11,7 +11,6 @@ stock(simulation, structure_stock, fix_probability, human_capital)
 @author: Scott Miles
 """
 from desaster.config import building_repair_times, materials_cost_pct
-from desaster import request
 from simpy import Interrupt
 import random
 
@@ -19,10 +18,18 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
     """A process to rebuild a household's residence based on available contractors and
     building materials.
     
+    Keyword Arguments:
     household -- A single entities.Household() object.
     human_capital -- A capitals.HumanCapital() object.
     financial_capital -- A capitals.FinancialCapital() object.
     write_story -- Boolean indicating whether to track a households story.
+    
+    Returns or Attribute Changes:
+    household.story -- Process outcomes appended to story.
+    household.home_put -- Record time money search starts
+    household.home_get -- Record time money search stops
+    household.residence.damage_state -- Set to 'None' if successful.
+    household.residence.damage_value = Set to $0.0 if successful.
     """
     # Use exception handling in case process is interrupted by another process.
     try: 
@@ -85,7 +92,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         # Deal with case that household does not have enough money to rebuild.
         if household.money_to_rebuild < household.residence.damage_value:
             # If true, write outcome of the process to their story
-            if story == True:
+            if write_story == True:
                 household.story.append(
                     '{0} was unable to get enough money to rebuild. '.format(
                     household.name))
@@ -110,11 +117,16 @@ def stock(simulation, structure_stock, fix_probability):
     """Process to rebuild a part or an entire building stock (FilterStore) based
     on available contractors and specified proportion/probability.
     
+    Keyword Arguments:
     structure_stock -- A SimPy FilterStore that contains one or more
         capitals.BuiltCapital(), capitals.Building(), or capitals.Residence() 
         objects that represent vacant structures for purchase.
     fix_probability -- A value to set approximate percentage of number of structures
         in the stock to rebuild.
+        
+    Attribute Changes:
+    put_structure.damage_state -- Changed to 'None' for selected structures.
+    put_structure.damage_value = Changed to $0.0 for selected structures.
     """
     random.seed(15)
 

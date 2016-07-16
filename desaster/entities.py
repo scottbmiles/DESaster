@@ -53,8 +53,8 @@ class Household(object):
         self.home_search_stop = 0.0  # Time found a new home
         self.money_search_start = 0.0  # Time that household started search for money
         self.money_search_stop = 0.0  # Time that household found rebuild money
-        self.gave_up_money_search = False  # Whether entity gave up search for money
-        self.gave_up_home_search = False  # Whether entity gave up search for home
+        self.gave_up_money_search = False  # Whether household gave up search for money
+        self.gave_up_home_search = False  # Whether household gave up search for home 
         
         # Initial method calls
         self.setStory(write_story)  # Start stories with non-disaster attributes
@@ -62,6 +62,7 @@ class Household(object):
     def setStory(self, write_story):
         """Initiate the household's story based on input attributes.
         
+        Keyword Arguments:
         write_story -- Boolean indicating whether to track a households story.
         """
         if write_story == True:
@@ -75,7 +76,7 @@ class Household(object):
                                                             )
             )
 
-    def story_to_text(self):  # --% modified %--
+    def story_to_text(self): 
         """Join list of story strings into a single story string."""
         return ''.join(self.story)
 
@@ -83,6 +84,7 @@ def importHouseholds(simulation, households_df, write_story = False):
     """Return list of entities.Household() objects from dataframe containing
     data describing households.
     
+    Keyword Arguments:
     simulation -- Pointer to SimPy simulation environment.
     household_df -- Dataframe row w/ household input attributes.
     write_story -- Boolean indicating whether to track a households story.

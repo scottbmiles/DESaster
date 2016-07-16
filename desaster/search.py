@@ -12,7 +12,6 @@ rebuild_money(simulation, human_capital, financial_capital, entity,
 
 @author: Scott Miles
 """
-from simpy import Interrupt
 from desaster import request
 
 def permanent_housing(simulation, household, search_patience, housing_stock, 
@@ -21,6 +20,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     based on housing preferences, available housing stock, and patience finding 
     a new home.
     
+    Keyword Arguments:
     simulation -- Pointer to SimPy simulation environment.
     household -- A single entities.Household() object.
     search_patience -- The search duration in which the household is willing to wait
@@ -31,6 +31,13 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                     purchase.
     human_capital -- A capitals.HumanCapital() object.
     write_story -- Boolean indicating whether to track a households story.
+    
+    Returns or Attribute Changes:
+    household.story -- Process outcomes appended to story.
+    household.home_search_start -- Record time home search starts
+    household.home_search_stop -- Record time home search stops
+    household.residence -- Potentially assigned a new capitals.Residence() object.
+    household.gave_up_home_search -- Set to True if search patience runs out.
     """
     # Record when housing search starts
     # Calculate the time that housing search patience ends
@@ -70,7 +77,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     # home is found in the housing stock.
     if home_search_outcome == {find_search_patience: 'Gave up'}:
         
-        entity.gave_up_home_search = True
+        household.gave_up_home_search = True
         
         # If write_story == True, note in the story that the household gave up 
         # the search.
@@ -110,17 +117,25 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
 
 def rebuild_money(simulation, human_capital, financial_capital, entity, 
                     search_patience, write_story = False):
-    """A process (generator) representing entity search for money to rebuild or repair home based on requests
-    for insurance and/or FEMA aid and/or loan.
+    """A process (generator) representing entity search for money to rebuild or 
+    repair home based on requests for insurance and/or FEMA aid and/or loan.
     
     simulation -- Pointer to SimPy simulation environment.
     entity -- A single entities object, such as Household().
-    search_patience -- The search duration in which the household is willing to wait
-                        to find a new home. Does not include the process of
+    search_patience -- The search duration in which the household is willing to 
+                        wait to find a new home. Does not include the process of
                         securing money.
     financial_capital -- A capitals.FinancialCapital() object.
     human_capital -- A capitals.HumanCapital() object.
     write_story -- Boolean indicating whether to track a households story.
+    
+    Returns or Attribute Changes:
+    entity.story -- Process outcomes appended to story.
+    entity.money_search_start -- Record time money search starts
+    entity.money_search_stop -- Record time money search stops
+    entity.gave_up_money_search -- Set to True if search patience runs out.
+    entity.money_to_rebuild -- Technically changed (increased) by functions 
+                                called within.
     """
     
     # Record when money search starts
