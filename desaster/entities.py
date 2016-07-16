@@ -76,3 +76,20 @@ class Household(object):
     def story_to_text(self):  # --% modified %--
         """Join list of story strings into a single story string."""
         return ''.join(self.story)
+
+def importHouseholds(simulation, households_df, write_story = False):
+    """Return list of entities.Household() objects from dataframe containing
+    data describing households.
+    
+    simulation -- Pointer to SimPy simulation environment.
+    household_df -- Dataframe row w/ household input attributes.
+    write_story -- Boolean indicating whether to track a households story.
+    """
+    
+    households = []
+
+    # Population the simulation with households from the households dataframe
+    for i in households_df.index:
+        households.append(Household(simulation, households_df.iloc[i], write_story))
+    
+    return households

@@ -183,7 +183,7 @@ class Residence(Building):
     def setBathrooms(self, residence):
         self.bathrooms = residence['Bathrooms']  # Number of bathrooms in residence
         
-def setHousingStock(simulation, stock_df):
+def importHousingStock(simulation, stock_df):
     """Define, populate and return a SimPy FilterStore with Residence() objects to 
     represent a vacant housing stock.
     
