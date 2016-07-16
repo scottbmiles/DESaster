@@ -53,6 +53,8 @@ class Household(object):
         self.home_search_stop = 0.0  # Time found a new home
         self.money_search_start = 0.0  # Time that household started search for money
         self.money_search_stop = 0.0  # Time that household found rebuild money
+        self.gave_up_money_search = False  # Whether entity gave up search for money
+        self.gave_up_home_search = False  # Whether entity gave up search for home
         
         # Initial method calls
         self.setStory(write_story)  # Start stories with non-disaster attributes

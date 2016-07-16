@@ -70,6 +70,8 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     # home is found in the housing stock.
     if home_search_outcome == {find_search_patience: 'Gave up'}:
         
+        entity.gave_up_home_search = True
+        
         # If write_story == True, note in the story that the household gave up 
         # the search.
         if write_story == True:
@@ -80,7 +82,8 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                     household.name
                     )
                 )
-        return 'Gave up'
+        
+        return
     
     # If a new home is found before patience runs out place household's current 
     # residence in vacant housing stock -- "sell" the house.
@@ -170,6 +173,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         # If patience process completes first, interrupt the insurance claim
         # request and return out of function.
         if money_search_outcome == {find_search_patience: 'Gave up'}:
+            entity.gave_up_money_search = True
             try_insurance.interrupt(simulation.now - entity.money_search_start)
             return
     
@@ -202,8 +206,9 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         # If patience process completes first, interrupt the FEMA aid
         # request and return out of function.
         if money_search_outcome == {find_search_patience: 'Gave up'}:
+            entity.gave_up_money_search = True
             try_fema.interrupt(simulation.now - entity.money_search_start)
-            return
+            return 
     
     # If entity (still) does not have enough rebuild money then yield a loan 
     # request, the duration of which is limited by entity's money search patience.
@@ -233,6 +238,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         # If patience process completes first, interrupt the loan
         # request and return out of function.
         if money_search_outcome == {find_search_patience: 'Gave up'}:
+            entity.gave_up_money_search = True
             try_loan.interrupt(simulation.now - entity.money_search_start)
             return
     
