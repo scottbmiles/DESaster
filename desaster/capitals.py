@@ -43,24 +43,24 @@ class HumanCapital(object):
         # in the dictionary for the respective capital type.
         
         # Initial number of available inspectors
-        self.inspectors = Resource(simulation, human_capital_dict['inspectors'])
+        self.inspectors = Resource(simulation, human_capital_dict['Inspectors'])
         # Initial number of available insurance claim adjusters
         self.insurance_adjusters = Resource(simulation, 
-                                    human_capital_dict['insurance adjusters'])
+                                    human_capital_dict['Insurance Adjusters'])
         # Initial number of available FEMA processors
         self.fema_processors = Resource(simulation,
-                                        human_capital_dict['fema processors'])
+                                        human_capital_dict['FEMA Processors'])
         # Initial number of available permit processors
         self.permit_processors = Resource(simulation,
-                                        human_capital_dict['permit processors'])
+                                        human_capital_dict['Permit Processors'])
         # Initial number of available contractors
         self.contractors = Resource(simulation,
-                                    human_capital_dict['contractors'])
+                                    human_capital_dict['Contractors'])
         # Initial number of available loan processors
         self.loan_processors = Resource(simulation,
-                                        human_capital_dict['loan processors'])
+                                        human_capital_dict['Loan Processors'])
         # Initial number of available engineers
-        self.engineers = Resource(simulation, human_capital_dict['engineers'])
+        self.engineers = Resource(simulation, human_capital_dict['Engineers'])
         
 class FinancialCapital(object): 
     """Define class for a collection of SimPy containers that represent different types of
@@ -77,11 +77,11 @@ class FinancialCapital(object):
         # Initial $ amount of overall FEMA aid available to the 
         # recovering area.
         self.fema_aid = Container(simulation, 
-                                    init=financial_capital_dict['fema aid'])
+                                    init=financial_capital_dict['FEMA Aid'])
         # Initial $ amount of overall construction resources available to 
         # the recovering area.
         self.building_materials = Container(simulation, 
-                                    init=financial_capital_dict['building materials'])
+                                    init=financial_capital_dict['Building Materials'])
     
 class BuiltCapital(object):
     """Define top-level class for representing the attributes and methods
