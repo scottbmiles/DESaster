@@ -22,7 +22,7 @@ from simpy import Resource, Container, FilterStore
 from desaster.config import structural_damage_ratios
 from desaster.config import acceleration_damage_ratios
 from desaster.config import drift_damage_ratios
-
+import random
 class HumanCapital(object):
     """Define class for a collection of SimPy resources that represent different types of
     human resources used by entities during recovery processes.
@@ -100,7 +100,10 @@ class BuiltCapital(object):
         self.setDamageState(asset)
         self.setInspection(asset)
     def setYearBuilt(self, asset):
-        self.age = asset['Year Built']  # Year asset was built
+        try:
+            self.age = asset['Year Built']  # Year asset was built
+        except KeyError as e:
+            self.age = random.randint(1900,2000)
     def setValue(self, asset):
         self.value = asset['Value']  # Value of the asset in $
     def setDamageState(self, asset):
@@ -119,15 +122,31 @@ class Building(BuiltCapital):
         simulation -- Pointer to SimPy simulation environment.
         building -- A dataframe row with required building attributes.
         """
+        #since we're overriding the base class init, we need to call it 
+        #to maintain its attributes, unless we're explicitely changing
+        #the structure
+        BuiltCapital.__init__(self, simulation, building) 
+        
         self.setAddress(building)
         self.setOccupancy(building)
-        self.setYearBuilt(building)
-        self.setValue(building)
-        self.setDamageState(building)
         self.setDamageValue(building)
-        self.setInspection(building)
+        self.setCoordinates(building)
+        self.setBuildingArea(building)
+        
     def setAddress(self, building):
-        self.address = building['Address']  # Address of building
+        try: #if address isn't in dataframe, we'll just set it to none
+            self.address = building['Address']  # Address of building
+        except KeyError as e:
+            self.address = None
+            
+    def setCoordinates(self, building):
+        try: #if lat/long aren't in data, we'll set to none
+            self.latitude = building['Latitude']
+            self.longitude = building['longitude']
+        except KeyError as e:
+            self.latitude = None
+            self.longitude = None
+            
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
     def setBuildingArea(self, building):
@@ -165,16 +184,12 @@ class Residence(Building):
         simulation -- Pointer to SimPy simulation environment.
         residence -- A dataframe row with required residence attributes.
         """
-        self.setAddress(residence)
-        self.setBuildingArea(residence)
-        self.setOccupancy(residence)
+        Building.__init__(self, simulation, residence)
+
+        self.setOccupancy(residence) #overriding base method for verification
         self.setBedrooms(residence)
         self.setBathrooms(residence)
-        self.setYearBuilt(residence)
-        self.setValue(residence)
-        self.setDamageState(residence)
-        self.setDamageValue(residence)
-        self.setInspection(residence)
+
     def setOccupancy(self, residence):
         # Verify that residence dataframe has expected occupancy types
         if residence['Occupancy'] in ('Single Family Dwelling',
@@ -182,10 +197,18 @@ class Residence(Building):
             self.occupancy = residence['Occupancy']
         else:
             raise AttributeError(residence['Occupancy'])
+            
     def setBedrooms(self, residence):
-        self.bedrooms = residence['Bedrooms']  # Number of bedrooms in residence
+        try:
+            self.bedrooms = residence['Bedrooms']  # Number of bedrooms in residence
+        except KeyError as e:
+            self.bedrooms = random.randint(2, 5)            
+        
     def setBathrooms(self, residence):
-        self.bathrooms = residence['Bathrooms']  # Number of bathrooms in residence
+        try:
+            self.bathrooms = residence['Bathrooms']  # Number of bathrooms in residence
+        except KeyError as e:
+            self.bathrooms = random.randint(1, self.bedrooms) #won't have more bath than BRs
 
 def importHousingStock(simulation, stock_df):
     """Define, populate and return a SimPy FilterStore with Residence() objects to
