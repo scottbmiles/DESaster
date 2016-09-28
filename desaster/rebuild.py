@@ -164,3 +164,4 @@ def stock(simulation, structure_stock, fix_probability):
             structure_stock.put(put_structure)
 
     print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, simulation.now))
+    
