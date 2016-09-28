@@ -142,15 +142,16 @@ class Building(BuiltCapital):
     def setCoordinates(self, building):
         try: #if lat/long aren't in data, we'll set to none
             self.latitude = building['Latitude']
-            self.longitude = building['longitude']
+            self.longitude = building['Longitude']
         except KeyError as e:
             self.latitude = None
             self.longitude = None
             
+                
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
     def setBuildingArea(self, building):
-        self.cost = building['Area']  # Floor area of building
+        self.area = building['Area']  # Floor area of building
     def setDamageValue(self, building):
         """Calculate damage value for building based on occupancy type and
         HAZUS damage state.
@@ -189,7 +190,7 @@ class Residence(Building):
         self.setOccupancy(residence) #overriding base method for verification
         self.setBedrooms(residence)
         self.setBathrooms(residence)
-
+        self.id = residence["ID Number"]
     def setOccupancy(self, residence):
         # Verify that residence dataframe has expected occupancy types
         if residence['Occupancy'] in ('Single Family Dwelling',
@@ -225,3 +226,6 @@ def importHousingStock(simulation, stock_df):
         stock_fs.put(Residence(simulation, stock_df.loc[i]))
 
     return stock_fs
+    
+def reloadBuildingMaterial(simulation, building_material, amount=2000000):
+    yield building_material.put(amount)
