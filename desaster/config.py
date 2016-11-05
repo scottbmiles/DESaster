@@ -18,7 +18,7 @@ random.seed(69)
 
 # Parameters for defining a normal distribution for representing the duration
 # required to inspect structures from the time of a hazard event.
-inspection_mean = 10.0
+inspection_mean = 1.0
 inspection_std = 0
 inspection_time = abs(random.gauss(inspection_mean, inspection_std))
 
