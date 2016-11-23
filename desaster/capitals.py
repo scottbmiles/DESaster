@@ -27,14 +27,14 @@ class HumanCapital(object):
     """Define class for a collection of SimPy resources that represent different types of
     human resources used by entities during recovery processes.
     """
-    def __init__(self, simulation, human_capital_dict):
+    def __init__(self, simulation, human_capital):
         """Initiate class based on current SimPy environment and human capital
         dictionary.
 
         Keyword Arguments:
         simulation -- Pointer to SimPy simulation environment.
-        human_capital_dict -- Dictionary of all required human capital types
-                                (as dict keys) with associated quantities
+        human_capital -- Dictionary or Pandas Series of all required human capital 
+                                types (as keys) with associated quantities
         """
 
         # Define a SimPy resource for each type of human capital.
@@ -42,46 +42,46 @@ class HumanCapital(object):
         # in the dictionary for the respective capital type.
 
         # Initial number of available inspectors
-        self.inspectors = Resource(simulation, human_capital_dict['Inspectors'])
+        self.inspectors = Resource(simulation, human_capital['Inspectors'])
         # Initial number of available insurance claim adjusters
         self.insurance_adjusters = Resource(simulation,
-                                    human_capital_dict['Insurance Adjusters'])
+                                    human_capital['Insurance Adjusters'])
         # Initial number of available FEMA processors
         self.fema_processors = Resource(simulation,
-                                        human_capital_dict['FEMA Processors'])
+                                        human_capital['FEMA Processors'])
         # Initial number of available permit processors
         self.permit_processors = Resource(simulation,
-                                        human_capital_dict['Permit Processors'])
+                                        human_capital['Permit Processors'])
         # Initial number of available contractors
         self.contractors = Resource(simulation,
-                                    human_capital_dict['Contractors'])
+                                    human_capital['Contractors'])
         # Initial number of available loan processors
         self.loan_processors = Resource(simulation,
-                                        human_capital_dict['Loan Processors'])
+                                        human_capital['Loan Processors'])
         # Initial number of available engineers
-        self.engineers = Resource(simulation, human_capital_dict['Engineers'])
+        self.engineers = Resource(simulation, human_capital['Engineers'])
 
 class FinancialCapital(object):
     """Define class for a collection of SimPy containers that represent different types of
     financial resources used by entities during recovery processes.
     """
-    def __init__(self, simulation, financial_capital_dict):
+    def __init__(self, simulation, financial_capital):
         """Initiate class based on current SimPy environment and financial
         capital dictionary.
         
         Keyword Arguments:
         simulation -- Pointer to SimPy simulation environment.
-        financial_capital_dict -- Dictionary of all required financial capital
-                                types (as dict keys) with associated quantities
+        financial_capital -- Dictionary or Pandas Series of all required financial 
+                            capital types (as keys) with associated quantities
         """
         # Initial $ amount of overall FEMA aid available to the
         # recovering area.
         self.fema_aid = Container(simulation,
-                                    init=financial_capital_dict['FEMA Aid'])
+                                    init=financial_capital['FEMA Aid'])
         # Initial $ amount of overall construction resources available to
         # the recovering area.
         self.building_materials = Container(simulation,
-                                    init=financial_capital_dict['Building Materials'])
+                                    init=financial_capital['Building Materials'])
 
 class BuiltCapital(object):
     """Define top-level class for representing the attributes and methods
