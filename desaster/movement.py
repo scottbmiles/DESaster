@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 20 14:14:36 2016
+A potential module for representing movement of entities.
 
-@author: Derek
+Not entirely clear this module is needed. The outcome of some of the search.py 
+functions is changing of the location of the entity vis-a-vis changing their
+associated building.
+
 """
-

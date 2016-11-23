@@ -1,113 +1,204 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 20 15:08:52 2016
+Module of classes that represent different types of capitals used by DESaster
+entities.
 
-@author: Derek, Scott
+DESaster capitals are basically fancy wrappers of SimPy resources, containers,
+stores.
+
+Classes:
+HumanCapital(object)
+FinancialCapital(object)
+BuiltCapital(object)
+Building(BuiltCapital)
+Residence(Building)
+
+Functions:
+setHousingStock(simulation, stock_df)
+
+@author: Derek Huling, Scott Miles
 """
-import simpy
+from simpy import Resource, Container, FilterStore
+from desaster.config import structural_damage_ratios
+from desaster.config import acceleration_damage_ratios
+from desaster.config import drift_damage_ratios
 
-class HumanCapital(): # --% created a separate class for just human capitals %--
+class HumanCapital(object):
+    """Define class for a collection of SimPy resources that represent different types of
+    human resources used by entities during recovery processes.
     """
-    
-    """
-    def __init__(self, simulation, human_cap_data): # --% changed argument name %--
-                
-        self.data = human_cap_data
-        
-        ## HUMAN CAPITALS ## --% changed to make reference to human_cap_data %--
-        
-        try:
-            self.inspectors = simpy.Resource(simulation, human_cap_data['inspectors'])
-            self.insurance_adjusters = simpy.Resource(simulation, human_cap_data['insurance adjusters'])
-            self.fema_processors = simpy.Resource(simulation, human_cap_data['fema processors'])
-            self.permit_processors = simpy.Resource(simulation, human_cap_data['permit processors'])
-            self.contractors = simpy.Resource(simulation, human_cap_data['contractors'])
-            self.loan_processors = simpy.Resource(simulation, human_cap_data['loan processors'])
-            self.engineers = simpy.Resource(simulation, human_cap_data['engineers'])
-        except ValueError as e:
-            
-            print ("You are missing a config value, or your value is zero. All" 
-                    "values must have a positive number, see error: {0}".format(e))
-        except KeyError as f:
-            print ("You are missing {0} as a capital. Please re-add in your"
-                    " config file".format(f))
-                    
-        except Exception as g:
-            print ("Something went really wrong, capitals failed to load."
-                    " See error {0}".format(g))
+    def __init__(self, simulation, human_capital):
+        """Initiate class based on current SimPy environment and human capital
+        dictionary.
 
-class FinancialCapital(): # --% created a separate class for just financial capitals %--
-        def __init__(self, simulation, financial_cap_data): # --% changed/added arguments %--
-            
-            self.fema_aid = simpy.Container(simulation, init=financial_cap_data['fema aid'])
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        human_capital -- Dictionary or Pandas Series of all required human capital 
+                                types (as keys) with associated quantities
+        """
+
+        # Define a SimPy resource for each type of human capital.
+        # Set initial quantity of each resource equal to the value specified
+        # in the dictionary for the respective capital type.
+
+        # Initial number of available inspectors
+        self.inspectors = Resource(simulation, human_capital['Inspectors'])
+        # Initial number of available insurance claim adjusters
+        self.insurance_adjusters = Resource(simulation,
+                                    human_capital['Insurance Adjusters'])
+        # Initial number of available FEMA processors
+        self.fema_processors = Resource(simulation,
+                                        human_capital['FEMA Processors'])
+        # Initial number of available permit processors
+        self.permit_processors = Resource(simulation,
+                                        human_capital['Permit Processors'])
+        # Initial number of available contractors
+        self.contractors = Resource(simulation,
+                                    human_capital['Contractors'])
+        # Initial number of available loan processors
+        self.loan_processors = Resource(simulation,
+                                        human_capital['Loan Processors'])
+        # Initial number of available engineers
+        self.engineers = Resource(simulation, human_capital['Engineers'])
+
+class FinancialCapital(object):
+    """Define class for a collection of SimPy containers that represent different types of
+    financial resources used by entities during recovery processes.
+    """
+    def __init__(self, simulation, financial_capital):
+        """Initiate class based on current SimPy environment and financial
+        capital dictionary.
         
-class BuiltCapital(): # --% created a separate class for just financial capitals %--
-        def __init__(self, simulation, asset):
-            self.setYearBuilt(asset)
-            self.setValue(asset)
-            self.setDamageState(asset)  
-            self.setDamageValue(asset) 
-            self.setInspection(simulation, asset)
-        def setYearBuilt(self, asset):
-            self.age = asset['Year Built']
-        def setValue(self, asset):
-            self.value = asset['Value']
-        def setDamageState(self, asset):
-            self.damage_state = asset['Damage State']
-        def setDamageValue(self, asset):
-            self.damage_value = asset['Damage Value']
-        def setInspection(self, simulation, asset):
-            self.inspection = simulation.event()
-            self.inspect_start = None
-            self.inspect_stop = None
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        financial_capital -- Dictionary or Pandas Series of all required financial 
+                            capital types (as keys) with associated quantities
+        """
+        # Initial $ amount of overall FEMA aid available to the
+        # recovering area.
+        self.fema_aid = Container(simulation,
+                                    init=financial_capital['FEMA Aid'])
+        # Initial $ amount of overall construction resources available to
+        # the recovering area.
+        self.building_materials = Container(simulation,
+                                    init=financial_capital['Building Materials'])
+
+class BuiltCapital(object):
+    """Define top-level class for representing the attributes and methods
+    of types of built capital.
+
+    """
+    def __init__(self, simulation, asset):
+        """Run initial methods for defining built capital attributes.
+        
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        asset -- A dataframe row with required built capital attributes.
+        """
+        self.setYearBuilt(asset)
+        self.setValue(asset)
+        self.setDamageState(asset)
+        self.setInspection(asset)
+    def setYearBuilt(self, asset):
+        self.age = asset['Year Built']  # Year asset was built
+    def setValue(self, asset):
+        self.value = asset['Value']  # Value of the asset in $
+    def setDamageState(self, asset):
+        self.damage_state = asset['Damage State']  # HAZUS damage state
+    def setInspection(self, asset):
+        self.inspected = False  # Whether the asset has been inspected
 
 class Building(BuiltCapital):
+    """Define class that inherits from BuiltCapital() for representing the
+    attributes and methods of types of buildings.
+    """
     def __init__(self, simulation, building):
-        self.setAddress(building)
-#         self.setResident(building)
-        try:
-            self.setOccupancy(building)
-        except AttributeError:
-            print('Invalid occupancy type provided: {0}.'.format(building['occupancy']))
-        self.setMonthlyCost(building)
-        self.setYearBuilt(asset)
-        self.setValue(building)
-        self.setDamageState(building)  
-        self.setDamageValue(building) 
-        self.setInspection(simulation, building)
-    def setAddress(self, building):
-        self.address = building['Address']
-    def setOccupancy(self, building):
-        self.occupancy = building['Occupancy']
-    def setMonthlyCost(self, building):
-        self.cost = building['Cost']
-    def setBuildingArea(self, building):
-        self.cost = building['Area']
-
+        """Run initial methods for defining building attributes.
         
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        building -- A dataframe row with required building attributes.
+        """
+        self.setAddress(building)
+        self.setOccupancy(building)
+        self.setYearBuilt(building)
+        self.setValue(building)
+        self.setDamageState(building)
+        self.setDamageValue(building)
+        self.setInspection(building)
+    def setAddress(self, building):
+        self.address = building['Address']  # Address of building
+    def setOccupancy(self, building):
+        self.occupancy = building['Occupancy']  # Occupancy type of building
+    def setBuildingArea(self, building):
+        self.cost = building['Area']  # Floor area of building
+    def setDamageValue(self, building):
+        """Calculate damage value for building based on occupancy type and
+        HAZUS damage state.
+
+        Function uses three lookup tables (Table 15.2, 15.3, 15.4) from the HAZUS-MH earthquake model
+        technical manual for structural damage, acceleration related damage,
+        and for drift related damage, respectively. Estimated damage value for
+        each type of damage is summed for total damage value.
+        http://www.fema.gov/media-library/assets/documents/24609
+        
+        Keyword Arguments:
+        structural_damage_ratios -- dataframe set in config.py
+        acceleration_damage_ratios -- dataframe set in config.py
+        drift_damage_ratios -- dataframe set in config.py
+        """
+        struct_repair_ratio = structural_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+        accel_repair_ratio = acceleration_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+        drift_repair_ratio = drift_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
+        self.damage_value = building['Value']*(struct_repair_ratio +
+                                                accel_repair_ratio +
+                                                drift_repair_ratio)
+
 class Residence(Building):
-    #Can verify that occupancy types only relate to residences
+    """Define class that inherits from Building() for representing the
+    attributes and methods of types of residences.
+    """
     def __init__(self, simulation, residence):
+        """Run initial methods for defining residence attributes.
+
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        residence -- A dataframe row with required residence attributes.
+        """
         self.setAddress(residence)
         self.setBuildingArea(residence)
-        self.setMonthlyCost(residence)
         self.setOccupancy(residence)
         self.setBedrooms(residence)
         self.setBathrooms(residence)
         self.setYearBuilt(residence)
         self.setValue(residence)
-        self.setDamageState(residence)  
-        self.setDamageValue(residence) 
-        self.setInspection(simulation, residence)
+        self.setDamageState(residence)
+        self.setDamageValue(residence)
+        self.setInspection(residence)
     def setOccupancy(self, residence):
-        if residence['Occupancy'] in ('Single Family', 'Multi Family', 'Mobile', 'Condo'):
+        # Verify that residence dataframe has expected occupancy types
+        if residence['Occupancy'] in ('Single Family Dwelling',
+                            'Multi Family Dwelling', 'Mobile Home', 'Condo'):
             self.occupancy = residence['Occupancy']
         else:
             raise AttributeError(residence['Occupancy'])
     def setBedrooms(self, residence):
-        self.bedrooms = residence['Bedrooms']
+        self.bedrooms = residence['Bedrooms']  # Number of bedrooms in residence
     def setBathrooms(self, residence):
-        self.bathrooms = residence['Bathrooms']
+        self.bathrooms = residence['Bathrooms']  # Number of bathrooms in residence
 
+def importHousingStock(simulation, stock_df):
+    """Define, populate and return a SimPy FilterStore with Residence() objects to
+    represent a vacant housing stock.
+    
+    Keyword Arguments:
+    simulation -- Pointer to SimPy simulation environment.
+    stock_df -- Dataframe with required attributes for each vacant home in
+                the stock.
+    """
+    stock_fs = FilterStore(simulation)
 
+    for i in stock_df.index:
+        stock_fs.put(Residence(simulation, stock_df.loc[i]))
 
+    return stock_fs

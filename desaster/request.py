@@ -1,58 +1,279 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 14 09:14:04 2016
+Module of various recovery processes that make complex requests to 
+resources.
 
-@author: Derek, Scott
+Functions:
+inspection(simulation, human_capital, structure, entity = None, 
+            write_story = False, callbacks = None)
+insurance_claim(simulation, human_capital, entity, write_story = False, 
+                callbacks = None)
+fema_assistance(simulation, human_capital, financial_capital, entity, 
+                write_story = False, callbacks = None)
+engineering_assessment(simulation, human_capital, entity, write_story = False, 
+                        callbacks = None)
+loan(simulation, human_capital, entity, write_story = False, callbacks = None)
+permit(simulation, human_capital, entity, write_story = False, 
+            callbacks = None)
+
+@author: Derek Huling, Scott Miles
 """
+from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
 from desaster.config import permit_process_time
 
-def inspection(simulation, human_capital, entity, callbacks = None):
-    """Request an inspection, do inspection, update entity attribute times.
+def inspection(simulation, human_capital, structure, entity = None, 
+    write_story = False, callbacks = None):
+    """Define process for inspecting an entity's structure.
 
     Keyword Arguments:
-    entity -- An entity object from the Entity() class. Must have a value for
-              attribute 'insurance_coverage', which should be set at __init__()
-
-    simulation -- A simpy.Environment() object. This references the simulation
-                  environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
-
-    callbacks -- a generator function containing any processes you want to start
-                 after the completion of the insurance claim. If this does not
-                 contain a yield (therefore isn't a generator), simpy will throw
-                 an error. Defaults to None.
+    entity -- An entity object from the entity.py module, for example
+                entities.Household(). Defaults to none so that can inspect
+                structures that aren't associated with an entity.
+                *** Currently, this function expects that the entity *is*
+                an entities.Household() object because makes an assignment to
+                Household().residence.inspected***
+    simulation -- A simpy.Environment() object.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+    human_capital -- A capitals.HumanCapital() object.
+    structure -- A capitals.BuiltCapital() object or an object of a BuiltCapital()
+                sub-class, such as capitals.Residence()
+    write_story -- Boolean indicating whether to track a households story.
 
     Returns or Attribute Changes:
-
     entity.inspection_put -- Record time of inspection request
     entity.inspection_get -- Record time of inspection completion
-    entity.story -- append natural language summary of process
+    entity.residence.inspected -- Whether inspection was successful.
+    entity.story -- Summary of process outcome as string.
     """
-
-    # Put in request for an inspector (shared resource)
-    entity.inspection_put = simulation.now
     
-    # ??? the inspection_put attribute can be added after init, ???
-    request = human_capital.inspectors.request()
-    yield request
+    # Only record inspection request time if structure associated with an entity.
+    if entity != None:
+        # Put in request for an inspector (shared resource)
+        entity.inspection_put = simulation.now
+    
+    # Request inspectors
+    inspectors_request = human_capital.inspectors.request()
+    yield inspectors_request
 
-    # Duration of inspection
+    # Yield timeout equivalent to time from hazard event to end of inspection.
     yield simulation.timeout(inspection_time)
     
-    # The time that the inspection has been completed
-    entity.inspection_get = simulation.now
-
-    # --% Added release statement
-    human_capital.inspectors.release(request)
-
-    #write their story
-    entity.story.append(
-    "{1}'s house was inspected {0} days after the event. ".format(entity.inspection_get, entity.name))
+    # Set attribute of structure to indicate its been inspected.
+    structure.inspected = True
     
-    entity.story.append(
-                    'The event caused ${0} of damage to the residence. '.format(entity.residence.damage_value)
+    # Release inspectors now that inspection is complete.
+    human_capital.inspectors.release(inspectors_request) 
+    
+    # Only record inspection time and write story if structure associated with 
+    # an entity.
+    if entity != None:
+        entity.inspection_get = simulation.now
+        
+        #If true, write process outcome to story
+        if write_story == True:
+            
+            entity.story.append(
+                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+
+def insurance_claim(simulation, human_capital, entity, write_story = False, 
+                    callbacks = None):
+    """Define process for entity to submit an insurance claim.
+
+    Keyword arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household().
+    simulation -- A simpy.Environment() object.
+    human_capital -- A capitals.HumanCapital() object.
+    write_story -- Boolean indicating whether to track a households story.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    Returns or attribute changes:
+    entity.claim_put -- Record current simulation time at the time the entity
+                        enters the adjuster queue
+    entity.claim_payout -- Set claim payout equal to damage value amount.
+    entity.claim_get -- Record simulation time when entity recieves payout
+    entity.story -- Append natural language sentences to entities story.
+    """
+    # Exception handling in case interrupted by another process.
+    try: 
+        # Ensure entity has insurance.
+        if entity.insurance <= 0.0:
+            return
+        # Has insurance so submits a claim.
+        else:  
+            # Record time that claim request is put.
+            entity.claim_put = simulation.now   
+            
+            #If true, write claim submission time to story.
+            if write_story == True:
+                entity.story.append(
+                    '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
+                        entity.name, entity.claim_put)
+                    )
+            
+            # Submit request for insurance adjusters.
+            request = human_capital.insurance_adjusters.request()
+            yield request
+
+            # Timeout process to simulate claims processing duration.
+            yield simulation.timeout(adjuster_time)  
+            
+            # Determine payout amount and add to entity's rebuild money.
+            # Only payout amount equal to the damage, not the full coverage.
+            if entity.residence.damage_value < entity.insurance:
+                entity.claim_payout = entity.residence.damage_value
+            else:
+                entity.claim_payout = entity.insurance
+            entity.money_to_rebuild += entity.claim_payout
+
+            # Record when the time when household gets claim payout
+            entity.claim_get = simulation.now     
+
+            # Release insurance adjusters so they can process other claims.
+            human_capital.insurance_adjusters.release(request)
+            
+            #If true, write process outcome to story.
+            if write_story == True:
+                entity.story.append(
+                    '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
+                        entity.name, 
+                        entity.claim_payout,
+                        entity.claim_get
+                        )
+                    )
+    # Handle any interrupt thrown by another process.
+    except Interrupt as i: 
+        #If true, write that the process was interrupted to their story.
+        if write_story == True:
+            entity.story.append(
+                    '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
+                    entity.name, i.cause))
+    
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+
+def fema_assistance(simulation, human_capital, financial_capital, entity, 
+                    write_story = False, callbacks = None):
+    """Define process for entity to submit request for FEMA individual assistance.
+
+    entity -- An entity object from the entity.py module, for example
+                entities.Household().
+    simulation -- A simpy.Environment() object.
+    human_capital -- A capitals.HumanCapital() object.
+    financial_capital -- A capitals.FinancialCapital() object.
+    write_story -- Boolean indicating whether to track a households story.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    Returns or Attribute Changes:
+    entity.assistance_put -- Records sim time of fema processor request
+    entity.assistance_get -- Records sim time of fema assistance reciept
+    entity.assistance_request -- The amount of assistance requested.
+    entity.assistance_payout -- Amount of FEMA aid given to the entity.
+    """
+    # Exception handling in case interrupted by another process.
+    try:
+        #Ensure that entity does not have enough money to rebuild already.
+        if entity.money_to_rebuild >= entity.residence.damage_value:
+            return
+        # If does not have enough money to rebuild, submit request to FEMA.
+        else: 
+            # Record time requests FEMA assistance.
+            entity.assistance_put = simulation.now  
+            #If true, write FEMA request time to story.
+            if write_story == True:    
+                entity.story.append(
+                    '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
+                        entity.name, entity.assistance_put
+                        )
+                    )
+            # Request a FEMA processor to review aid application.
+            request = human_capital.fema_processors.request()
+            yield request
+            
+            # Yield timeout for duration necessary to process FEMA aid request.
+            yield simulation.timeout(fema_process_time)
+
+            # Release FEMA processors. 
+            human_capital.fema_processors.release(request)
+            
+            # Record time received FEMA assistance.
+            entity.assistance_get = simulation.now
+
+            # Must subtract any insurance payout from FEMA payout.
+            entity.assistance_request = (entity.residence.damage_value 
+                                        - entity.claim_payout)
+
+            # If requesting assistance, determine if FEMA has money left to 
+            # provide assistance.
+            if entity.assistance_request <= financial_capital.fema_aid.level:
+                # FEMA has enough money to fully pay requested amount.
+                entity.assistance_payout = entity.assistance_request
+                entity.money_to_rebuild += entity.assistance_payout
+
+                # Subtract payout amount from the overall amount of assistance
+                # FEMA has available to payout to all requests.
+                yield financial_capital.fema_aid.get(entity.assistance_request)
+                
+                #If true, write process outcome to story.
+                if write_story == True:
+                    entity.story.append(
+                        '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
+                            entity.name,
+                            entity.assistance_payout,
+                            entity.assistance_get
+                            )
+                        )
+            elif financial_capital.fema_aid.level > 0:
+                # FEMA has money left but less than requested.
+                # Set payout equal to remaining funds.
+                entity.assistance_payout = financial_capital.fema_aid.level
+                entity.money_to_rebuild += entity.assistance_payout
+                
+                # Subtract payout amount from the overall amount of assistance
+                # FEMA has available to payout to all requests.
+                yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
+                
+                #If true, write process outcome to story.
+                if write_story == True:
+                    entity.story.append(
+                     '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
+                     .format(
+                                entity.name,
+                                entity.assistance_request,
+                                entity.assistance_payout,
+                                entity.assistance_get
+                            )
+                        )    
+            else:
+                # FEMA has no money left to make payout.
+                entity.assistance_payout = 0.0
+                
+                #If true, write process outcome to story.
+                if write_story == True:
+                    entity.story.append(
+                    '{0} received no money from FEMA because of inadequate funding. '
+                    .format(entity.name)
+                    )
+            
+    # Catch any interrupt from another process.      
+    except Interrupt as i:
+        #If true, write process outcome to story.
+        if write_story == True:
+            entity.story.append(
+                    '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
+                        entity.name, i.cause)
                     )
 
     if callbacks is not None:
@@ -60,285 +281,171 @@ def inspection(simulation, human_capital, entity, callbacks = None):
     else:
         pass
 
-def insurance_claim(simulation, human_capital, entity, callbacks = None):
-    """File an insurance claim, assign claim amounts to entity objects.
-
-    Keyword arguments:
-    entity -- An entity object from the Entity() class. Must have a value for
-              attribute 'insurance_coverage', which should be set at __init__()
-
-    simulation -- A simpy.Environment() object. This references the simulation
-                  environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
-
-    callbacks -- a generator function containing any processes you want to start
-                 after the completion of the insurance claim. If this does not
-                 contain a yield (therefore isn't a generator), simpy will throw
-                 an error. Defaults to None.
-
-    Returns or attribute changes:
-
-    entity.claim_put -- Record current simulation time at the time the entity
-                        enters the adjuster queue
-
-    entity.claim_payout -- Set claim payout equal to damage value amount.
-
-    entity.claim_get -- Record simulation time when entity recieves payout
-
-    entity.story -- Append natural language sentences to entities story.
-    """
-    try: # in case a process interrupt is thrown in a master process
-        
-        if entity.money_to_rebuild >= entity.residence.damage_value:  # Doesn't need to make a claim
-            
-            return
-        
-        elif entity.insurance == 0.0:  # Has no insurance
-            
-            return
-        
-        else # Has insurance and needs to submit a claim
-            
-            entity.claim_put = simulation.now   # Record time that claim is put in
-            
-            entity.story.append(
-                '{0} submitted an insurance claim {1} days after the event. '.format(
-                entity.name, entity.claim_put))
-            
-            request = human_capital.insurance_adjusters.request()
-            yield request
-
-            yield simulation.timeout(adjuster_time)    # Duration of claim processing
-
-            
-            entity.claim_get = simulation.now     # Record when the time when household gets claim payout
-
-            human_capital.insurance_adjusters.release(request)
-            
-            # Only payout amount equal to the damage, not the full coverage
-            if entity.residence.damage_value < entity.insurance:
-                entity.claim_payout = entity.residence.damage_value
-            else:
-                entity.claim_payout = entity.insurance
-
-            entity.money_to_rebuild += entity.claim_payout
-
-            entity.story.append(
-                '{0} received a ${1} insurance payout {2} days after the event. '.format(
-                entity.name, entity.claim_payout, entity.claim_get))
-       
-    except simpy.Interrupt as i: # Handle any interrupt thrown by a master process
-        
-        entity.story.append(
-                '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
-                entity.name, i.cause))
+def engineering_assessment(simulation, human_capital, entity, write_story = False, 
+                            callbacks = None):
+    """Define process for entity to request an engineering assessment of their
+    structure.
     
-    if callbacks is not None:
-        yield simulation.process(callbacks)
-
-    else:
-        pass
-
-def fema_assistance(simulation, human_capital, financial_capital, entity, callbacks = None):
-    """Request and receive assistance from fema.
-
-    entity -- An entity object from the Entity() class. Must have a value for
-              attributes: 'residence.damage_value', 'claim_payout',
-              which should be set at __init__()
-
-    simulation -- A simpy.Environment() object. This references the simulation
-                  environment, and is usually set as the first variable in a
-                  simulation, e.g. simulation = simpy.Environment().
-
-    callbacks -- a generator function containing any processes you want to start
-                 after the completion of the insurance claim. If this does not
-                 contain a yield (therefore isn't a generator), simpy will throw
-                 an error. Defaults to None.
-
+    Keyword Arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household().
+    simulation -- A simpy.Environment() object.
+    human_capital -- A capitals.HumanCapital() object.
+    write_story -- Boolean indicating whether to track a households story.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
 
     Returns or Attribute Changes:
-
-    entity.assistance_put -- Records sim time of fema processor request
-
-    entity.assistance_get -- Records sim time of fema assistance reciept
-
-    entity.assistance_request -- The amount of money being requested by the
-                                 entity, equal to the residence.damage_value minus the
-                                 claim_payout provided by the insurance process
-
-    entity.assistance_payout -- amount of money given to the entity, equal to
-                                the request amount or whatever is left in the
-                                financial_capital.fema_aid container, whichever is higher.
-
+    entity.assessment_put -- Records sim time of assessment request
+    entity.assistance_get -- Records sim time of assessment reciept
     """
-
-    try:
-
-        if entity.money_to_rebuild >= entity.residence.damage_value: # Doesn't need FEMA assistance
-            return
-
-        else: # Requires FEMA assistance
-            
-            entity.assistance_put = simulation.now  # Record time household requests FEMA assistance
-
-            entity.story.append(
-                '{0} submitted a request to FEMA {1} days after the event. '.format(
-                entity.name, entity.assistance_put))
-
-            request = human_capital.fema_processors.request()
-            yield request
-            
-            yield simulation.timeout(fema_process_time)  # Duration required for FEMA to process assistance request
-
-            human_capital.fema_processors.release(request)
-
-            entity.assistance_get = simulation.now   # Record time household gets FEMA assistance
-
-            # Compute amount of assistance requested from FEMA; if insurance payout covers repair cost it is zero
-            entity.assistance_request = entity.residence.damage_value - entity.claim_payout
-
-            # If requesting assistance, determine if FEMA has money left to provide assistance
-            if entity.assistance_request <= financial_capital.fema_aid.level: # FEMA has enough money
-                entity.assistance_payout = entity.assistance_request
-                entity.money_to_rebuild += entity.assistance_payout
-
-                yield financial_capital.fema_aid.get(entity.assistance_request)
-                
-                # Write the household's story
-                entity.story.append(
-                    '{0} received ${1} from FEMA {2} days after the event. '.format(
-                    entity.name, entity.assistance_payout, entity.assistance_get))
-
-            elif financial_capital.fema_aid.level > 0:  # FEMA has money left but less than requested
-                entity.assistance_payout = financial_capital.fema_aid.level
-                entity.money_to_rebuild += entity.assistance_payout
-                
-                yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
-                
-                # Write the household's story
-                entity.story.append(
-                 '{0} requested ${1} from FEMA but only received ${2}. '
-                 .format(entity.name, entity.assistance_request, entity.assistance_payout))
-
-                entity.story.append(
-                    'They received the assistance {0} days after the event. '.format(
-                    entity.assistance_get))
     
-            else:  # FEMA has no money left
-                
-                entity.assistance_payout = 0.0
-
-                # Write the household's story
-                entity.story.append(
-                '{0} received no money from FEMA because of inadequate funding. '
-                .format(entity.name))
-                
-                yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
-            
-    # Catch any interrupt from a master process         
-    except simpy.Interrupt as i:
-        
-        entity.story.append(
-                '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
-                entity.name, i.cause))
-        
-    if callbacks is not None:
-        yield simulation.process(callbacks)
-
-    else:
-        pass
-
-def engineering_assessment(simulation, human_capital, entity, callbacks = None):
-    """Request an engineering assessment"""
-
-    entity.assessment_put = simulation.now #time of request
+    # Record time that assessment request put in.
+    entity.assessment_put = simulation.now
     
+    # Request an engineer.
     request = human_capital.engineers.request()
     yield request
 
+    # Yield process timeout for duration necessary to assess entity's structure.
     yield simulation.timeout(engineering_assessment_time)
     
+    # Release engineer so it can assess other structures.
     human_capital.engineers.release(request)
     
-    entity.assessment_get = simulation.now #when assessment is received
-
-    entity.story.append(
-    '{0} received an engineering assessment {1} days after the event. '
-    .format(entity.name, entity.assessment_get))
+    # Record time when assessment complete.
+    entity.assessment_get = simulation.now
+    
+    # If true, write the outcome of the process to story.
+    if write_story == True:
+        entity.story.append(
+        '{0} received an engineering assessment {1:.0f} days after the event. '
+        .format(entity.name, entity.assessment_get)
+        )
 
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
         pass
 
-def loan(simulation, human_capital, entity, callbacks = None):
-    
+def loan(simulation, human_capital, entity, write_story = False, callbacks = None):
+    """Define process for entity to submit request for loan (e.g., from SBA).
+
+    entity -- An entity object from the entity.py module, for example
+                entities.Household().
+    simulation -- A simpy.Environment() object.
+    human_capital -- A capitals.HumanCapital() object.
+    write_story -- Boolean indicating whether to track a households story.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    Returns or Attribute Changes:
+    entity.loan_put -- Records sim time of loan request
+    entity.loan_get -- Records sim time of loan reciept
+    entity.loan_amount -- The amount of loan requested.
+    """
+    # Exception handling in case interrupted by another process.
     try:
-
-        if entity.money_to_rebuild >= entity.residence.damage_value:  # Don't need a loan
+        # Ensure entity does not have enough money to rebuild.
+        if entity.money_to_rebuild >= entity.residence.damage_value:
             return
-        
         else:
-            entity.loan_put = simulation.now # Record time application submitted
-                 
-            entity.story.append(
-                '{0} submitted a loan application {1} days after the event. '.format(
-                entity.name, entity.loan_put))
-
+            # Does not have enough money to rebuild.
+            # Record time application submitted.
+            entity.loan_put = simulation.now 
+            
+            # If true, write loan request time to story.
+            if write_story == True:
+                   
+                entity.story.append(
+                    '{0} submitted a loan application {1:.0f} days after the event. '.format(
+                        entity.name, entity.loan_put)
+                    )
+            
+            # Request a loan processor.
             request = human_capital.loan_processors.request()
             yield request
 
-            yield simulation.timeout(loan_process_time)  # Duration of loan processing
-
+            # Yield process timeout for duration needed to process loan request.
+            yield simulation.timeout(loan_process_time)
+            
+            # Release loan processor so that they can process other loans.
             human_capital.loan_processors.release(request)
 
+            # Record time loan is given.
             entity.loan_get = simulation.now
-
-
-            # --% Added initial code to produce loan payout %--
-            # TODO Need code here to determine how much money the entity requests for their
-            #loan and whether the are approved
-            # TODO make sure to add to entity.money_to_rebuild
-
-            entity.loan_amount = entity.residence.damage_value - entity.claim_payout - entity.assistance_payout
-
+            
+            # Subtract any insurance or FEMA payouts from damage value to 
+            # arrive at loan amount.
+            entity.loan_amount = (
+                                    entity.residence.damage_value 
+                                    - entity.claim_payout
+                                    - entity.assistance_payout
+                                )
+            
+            # Add loan amount to entity's money to rebuild.
             if entity.loan_amount > 0.0:
                 entity.money_to_rebuild += entity.loan_amount
+                
+                #If true, write process outcome to story.
+                if write_story == True:
+                
+                    entity.story.append(
+                    "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
+                    .format(entity.name, entity.loan_amount, entity.loan_get))
 
-                entity.story.append(
-                "{0} received a loan for ${1} {2} days after the event. "
-                .format(entity.name, entity.loan_amount, entity.loan_get))
-
-    # Handle any interrupt from a master process
-    except simpy.Interrupt as i:
-        
-        entity.story.append(
-                '{0} gave up during the loan approval process after a {1} day search for money. '.format(
-                entity.name, i.cause))
+    # Handle any interrupt from another process.
+    except Interrupt as i:
+        #If true, write interrupt outcome to story.
+        if write_story == True:
+            entity.story.append(
+                    '{0} gave up during the loan approval process after a {1} day search for money. '.format(
+                    entity.name, i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:
         pass
 
-def permit(simulation, human_capital, entity, callbacks = None):
+def permit(simulation, human_capital, entity, write_story = False, callbacks = None):
+    """Define process for entity to request an engineering assessment of their
+    structure.
 
-    """Request a permit for building."""
+    Keyword Arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household().
+    simulation -- A simpy.Environment() object.
+    human_capital -- A capitals.HumanCapital() object.
+    write_story -- Boolean indicating whether to track a households story.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    Returns or Attribute Changes:
+    entity.permit_put -- Records sim time of permit request
+    entity.permit_get -- Records sim time of permit reciept
+    """
+    # Record time permit application submitted.
     entity.permit_put = simulation.now
 
+    # Request permit processor / building official.
     request = human_capital.permit_processors.request()
     yield request
-
+    
+    # Yield process timeout equal to duration required to review permit request.
     yield simulation.timeout(permit_process_time)
 
-    # --% Added release statement
+    # Release permit process to allow them to review other requests.
     human_capital.permit_processors.release(request)
 
+    # Record time that permit is granted.
     entity.permit_get = simulation.now
-
-    entity.story.append(
-    "{0} received permit approval {1} days after the event. "
-    .format(entity.name, entity.permit_get))
+    
+    #If true, write outcome of process to story.
+    if write_story == True:
+        entity.story.append(
+        "{0} received permit approval {1:.0f} days after the event. "
+        .format(entity.name, entity.permit_get)
+        )
 
     if callbacks is not None:
         yield simulation.process(callbacks)
