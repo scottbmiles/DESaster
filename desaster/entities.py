@@ -23,12 +23,17 @@ class Household(object):
         household_df -- Dataframe row w/ household input attributes.
         write_story -- Boolean indicating whether to track a households story.
         """
-         # Household simulation inputs
+        
+        # Household simulation inputs
         self.household = household_df  # Dataframe w/ household input attributes
-        self.name = household_df['Name']   # Name associated with household
+#        self.name = household_df['Name']   # Name associated with household
+        self.name = household_df['Occupant']   # Name associated with household %***%
         self.savings = household_df['Savings']  # Amount of household savings in $
         self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage in $
         self.residence = Residence(simulation, household_df)  # Pointer to household's Residence() object
+        self.tenure_pref = household_df['Tenure Pref'] # Indicator of the household's preference between rent or own %***%
+        self.tenure = household_df['Tenure'] # Indicator of the household's *actual* tenure between rent or own %***%
+        self.occupancy_pref = household_df['Occupancy Pref'] # Indicator of the household's preference between occupancy types %***%
         
         # Household simulation outputs
         self.story = []  # The story of events for each household
