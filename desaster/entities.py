@@ -21,6 +21,7 @@ class Household(object):
         
         simulation -- Pointer to SimPy simulation environment.
         household_df -- Dataframe row w/ household input attributes.
+        housing_stock -- a SimPy FilterStore that acts as an occupied housing stock
         write_story -- Boolean indicating whether to track a households story.
         """
         
@@ -67,6 +68,14 @@ class Household(object):
         self.setStory(write_story)  # Start stories with non-disaster attributes
     
     def setResidence(self, simulation, housing_stock, household_df):
+        """Initiate the household's residence based on input attributes
+        then add their residence to the housing stock FilterStore.
+        
+        Keyword Arguments:
+        simulation -- Pointer to SimPy simulation environment.
+        household_df -- Dataframe row w/ household input attributes.
+        housing_stock -- a SimPy FilterStore that acts as an occupied housing stock
+        """
         self.residence = Residence(simulation, household_df) 
         housing_stock.put(self.residence)
         
