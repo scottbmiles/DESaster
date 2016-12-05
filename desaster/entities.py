@@ -15,7 +15,7 @@ class Household(object):
     """Define a Household() class to represent a group of persons that reside 
     together as a single analysis unit with attributes and methods.
     """
-    def __init__(self, simulation, household_df, write_story = False):
+    def __init__(self, simulation, housing_stock, household_df, write_story = False):
         """Define household inputs and outputs attributes.
         Initiate household's story list string. 
         
@@ -23,13 +23,18 @@ class Household(object):
         household_df -- Dataframe row w/ household input attributes.
         write_story -- Boolean indicating whether to track a households story.
         """
-         # Household simulation inputs
+        
+        # Household simulation inputs
         self.household = household_df  # Dataframe w/ household input attributes
-        self.name = household_df['Name']   # Name associated with household
+#        self.name = household_df['Name']   # Name associated with household
+        self.name = household_df['Occupant']   # Name associated with household %***%
         self.savings = household_df['Savings']  # Amount of household savings in $
         self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage in $
-        self.residence = Residence(simulation, household_df)  # Pointer to household's Residence() object
-        
+#        self.residence = Residence(simulation, household_df)  # Pointer to household's Residence() object
+        self.tenure_pref = household_df['Tenure Pref'] # Indicator of the household's preference between rent or own %***%
+        self.tenure = household_df['Tenure'] # Indicator of the household's *actual* tenure between rent or own %***%
+        self.occupancy_pref = household_df['Occupancy Pref'] # Indicator of the household's preference between occupancy types %***%
+         
         # Household simulation outputs
         self.story = []  # The story of events for each household
         self.inspection_put = 0.0  # Time put request in for house inspection
@@ -57,8 +62,14 @@ class Household(object):
         self.gave_up_home_search = False  # Whether household gave up search for home 
         
         # Initial method calls
+        
+        self.setResidence(simulation, housing_stock, household_df)
         self.setStory(write_story)  # Start stories with non-disaster attributes
     
+    def setResidence(self, simulation, housing_stock, household_df):
+        self.residence = Residence(simulation, household_df) 
+        housing_stock.put(self.residence)
+        
     def setStory(self, write_story):
         """Initiate the household's story based on input attributes.
         
@@ -80,7 +91,7 @@ class Household(object):
         """Join list of story strings into a single story string."""
         return ''.join(self.story)
 
-def importHouseholds(simulation, households_df, write_story = False):
+def importHouseholds(simulation, housing_stock, households_df, write_story = False):
     """Return list of entities.Household() objects from dataframe containing
     data describing households.
     
@@ -94,6 +105,6 @@ def importHouseholds(simulation, households_df, write_story = False):
 
     # Population the simulation with households from the households dataframe
     for i in households_df.index:
-        households.append(Household(simulation, households_df.iloc[i], write_story))
+        households.append(Household(simulation, housing_stock, households_df.iloc[i], write_story))
     
     return households
