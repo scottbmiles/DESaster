@@ -126,23 +126,18 @@ class Building(BuiltCapital):
 #        self.setDamageState(building)
 #        self.setInspection(building)
         
-        self.setOwner(building) # %***%
-        self.setOccupant(building) # %***%
+        
         self.setAddress(building)
         self.setOccupancy(building)
-        self.setTenure(building)  # %***%
         self.setDamageValue(building)
        
-    def setOwner(self, building):
-        self.owner = building['Owner']  # Owner of building as Household() entity %***%
-    def setOccupant(self, building):
-        self.occupant = building['Occupant']  # Occupant of building as Household() entity %***%
+        self.owner = []  # Owner of building as Household() entity %***%
+        self.occupant = [] # %***%
+        
     def setAddress(self, building):
         self.address = building['Address']  # Address of building
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
-    def setTenure(self, building):
-        self.tenure = building['Tenure']  # Tenure of building: rent or own %***%
     def setBuildingArea(self, building):
         self.cost = building['Area']  # Floor area of building
     def setDamageValue(self, building):
