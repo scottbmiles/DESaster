@@ -275,15 +275,12 @@ class Landlord(object):
         """Define landlord's inputs and outputs attributes.
         Initiate landlord's story list string. 
         
-        simulation -- Pointer to SimPy simulation environment.
-        household_df -- Dataframe row w/ household input attributes.
-        housing_stock -- a SimPy FilterStore that acts as an occupied housing stock
         write_story -- Boolean indicating whether to track a households story.
         """
         
         # Landlord simulation inputs
         ctime = datetime.datetime.now()
-        self.name = 'Landlord ' + str(ctime.minute) + str(ctime.second) # Name associated with household
+        self.name = 'Landlord ' + str(ctime.microsecond)[-3:] # Name associated with household
         self.savings = 0.5  # Amount of landlord savings as percentage of property value (cash ratio)
         self.insurance = 0.85 # Hazard-specific insurance coverage as percentage of replacement cost (includes deductible)
         self.money_to_rebuild = self.savings   # Total funds available to landlord to rebuild building
@@ -390,4 +387,29 @@ def importRenters(simulation, housing_stock, households_df, write_story = False)
     for i in households_df.index:
         renters.append(Renter(simulation, housing_stock, households_df.iloc[i], write_story))
     
+
     return renters
+    
+def assignLandlords(renters, landlords, write_story = False):
+    """Return list of entities.Owner() objects from dataframe containing
+    data describing households.
+    
+    Keyword Arguments:
+    simulation -- Pointer to SimPy simulation environment.
+    renters -- List of entities.Renters()
+    landlords -- List of entities.Landlords()
+    write_story -- Boolean indicating whether to track a households story.
+    """
+        
+    for i, renter in enumerate(renters):
+        renter.landlord = landlords[i]
+        renter.landlord.residence = renter.residence
+        renter.landlord.tenant = renter
+    
+        if write_story == True:
+            # Indicate renter's landlord in their story.
+            renter.story.append(
+                              '{0}\'s residence is owned by {1}. '.format(renter.name, 
+                              renter.landlord.name
+                              )
+                )

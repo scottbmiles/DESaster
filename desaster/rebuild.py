@@ -63,7 +63,6 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
 
             # After successful rebuild, set damage to None & $0.
             household.residence.damage_state = 'None'
-            household.residence.damage_value = 0.0
 
             # Record time when household gets home.
             household.home_get = simulation.now
