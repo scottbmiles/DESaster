@@ -121,10 +121,6 @@ class Building(BuiltCapital):
         """
         
         BuiltCapital.__init__(self, simulation, building)
-#        self.setYearBuilt(building)
-#        self.setValue(building)
-#        self.setDamageState(building)
-#        self.setInspection(building)
         
         
         self.setAddress(building)
@@ -133,6 +129,8 @@ class Building(BuiltCapital):
        
         self.owner = []  # Owner of building as Household() entity %***%
         self.occupant = [] # %***%
+        
+        self.cost = building['Cost']  # Monthly rent/mortgage of building
         
     def setAddress(self, building):
         self.address = building['Address']  # Address of building
@@ -174,16 +172,7 @@ class Residence(Building):
         residence -- A dataframe row with required residence attributes.
         """
         
-        Building.__init__(self, simulation, residence) # %***%
-        
-#        self.setYearBuilt(residence)
-
-#        self.setValue(residence)
-#        self.setDamageState(residence)
-#        self.setDamageValue(residence)
-#        self.setInspection(residence)
-#        self.setAddress(residence)
-#        self.setBuildingArea(residence)
+        Building.__init__(self, simulation, residence) # %***%s
         
         self.setOccupancy(residence)
         self.setBedrooms(residence)

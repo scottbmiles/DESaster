@@ -15,13 +15,15 @@ engineering_assessment(simulation, human_capital, entity, write_story = False,
 loan(simulation, human_capital, entity, write_story = False, callbacks = None)
 permit(simulation, human_capital, entity, write_story = False, 
             callbacks = None)
+reoccupy(simulation, entity, write_story = False, callbacks = None):
 
 @author: Derek Huling, Scott Miles
 """
 from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
-from desaster.config import permit_process_time
+from desaster.config import permit_process_time, movein_time
+from desaster import entities
 
 def inspection(simulation, human_capital, structure, entity = None, 
     write_story = False, callbacks = None):
@@ -76,7 +78,9 @@ def inspection(simulation, human_capital, structure, entity = None,
         if write_story == True:
             
             entity.story.append(
-                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+                            "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage.".format(
+                            entity.name, entity.residence.occupancy.lower(),
+                            entity.inspection_get, entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -447,6 +451,69 @@ def permit(simulation, human_capital, entity, write_story = False, callbacks = N
         .format(entity.name, entity.permit_get)
         )
 
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+
+def reoccupy(simulation, entity, write_story = False, callbacks = None):
+    """Define process for reoccupying building.
+
+    Keyword Arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household(). Defaults to none so that can inspect
+                structures that aren't associated with an entity.
+                *** Currently, this function expects that the entity *is*
+                an entities.Household() object because makes an assignment to
+                Household().residence.inspected***
+    simulation -- A simpy.Environment() object.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    write_story -- Boolean indicating whether to track a households story.
+
+    Returns or Attribute Changes:
+    entity.story -- Summary of process outcome as string.
+    """
+   
+    
+    # If is renter and no longer has a residence (.residence is an empty list) 
+    # add this event to their story as an eviction.
+    if not entity.residence and isinstance(entity, entities.Renter):
+        #If true, write process outcome to story
+        if write_story == True:
+            
+            entity.story.append(
+                            "{0} terminated {1}\'s lease {2:.0f} days after the event. ".format(entity.landlord.name, entity.name, simulation.now)
+                            )
+        
+            return
+            
+    # If is a renter and the monthly cost is greater than 30% of their income
+    # displace them by removing their residence
+    # **** Not used yet. ****
+#    if isinstance(entity, entities.Renter) and entity.residence.cost > 0.3* entity.income:
+#        #If true, write process outcome to story
+#        if write_story == True:
+#            
+#            entity.story.append(
+#                            "{0} could not afford a rent increase and was displaced. ".format(entity.name)
+#                            )
+#        
+#        return
+        
+    # Yield timeout equivalent to time required to move back into home.
+    yield simulation.timeout(movein_time)
+    
+    #If true, write process outcome to story
+    if write_story == True:
+        
+        entity.story.append(
+                        "{0} reoccupied the {1} {2:.0f} days after the event. ".format(entity.name, entity.residence.occupancy.lower(), simulation.now)
+                        )
+    
+    return
+    
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:

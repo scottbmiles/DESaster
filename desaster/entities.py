@@ -10,7 +10,7 @@ Household(object)
 """
 # Import Residence() class in order to assign households a residence.
 from desaster.capitals import Residence 
-import datetime
+import names
 
 #class Household(object):
 #    """Define a Household() class to represent a group of persons that reside 
@@ -121,7 +121,9 @@ class Household(object):
         self.savings = household_df['Savings']  # Amount of household savings in $
         self.tenure_pref = household_df['Tenure Pref'] # Indicator of the household's preference between rent or own %***%
         self.occupancy_pref = household_df['Occupancy Pref'] # Indicator of the household's preference between occupancy types %***%
-         
+        
+        self.prior_residence = []
+        
         # Household simulation outputs
         self.story = []  # The story of events for each household
         self.home_search_start = 0.0  # Time started searching for a new home
@@ -207,7 +209,7 @@ class Owner(Household):
             self.story.append(
             '{0} owns and lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(self.name, 
                                                             self.residence.bedrooms, 
-                                                            self.residence.occupancy,
+                                                            self.residence.occupancy.lower(),
                                                             self.residence.address,
                                                             self.residence.value
                                                             )
@@ -255,7 +257,7 @@ class Renter(Household):
             self.story.append(
             '{0} rents and lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(self.name, 
                                                             self.residence.bedrooms, 
-                                                            self.residence.occupancy,
+                                                            self.residence.occupancy.lower(),
                                                             self.residence.address,
                                                             self.residence.value
                                                             )
@@ -279,8 +281,7 @@ class Landlord(object):
         """
         
         # Landlord simulation inputs
-        ctime = datetime.datetime.now()
-        self.name = 'Landlord ' + str(ctime.microsecond)[-3:] # Name associated with household
+        self.name = names.get_first_name() # Random name associated with household
         self.savings = 0.5  # Amount of landlord savings as percentage of property value (cash ratio)
         self.insurance = 0.85 # Hazard-specific insurance coverage as percentage of replacement cost (includes deductible)
         self.money_to_rebuild = self.savings   # Total funds available to landlord to rebuild building

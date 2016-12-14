@@ -52,6 +52,13 @@ permit_process_mean = 35.0
 permit_process_std = 0.0
 permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
 
+# Parameters for defining a normal distribution for representing the duration
+# required to process building permit request from time permit is requested.
+movein_mean = 2.0
+movein_std = 0.0
+movein_time = abs(random.gauss(movein_mean, movein_std))
+
+
 # % of damage value related to building materials (vs. labor and profit)
 materials_cost_pct = 1.0 
 

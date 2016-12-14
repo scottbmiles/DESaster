@@ -70,8 +70,8 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # If True, write outcome of successful rebuild to story.
             if write_story == True:
                 household.story.append(
-                    '{0}\'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. '.format(
-                        household.name,
+                    '{0}\'s {1} was repaired {2:,.0f} days after the event, taking {3:.0f} days to repair. '.format(
+                        household.name, household.residence.occupancy.lower(),
                         household.home_get,
                         household.home_get - household.home_put
                     )
@@ -79,6 +79,11 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         
         # Deal with case that insufficient construction materials are available.
         if household.residence.damage_value > financial_capital.building_materials.level:
+            
+            # Subtract the damage_value (as cost of repair/rebuild) from household money to rebuild
+            # in case they have additional expenditures
+            household.money_to_rebuild = household.money_to_rebuild - household.residence.damage_value
+            
             # If true, write outcome of the process to their story
             if write_story == True:
                 household.story.append(
@@ -93,7 +98,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # If true, write outcome of the process to their story
             if write_story == True:
                 household.story.append(
-                    '{0} was unable to get enough money to rebuild. '.format(
+                    '{0} was unable to get enough money to rebuild or repair. '.format(
                     household.name))
             
             return
@@ -103,7 +108,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         # If true, write outcome of the process to their story
         if write_story == True:
             household.story.append(
-                    '{0} gave up {1:.0f} days into the home rebuilding process. '.format(
+                    '{0} gave up {1:.0f} days into the rebuilding process. '.format(
                     household.name, i.cause))
 
     if callbacks is not None:
@@ -163,3 +168,4 @@ def stock(simulation, structure_stock, fix_probability):
             structure_stock.put(put_structure)
 
     print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, simulation.now))
+    
