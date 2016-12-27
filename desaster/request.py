@@ -111,12 +111,19 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
     try: 
         # Ensure entity has insurance.
         if entity.insurance <= 0.0:
+            if write_story == True:
+                entity.story.append(
+                    '{0} has no hazard insurance. '.format(
+                        entity.name
+                        )
+                    )
             return
+        
         # Has insurance so submits a claim.
         else:  
             # Record time that claim request is put.
             entity.claim_put = simulation.now   
-            
+
             #If true, write claim submission time to story.
             if write_story == True:
                 entity.story.append(
@@ -124,19 +131,32 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
                         entity.name, entity.claim_put)
                     )
             
-            # Submit request for insurance adjusters.
+            # The insurance deductible is the fraction of home value not
+            # covered by insurance. Dollar amount of the insurance policy coverage
+            # entity.insurance is the percenage of home value covered.
+            # (e.g., if insurance = 0.85, deductible = .15)
+            deductible = entity.residence.value * (1 - entity.insurance)
+            
+            # Determine payout amount and add to entity's rebuild money.
+            # Only payout amount equal to the damage, not the full coverage.
+            if entity.residence.damage_value < deductible:
+                if write_story == True:
+                    entity.story.append(
+                        '{0}\'s insurance deductible is greater than the value of damage. '.format(
+                        entity.name)
+                        )   
+                entity.claim_get = simulation.now
+                return
+            
+            # If damage > deductible, submit request for insurance adjusters.
             request = human_capital.insurance_adjusters.request()
             yield request
 
             # Timeout process to simulate claims processing duration.
             yield simulation.timeout(adjuster_time)  
-            
-            # Determine payout amount and add to entity's rebuild money.
-            # Only payout amount equal to the damage, not the full coverage.
-            if entity.residence.damage_value < entity.insurance:
-                entity.claim_payout = entity.residence.damage_value
-            else:
-                entity.claim_payout = entity.insurance
+          
+            entity.claim_payout = entity.residence.damage_value - deductible
+
             entity.money_to_rebuild += entity.claim_payout
 
             # Record when the time when household gets claim payout

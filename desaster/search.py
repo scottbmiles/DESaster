@@ -66,6 +66,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                             or getResidence.damage_state == 'Slight'
                         )
                         and getResidence.occupancy.lower() == household.residence.occupancy.lower()
+                        and getResidence.bedrooms == household.residence.bedrooms
                         and getResidence.value < household.residence.value
                         and getResidence.inspected == True
                        )
@@ -79,20 +80,18 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                 household.name, household.prior_residence.occupancy.lower(),
                 household.home_search_start)
                 )
-#        new_residence = housing_stock.get(lambda getResidence:
-#                        (
-#                            getResidence.damage_state == 'None'
-#                            or getResidence.damage_state == 'Slight'
-#                        )
-#                        and getResidence.occupancy.lower() == household.prior_residence.occupancy.lower()
-#                        and getResidence.cost < household.prior_residence.cost
-#                        and getResidence.inspected == True
-#                       )
-        
-        print(len(housing_stock.items))
+ 
         new_residence = housing_stock.get(lambda getResidence:
-                        print(getResidence.damage_state)
+                        (
+                            getResidence.damage_state == 'None'
+                            or getResidence.damage_state == 'Slight'
+                        )
+                        and getResidence.occupancy.lower() == household.prior_residence.occupancy.lower()
+                        and getResidence.bedrooms == household.prior_residence.bedrooms
+                        and getResidence.cost < household.prior_residence.cost
+                        and getResidence.inspected == True
                        )
+
     # Yield both the patience timeout and the housing stock FilterStore get.
     # Wait until one or the other process is completed.
     # Assign the process that is completed first to the variable.
@@ -140,7 +139,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
             household.story.append(
                 'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
                     household.home_search_stop,
-                    household.name, household.residence.occupancy, 
+                    household.name, household.residence.occupancy.lower(), 
                     household.residence.address, 
                     household.residence.value, 
                     household.residence.damage_value
@@ -154,7 +153,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
             household.story.append(
                 'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f} and ${5:,.0f} of damage. '.format(
                     household.home_search_stop,
-                    household.name, household.residence.occupancy, 
+                    household.name, household.residence.occupancy.lower(), 
                     household.residence.address, 
                     household.residence.cost, 
                     household.residence.damage_value

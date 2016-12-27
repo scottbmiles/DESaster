@@ -137,7 +137,7 @@ def stock(simulation, structure_stock, fix_probability):
     structures_list = []  # Empty list to temporarily place FilterStore objects.
 
     # Remove all structures from the FilterStore; put in a list for processing.
-    while len(structure_stock.items) > 0:
+    while structure_stock.items:
         get_structure = yield structure_stock.get(lambda getStructure:
                                                         getStructure.value >= 0.0
                                                 )
@@ -148,7 +148,7 @@ def stock(simulation, structure_stock, fix_probability):
     for put_structure in structures_list:
         # Select inspected structures that have Moderate or Complete damage
         if (put_structure.inspected == True 
-        and (put_structure.damage_state == 'Moderate' 
+        and (put_structure.damage_state == 'Extensive' 
         or put_structure.damage_state == 'Complete')
         ):
             # Compare uniform random to prob to estimate percentage to fix.
