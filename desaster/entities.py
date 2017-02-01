@@ -32,27 +32,27 @@ class Household(object):
         
         # Household simulation outputs
         self.story = []  # The story of events for each household
-        self.inspection_put = 0.0  # Time put request in for house inspection
-        self.inspection_get = 0.0  # Time get  house inspection
-        self.claim_put = 0.0  # Time put request in for insurance settlement
-        self.claim_get = 0.0  # Time get insurance claim settled
-        self.claim_payout = 0.0  # Amount of insurance claim payout
-        self.assistance_put = 0.0  # Time put request in for FEMA assistance
-        self.assistance_get = 0.0  # Time get FEMA assistance
-        self.assistance_request = 0.0  # Amount of money requested from FEMA
-        self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
+        self.inspection_put = None  # Time put request in for house inspection
+        self.inspection_get = None  # Time get  house inspection
+        self.claim_put = None  # Time put request in for insurance settlement
+        self.claim_get = None  # Time get insurance claim settled
+        self.claim_payout = 0  # Amount of insurance claim payout
+        self.assistance_put = None  # Time put request in for FEMA assistance
+        self.assistance_get = None  # Time get FEMA assistance
+        self.assistance_request = 0  # Amount of money requested from FEMA
+        self.assistance_payout = 0  # Amount of assistance provided by FEMA
         self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
-        self.home_put = 0.0  # Time put request in for house rebuild
-        self.home_get = 0.0  # Time get house rebuild completed
-        self.loan_put = 0.0  # Time put request for loan
-        self.loan_get = 0.0  # Time get requested loan
-        self.loan_amount = 0.0  # Amount of loan received
-        self.permit_put = 0.0  # Time put request for building permit
-        self.permit_get = 0.0  # Time get requested building permit
-        self.home_search_start = 0.0  # Time started searching for a new home
-        self.home_search_stop = 0.0  # Time found a new home
-        self.money_search_start = 0.0  # Time that household started search for money
-        self.money_search_stop = 0.0  # Time that household found rebuild money
+        self.home_put = None  # Time put request in for house rebuild
+        self.home_get = None  # Time get house rebuild completed
+        self.loan_put = None  # Time put request for loan
+        self.loan_get = None  # Time get requested loan
+        self.loan_amount = 0  # Amount of loan received
+        self.permit_put = None  # Time put request for building permit
+        self.permit_get = None  # Time get requested building permit
+        self.home_search_start = None  # Time started searching for a new home
+        self.home_search_stop = None  # Time found a new home
+        self.money_search_start = None  # Time that household started search for money
+        self.money_search_stop = None  # Time that household found rebuild money
         self.gave_up_money_search = False  # Whether household gave up search for money
         self.gave_up_home_search = False  # Whether household gave up search for home 
         
@@ -68,11 +68,12 @@ class Household(object):
         if write_story == True:
             # Set story with non-disaster attributes.
             self.story.append(
-            '{0} lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(self.name, 
+            "{0} lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. Its damage level from the event was {5}.".format(self.name.title(), 
                                                             self.residence.bedrooms, 
                                                             self.residence.occupancy,
                                                             self.residence.address,
-                                                            self.residence.value
+                                                            self.residence.value,
+                                                            self.residence.damage_state
                                                             )
             )
 

@@ -76,7 +76,7 @@ def inspection(simulation, human_capital, structure, entity = None,
         if write_story == True:
             
             entity.story.append(
-                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage. ".format(entity.inspection_get, entity.name.title(), entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -116,8 +116,8 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
             #If true, write claim submission time to story.
             if write_story == True:
                 entity.story.append(
-                    '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
-                        entity.name, entity.claim_put)
+                    "{0} submitted an insurance claim {1:.0f} days after the event. ".format(
+                        entity.name.title(), entity.claim_put)
                     )
             
             # Submit request for insurance adjusters.
@@ -144,8 +144,8 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
             #If true, write process outcome to story.
             if write_story == True:
                 entity.story.append(
-                    '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
-                        entity.name, 
+                    "{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. ".format(
+                        entity.name.title(), 
                         entity.claim_payout,
                         entity.claim_get
                         )
@@ -155,8 +155,8 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
         #If true, write that the process was interrupted to their story.
         if write_story == True:
             entity.story.append(
-                    '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
-                    entity.name, i.cause))
+                    "{0} gave up during the insurance claim process after a {1} day search for money. ".format(
+                    entity.name.title(), i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -194,8 +194,8 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
             #If true, write FEMA request time to story.
             if write_story == True:    
                 entity.story.append(
-                    '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
-                        entity.name, entity.assistance_put
+                    "{0} submitted a request to FEMA {1:.0f} days after the event. ".format(
+                        entity.name.title(), entity.assistance_put
                         )
                     )
             # Request a FEMA processor to review aid application.
@@ -217,7 +217,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
 
             # If requesting assistance, determine if FEMA has money left to 
             # provide assistance.
-            if entity.assistance_request <= financial_capital.fema_aid.level:
+            if entity.assistance_request <= financial_capital.fema_aid.level and entity.assistance_request != 0:
                 # FEMA has enough money to fully pay requested amount.
                 entity.assistance_payout = entity.assistance_request
                 entity.money_to_rebuild += entity.assistance_payout
@@ -229,8 +229,8 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                 #If true, write process outcome to story.
                 if write_story == True:
                     entity.story.append(
-                        '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                            entity.name,
+                        "{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. ".format(
+                            entity.name.title(),
                             entity.assistance_payout,
                             entity.assistance_get
                             )
@@ -248,9 +248,9 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                 #If true, write process outcome to story.
                 if write_story == True:
                     entity.story.append(
-                     '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
+                     "{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. "
                      .format(
-                                entity.name,
+                                entity.name.title(),
                                 entity.assistance_request,
                                 entity.assistance_payout,
                                 entity.assistance_get
@@ -263,8 +263,8 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                 #If true, write process outcome to story.
                 if write_story == True:
                     entity.story.append(
-                    '{0} received no money from FEMA because of inadequate funding. '
-                    .format(entity.name)
+                    "{0} received no money from FEMA because of inadequate funding. "
+                    .format(entity.name.title())
                     )
             
     # Catch any interrupt from another process.      
@@ -272,8 +272,8 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
         #If true, write process outcome to story.
         if write_story == True:
             entity.story.append(
-                    '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
-                        entity.name, i.cause)
+                    "{0} gave up during the FEMA assistance process after a {1} day search for money. ".format(
+                        entity.name.title(), i.cause)
                     )
 
     if callbacks is not None:
@@ -319,8 +319,8 @@ def engineering_assessment(simulation, human_capital, entity, write_story = Fals
     # If true, write the outcome of the process to story.
     if write_story == True:
         entity.story.append(
-        '{0} received an engineering assessment {1:.0f} days after the event. '
-        .format(entity.name, entity.assessment_get)
+        "{0} received an engineering assessment {1:.0f} days after the event. "
+        .format(entity.name.title(), entity.assessment_get)
         )
 
     if callbacks is not None:
@@ -358,8 +358,8 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
             if write_story == True:
                    
                 entity.story.append(
-                    '{0} submitted a loan application {1:.0f} days after the event. '.format(
-                        entity.name, entity.loan_put)
+                    "{0} submitted a loan application {1:.0f} days after the event. ".format(
+                        entity.name.title(), entity.loan_put)
                     )
             
             # Request a loan processor.
@@ -392,15 +392,15 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
                 
                     entity.story.append(
                     "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
-                    .format(entity.name, entity.loan_amount, entity.loan_get))
+                    .format(entity.name.title(), entity.loan_amount, entity.loan_get))
 
     # Handle any interrupt from another process.
     except Interrupt as i:
         #If true, write interrupt outcome to story.
         if write_story == True:
             entity.story.append(
-                    '{0} gave up during the loan approval process after a {1} day search for money. '.format(
-                    entity.name, i.cause))
+                    "{0} gave up during the loan approval process after a {1} day search for money. ".format(
+                    entity.name.title(), i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -444,7 +444,7 @@ def permit(simulation, human_capital, entity, write_story = False, callbacks = N
     if write_story == True:
         entity.story.append(
         "{0} received permit approval {1:.0f} days after the event. "
-        .format(entity.name, entity.permit_get)
+        .format(entity.name.title(), entity.permit_get)
         )
 
     if callbacks is not None:

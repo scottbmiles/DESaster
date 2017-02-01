@@ -71,8 +71,8 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # If True, write outcome of successful rebuild to story.
             if write_story == True:
                 household.story.append(
-                    '{0}\'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. '.format(
-                        household.name,
+                    "{0}'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. ".format(
+                        household.name.title(),
                         household.home_get,
                         household.home_get - household.home_put
                     )
@@ -83,8 +83,8 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # If true, write outcome of the process to their story
             if write_story == True:
                 household.story.append(
-                'There were insufficient construction materials available in the area for {0} to rebuild. '
-                .format(household.name)
+                "There were insufficient construction materials available in the area for {0} to rebuild. "
+                .format(household.name.title())
                 )
             
             return
@@ -94,8 +94,8 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # If true, write outcome of the process to their story
             if write_story == True:
                 household.story.append(
-                    '{0} was unable to get enough money to rebuild. '.format(
-                    household.name))
+                    "{0} was unable to get enough money to rebuild. ".format(
+                    household.name.title()))
             
             return
     
@@ -104,8 +104,8 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         # If true, write outcome of the process to their story
         if write_story == True:
             household.story.append(
-                    '{0} gave up {1:.0f} days into the home rebuilding process. '.format(
-                    household.name, i.cause))
+                    "{0} gave up {1:.0f} days into the home rebuilding process. ".format(
+                    household.name.title(), i.cause))
 
     if callbacks is not None:
         yield simulation.process(callbacks)

@@ -46,8 +46,8 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     patience_end = household.home_search_start + search_patience
     if write_story == True:
         household.story.append(
-            '{0} started searching for a {1} with a value under ${2:,.0f} {3:,.0f} days after the event. '.format(
-            household.name, household.residence.occupancy,
+            "{0} started searching for a {1} with a value under ${2:,.0f} {3:,.0f} days after the event. ".format(
+            household.name.title(), household.residence.occupancy,
             household.residence.value, household.home_search_start)
             )
     
@@ -83,10 +83,10 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
         # the search.
         if write_story == True:
             household.story.append(
-                'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
+                "On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. ".format(
                     simulation.now,
                     simulation.now - household.home_search_start, 
-                    household.name
+                    household.name.title()
                     )
                 )
         
@@ -106,9 +106,9 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     # household's story.
     if write_story == True:
         household.story.append(
-            'On day {0:,.0f}, {1} received a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
+            "On day {0:,.0f}, {1} received a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. ".format(
                 household.home_search_stop,
-                household.name, household.residence.occupancy, 
+                household.name.title(), household.residence.occupancy, 
                 household.residence.address, 
                 household.residence.value, 
                 household.residence.damage_value
@@ -151,8 +151,8 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         # If True, append search outcome to story.
         if write_story == True:
             entity.story.append(
-                '{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. '.format(
-                                    entity.name,
+                "{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. ".format(
+                                    entity.name.title(),
                                     entity.money_to_rebuild
                                     )
                                 )
@@ -265,8 +265,8 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
     # If write_story is True, then append money search outcome to entity's story.
     if write_story == True:
         entity.story.append(
-            'It took {0} {1:.0f} days to receive enough financial assistance and now has ${2:,.0f} to rebuild. '.format(
-                    entity.name,
+            "It took {0} {1:.0f} days to receive enough financial assistance and now has ${2:,.0f} to rebuild. ".format(
+                    entity.name.title(),
                     search_duration,
                     entity.money_to_rebuild
                     )
