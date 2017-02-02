@@ -34,26 +34,40 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
     # Use exception handling in case process is interrupted by another process.
     try: 
 
-        # If household has enough money & there is enough available construction 
-        # materials in the region, then rebuild.
-        if (household.money_to_rebuild >= household.residence.damage_value and
-        household.residence.damage_value <= financial_capital.building_materials.level):
-            # Record time put in request for home rebuild.
-            household.home_put = simulation.now
-            
-            # Put in request for contractors to repair home.
-            contractors_request = human_capital.contractors.request()
-            yield contractors_request
+        
+        # Record time put in request for home rebuild.
+        household.home_put = simulation.now
+        
+        # Put in request for contractors to repair home.
+        contractors_request = human_capital.contractors.request()
+        yield contractors_request
 
-            # Get the rebuild time for the household from config.py
-            # which imports the HAZUS repair time look up table.
-            # Rebuild time is based on occupancy type and damage state.
-            rebuild_time = building_repair_times.ix[household.residence.occupancy][household.residence.damage_state]
+        # Get the rebuild time for the household from config.py
+        # which imports the HAZUS repair time look up table.
+        # Rebuild time is based on occupancy type and damage state.
+        rebuild_time = building_repair_times.ix[household.residence.occupancy][household.residence.damage_state]
 
-            # Obtain necessary construction materials from regional inventory.
-            # materials_cost_pct is % of damage value related to building materials 
-            # (vs. labor and profit)
+        # Obtain necessary construction materials from regional inventory.
+        # materials_cost_pct is % of damage value related to building materials 
+        # (vs. labor and profit)
+        
+        if household.residence.damage_value >= financial_capital.building_materials.level:
+        # If true, write outcome of the process to their story
+            if write_story == True:
+                household.story.append(
+                "There were insufficient construction materials available in the area for {0} to rebuild. "
+                .format(household.name.title())
+                )
+        if household.money_to_rebuild < household.residence.damage_value:
+            # If true, write outcome of the process to their story
+            if write_story == True:
+                household.story.append(
+                    "{0} was unable to get enough money to rebuild. ".format(
+                    household.name.title()))
+        
+        try:
             yield financial_capital.building_materials.get(household.residence.damage_value * materials_cost_pct)
+
 
             # Yield timeout equivalent to rebuild time.
             yield simulation.timeout(rebuild_time)
@@ -70,34 +84,14 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
 
             # If True, write outcome of successful rebuild to story.
             if write_story == True:
-                household.story.append(
-                    "{0}'s home was repaired {1:,.0f} days after the event, taking {2:.0f} days to repair. ".format(
+                household.story.append("{0}'s home was repaired {1:.0f} days after the event, taking {2:.0f} days to repair. ".format(
                         household.name.title(),
                         household.home_get,
-                        household.home_get - household.home_put
-                    )
-                )
-        
-        # Deal with case that insufficient construction materials are available.
-        if household.residence.damage_value > financial_capital.building_materials.level:
-            # If true, write outcome of the process to their story
+                        household.home_get - household.home_put))
+        except ValueError as e:
             if write_story == True:
-                household.story.append(
-                "There were insufficient construction materials available in the area for {0} to rebuild. "
-                .format(household.name.title())
-                )
-            
-            return
+                household.story.append("There were insufficient construction materials available in the area for {0} to rebuild. ".format(household.name.title()))
         
-        # Deal with case that household does not have enough money to rebuild.
-        if household.money_to_rebuild < household.residence.damage_value:
-            # If true, write outcome of the process to their story
-            if write_story == True:
-                household.story.append(
-                    "{0} was unable to get enough money to rebuild. ".format(
-                    household.name.title()))
-            
-            return
     
     # Handle any interrupt thrown by another process
     except Interrupt as i: 

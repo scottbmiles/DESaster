@@ -58,21 +58,26 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
 
     # Define a FilterStore get process to find a new home from the vacant 
     # housing stock with similar attributes as current home.
-    new_residence = housing_stock.get(lambda getResidence:
-                    (
-                        getResidence.damage_state == 'None'
-                        or getResidence.damage_state == 'Slight'
-                    )
-                    and getResidence.occupancy == household.residence.occupancy
-                    and getResidence.value < household.residence.value
-                    and getResidence.inspected == True
-                   )
-    
+    def find_res(simulation):
+        
+        new_residence = yield housing_stock.get(lambda getResidence:
+                        (
+                            getResidence.damage_state == 'None'
+                            or getResidence.damage_state == 'Slight'
+                        )
+                        and getResidence.occupancy == household.residence.occupancy
+                        and getResidence.value < household.residence.value
+                        and getResidence.inspected == True
+                       )
+        yield housing_stock.put(household.residence)
+        household.residence = new_residence
+        household.old_house = (household.residence.latitude, household.residence.longitude)
+        household.moved = 1
+    find_a_res = simulation.process(find_res(simulation))
     # Yield both the patience timeout and the housing stock FilterStore get.
     # Wait until one or the other process is completed.
     # Assign the process that is completed first to the variable.
-    home_search_outcome = yield find_search_patience | new_residence
-    
+    home_search_outcome = yield find_search_patience | find_a_res
     # Exit the function if the patience timeout completes before a suitable 
     # home is found in the housing stock.
     if home_search_outcome == {find_search_patience: 'Gave up'}:
@@ -90,14 +95,14 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                     )
                 )
         
-        return
+        
     
     # If a new home is found before patience runs out place household's current 
     # residence in vacant housing stock -- "sell" the house.
     yield housing_stock.put(household.residence)
     
     # Set the newly found residence as the household's residence.
-    household.residence = home_search_outcome[new_residence]
+    #household.residence = home_search_outcome
     
     # Record the time that the housing search ends.
     household.home_search_stop = simulation.now
@@ -156,7 +161,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
                                     entity.money_to_rebuild
                                     )
                                 )
-        return
+        
     
     # If entity has insurance then yield an insurance claim request, the duration
     # of which is limited by entity's money search patience.
@@ -190,7 +195,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         if money_search_outcome == {find_search_patience: 'Gave up'}:
             entity.gave_up_money_search = True
             try_insurance.interrupt(simulation.now - entity.money_search_start)
-            return
+            
     
     # If entity (still) does not have enough rebuild money then yield an FEMA aid
     # request, the duration of which is limited by entity's money search patience.
@@ -223,7 +228,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         if money_search_outcome == {find_search_patience: 'Gave up'}:
             entity.gave_up_money_search = True
             try_fema.interrupt(simulation.now - entity.money_search_start)
-            return 
+             
     
     # If entity (still) does not have enough rebuild money then yield a loan 
     # request, the duration of which is limited by entity's money search patience.
@@ -255,7 +260,8 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         if money_search_outcome == {find_search_patience: 'Gave up'}:
             entity.gave_up_money_search = True
             try_loan.interrupt(simulation.now - entity.money_search_start)
-            return
+            print("Loan Interrupted.")
+            
     
     # Record the time and duration when entity's search for money ends without 
     # giving up.

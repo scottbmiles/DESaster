@@ -55,7 +55,7 @@ class Household(object):
         self.money_search_stop = None  # Time that household found rebuild money
         self.gave_up_money_search = False  # Whether household gave up search for money
         self.gave_up_home_search = False  # Whether household gave up search for home 
-        
+        self.old_house = None #Location of old house, in a tuple
         # Initial method calls
         self.setStory(write_story)  # Start stories with non-disaster attributes
     

@@ -21,7 +21,7 @@ permit(simulation, human_capital, entity, write_story = False,
 from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
-from desaster.config import permit_process_time
+from desaster.config import permit_process_time, fema_max_assistance
 
 def inspection(simulation, human_capital, structure, entity = None, 
     write_story = False, callbacks = None):
@@ -211,9 +211,10 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
             # Record time received FEMA assistance.
             entity.assistance_get = simulation.now
 
-            # Must subtract any insurance payout from FEMA payout.
-            entity.assistance_request = (entity.residence.damage_value 
-                                        - entity.claim_payout)
+            # Must subtract any insurance payout from FEMA payout, and Choose the lesser of 
+            #max assistance and deducted total
+            entity.assistance_request = min(fema_max_assistance, (entity.residence.damage_value 
+                                        - entity.claim_payout))
 
             # If requesting assistance, determine if FEMA has money left to 
             # provide assistance.
@@ -347,6 +348,7 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
     # Exception handling in case interrupted by another process.
     try:
         # Ensure entity does not have enough money to rebuild.
+        
         if entity.money_to_rebuild >= entity.residence.damage_value:
             return
         else:

@@ -19,37 +19,38 @@ random.seed(69)
 # Parameters for defining a normal distribution for representing the duration
 # required to inspect structures from the time of a hazard event.
 inspection_mean = 1.0
-inspection_std = 0
+inspection_std = 1
 inspection_time = abs(random.gauss(inspection_mean, inspection_std))
 
 # Parameters for defining a normal distribution for representing the duration
 # required to process an insurance claim from time claim is submitted.
 adjuster_mean = 15.0
-adjuster_std = 0.0
+adjuster_std = 1
 adjuster_time = abs(random.gauss(adjuster_mean, adjuster_std))
 
 # Parameters for defining a normal distribution for representing the duration
 # required to process an FEMA aid request from time request is submitted.
 fema_process_mean = 20.0
-fema_process_std = 0.0
+fema_process_std = 1
 fema_process_time = abs(random.gauss(fema_process_mean, fema_process_std))
+fema_max_assistance = 30000 #highest payout allowed by fema to individuals
 
 # Parameters for defining a normal distribution for representing the duration
 # required to conduct engineering assessment from time assessment is requested.
 engineering_mean = 25.0
-engineering_std = 0.0
+engineering_std = 1
 engineering_assessment_time = abs(random.gauss(engineering_mean, engineering_std))
 
 # Parameters for defining a normal distribution for representing the duration
 # required to process a loan application from time application is submitted.
 loan_process_mean = 30.0
-loan_process_std = 0.0
+loan_process_std = 1
 loan_process_time = abs(random.gauss(loan_process_mean, loan_process_std))
 
 # Parameters for defining a normal distribution for representing the duration
 # required to process building permit request from time permit is requested.
 permit_process_mean = 35.0
-permit_process_std = 0.0
+permit_process_std = 1
 permit_process_time = abs(random.gauss(permit_process_mean, permit_process_std))
 
 # % of damage value related to building materials (vs. labor and profit)
