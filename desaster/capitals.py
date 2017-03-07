@@ -137,7 +137,7 @@ class Building(BuiltCapital):
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
     def setBuildingArea(self, building):
-        self.cost = building['Area']  # Floor area of building
+        self.area = building['Area']  # Floor area of building
     def setDamageValue(self, building):
         """Calculate damage value for building based on occupancy type and
         HAZUS damage state.
