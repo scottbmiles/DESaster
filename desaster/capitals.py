@@ -119,13 +119,17 @@ class Building(BuiltCapital):
         simulation -- Pointer to SimPy simulation environment.
         building -- A dataframe row with required building attributes.
         """
-        
+        #since we're overriding the base class init, we need to call it 
+        #to maintain its attributes, unless we're explicitely changing
+        #the structure
         BuiltCapital.__init__(self, simulation, building)
         
         
         self.setAddress(building)
         self.setOccupancy(building)
         self.setDamageValue(building)
+        self.setCoordinates(building)
+        self.setBuildingArea(building)
        
         self.owner = []  # Owner of building as Household() entity %***%
         self.occupant = [] # %***%
@@ -134,10 +138,25 @@ class Building(BuiltCapital):
         
     def setAddress(self, building):
         self.address = building['Address']  # Address of building
+        try: #if address isn't in dataframe, we'll just set it to none
+            self.address = building['Address']  # Address of building
+        except KeyError as e:
+            self.address = None
+    
+    def setCoordinates(self, building):
+        try: #if lat/long aren't in data, we'll set to none
+            self.latitude = building['Latitude']
+            self.longitude = building['Longitude']
+        except KeyError as e:
+            self.latitude = None
+            self.longitude = None
+    
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
+    
     def setBuildingArea(self, building):
         self.area = building['Area']  # Floor area of building
+    
     def setDamageValue(self, building):
         """Calculate damage value for building based on occupancy type and
         HAZUS damage state.
@@ -178,7 +197,7 @@ class Residence(Building):
         self.setBedrooms(residence)
         self.setBathrooms(residence)
        
-
+        # self.id = residence["ID Number"] # Derek's addition. Not sure why.
     def setOccupancy(self, residence):
         # Verify that residence dataframe has expected occupancy types
         if residence['Occupancy'] in ('Single Family Dwelling',
@@ -206,3 +225,6 @@ def importHousingStock(simulation, stock_df):
         stock_fs.put(Residence(simulation, stock_df.loc[i]))
 
     return stock_fs
+    
+def reloadBuildingMaterial(simulation, building_material, amount=2000000):
+    yield building_material.put(amount)

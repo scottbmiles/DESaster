@@ -85,4 +85,6 @@ acceleration_damage_ratios = pd.read_excel(hazus_parameters_file,
 drift_damage_ratios = pd.read_excel(hazus_parameters_file, 
                         sheetname='Deflect non-struc repair cost', 
                         index_col='Occupancy')
-                     
+
+#Highest payout allowed by FEMA to individuals
+fema_max_assistance = 30000                      

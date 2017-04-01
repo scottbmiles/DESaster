@@ -126,10 +126,10 @@ class Household(object):
         
         # Household simulation outputs
         self.story = []  # The story of events for each household
-        self.home_search_start = 0.0  # Time started searching for a new home
-        self.home_search_stop = 0.0  # Time found a new home
-        self.money_search_start = 0.0  # Time that household started search for money
-        self.money_search_stop = 0.0  # Time that household found rebuild money
+        self.home_search_start = None  # Time started searching for a new home
+        self.home_search_stop = None  # Time found a new home
+        self.money_search_start = None  # Time that household started search for money
+        self.money_search_stop = None  # Time that household found rebuild money
         self.gave_up_money_search = False  # Whether household gave up search for money
         self.gave_up_home_search = False  # Whether household gave up search for home 
         
@@ -176,23 +176,23 @@ class Owner(Household):
 
          
         # Owner simulation outputs
-        self.inspection_put = 0.0  # Time put request in for house inspection
-        self.inspection_get = 0.0  # Time get  house inspection
-        self.claim_put = 0.0  # Time put request in for insurance settlement
-        self.claim_get = 0.0  # Time get insurance claim settled
+        self.inspection_put = None  # Time put request in for house inspection
+        self.inspection_get = None  # Time get  house inspection
+        self.claim_put = None  # Time put request in for insurance settlement
+        self.claim_get = None  # Time get insurance claim settled
         self.claim_payout = 0.0  # Amount of insurance claim payout
-        self.assistance_put = 0.0  # Time put request in for FEMA assistance
-        self.assistance_get = 0.0  # Time get FEMA assistance
+        self.assistance_put = None  # Time put request in for FEMA assistance
+        self.assistance_get = None  # Time get FEMA assistance
         self.assistance_request = 0.0  # Amount of money requested from FEMA
         self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
         self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
-        self.home_put = 0.0  # Time put request in for house rebuild
-        self.home_get = 0.0  # Time get house rebuild completed
-        self.loan_put = 0.0  # Time put request for loan
-        self.loan_get = 0.0  # Time get requested loan
+        self.home_put = None  # Time put request in for house rebuild
+        self.home_get = None  # Time get house rebuild completed
+        self.loan_put = None  # Time put request for loan
+        self.loan_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
-        self.permit_put = 0.0  # Time put request for building permit
-        self.permit_get = 0.0  # Time get requested building permit
+        self.permit_put = None  # Time put request for building permit
+        self.permit_get = None  # Time get requested building permit
         
         # Initial method calls
         
@@ -291,25 +291,25 @@ class Landlord(object):
          
         # Household simulation outputs
         self.story = []  # The story of events for each household
-        self.inspection_put = 0.0  # Time put request in for house inspection
-        self.inspection_get = 0.0  # Time get  house inspection
-        self.claim_put = 0.0  # Time put request in for insurance settlement
-        self.claim_get = 0.0  # Time get insurance claim settled
+        self.inspection_put = None  # Time put request in for house inspection
+        self.inspection_get = None  # Time get  house inspection
+        self.claim_put = None  # Time put request in for insurance settlement
+        self.claim_get = None  # Time get insurance claim settled
         self.claim_payout = 0.0  # Amount of insurance claim payout
-        self.assistance_put = 0.0  # Time put request in for FEMA assistance
-        self.assistance_get = 0.0  # Time get FEMA assistance
+        self.assistance_put = None  # Time put request in for FEMA assistance
+        self.assistance_get = None  # Time get FEMA assistance
         self.assistance_request = 0.0  # Amount of money requested from FEMA
         self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
 
-        self.home_put = 0.0  # Time put request in for house rebuild
-        self.home_get = 0.0  # Time get house rebuild completed
-        self.loan_put = 0.0  # Time put request for loan
-        self.loan_get = 0.0  # Time get requested loan
+        self.home_put = None  # Time put request in for house rebuild
+        self.home_get = None  # Time get house rebuild completed
+        self.loan_put = None  # Time put request for loan
+        self.loan_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
-        self.permit_put = 0.0  # Time put request for building permit
-        self.permit_get = 0.0  # Time get requested building permit
-        self.money_search_start = 0.0  # Time that household started search for money
-        self.money_search_stop = 0.0  # Time that household found rebuild money
+        self.permit_put = None  # Time put request for building permit
+        self.permit_get = None  # Time get requested building permit
+        self.money_search_start = None  # Time that household started search for money
+        self.money_search_stop = None  # Time that household found rebuild money
         self.gave_up_money_search = False  # Whether household gave up search for money
         self.gave_up_home_search = False  # Whether household gave up search for home 
         

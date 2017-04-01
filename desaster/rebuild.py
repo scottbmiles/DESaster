@@ -71,7 +71,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             if write_story == True:
                 household.story.append(
                     '{0}\'s {1} was repaired {2:,.0f} days after the event, taking {3:.0f} days to repair. '.format(
-                        household.name, household.residence.occupancy.lower(),
+                        household.name.title(), household.residence.occupancy.lower(),
                         household.home_get,
                         household.home_get - household.home_put
                     )
@@ -88,7 +88,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             if write_story == True:
                 household.story.append(
                 'There were insufficient construction materials available in the area for {0} to rebuild. '
-                .format(household.name)
+                .format(household.name.title())
                 )
             
             return
@@ -99,7 +99,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             if write_story == True:
                 household.story.append(
                     '{0} was unable to get enough money to rebuild or repair. '.format(
-                    household.name))
+                    household.name.title()))
             
             return
     
@@ -109,7 +109,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         if write_story == True:
             household.story.append(
                     '{0} gave up {1:.0f} days into the rebuilding process. '.format(
-                    household.name, i.cause))
+                    household.name.title(), i.cause))
 
     if callbacks is not None:
         yield simulation.process(callbacks)

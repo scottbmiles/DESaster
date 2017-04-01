@@ -22,7 +22,7 @@ reoccupy(simulation, entity, write_story = False, callbacks = None):
 from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
-from desaster.config import permit_process_time, movein_time
+from desaster.config import permit_process_time, movein_time, fema_max_assistance
 from desaster import entities
 
 def inspection(simulation, human_capital, structure, entity = None, 
@@ -79,7 +79,7 @@ def inspection(simulation, human_capital, structure, entity = None,
             
             entity.story.append(
                             "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage.".format(
-                            entity.name, entity.residence.occupancy.lower(),
+                            entity.name.title(), entity.residence.occupancy.lower(),
                             entity.inspection_get, entity.residence.damage_value))
 
     if callbacks is not None:
@@ -114,7 +114,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
             if write_story == True:
                 entity.story.append(
                     '{0} has no hazard insurance. '.format(
-                        entity.name
+                        entity.name.title()
                         )
                     )
             return
@@ -128,7 +128,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
             if write_story == True:
                 entity.story.append(
                     '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
-                        entity.name, entity.claim_put)
+                        entity.name.title(), entity.claim_put)
                     )
             
             # The insurance deductible is the fraction of home value not
@@ -143,7 +143,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
                 if write_story == True:
                     entity.story.append(
                         '{0}\'s insurance deductible is greater than the value of damage. '.format(
-                        entity.name)
+                        entity.name.title())
                         )   
                 entity.claim_get = simulation.now
                 return
@@ -169,7 +169,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
             if write_story == True:
                 entity.story.append(
                     '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
-                        entity.name, 
+                        entity.name.title(), 
                         entity.claim_payout,
                         entity.claim_get
                         )
@@ -180,7 +180,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
         if write_story == True:
             entity.story.append(
                     '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
-                    entity.name, i.cause))
+                    entity.name.title(), i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -219,7 +219,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
             if write_story == True:    
                 entity.story.append(
                     '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
-                        entity.name, entity.assistance_put
+                        entity.name.title(), entity.assistance_put
                         )
                     )
             # Request a FEMA processor to review aid application.
@@ -235,13 +235,14 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
             # Record time received FEMA assistance.
             entity.assistance_get = simulation.now
 
-            # Must subtract any insurance payout from FEMA payout.
-            entity.assistance_request = (entity.residence.damage_value 
-                                        - entity.claim_payout)
+            # Must subtract any insurance payout from FEMA payout and choose the lesser of 
+            #max assistance and deducted total
+            entity.assistance_request = min(fema_max_assistance, (entity.residence.damage_value 
+                                        - entity.claim_payout))
 
             # If requesting assistance, determine if FEMA has money left to 
             # provide assistance.
-            if entity.assistance_request <= financial_capital.fema_aid.level:
+            if entity.assistance_request <= financial_capital.fema_aid.level and entity.assistance_request != 0:
                 # FEMA has enough money to fully pay requested amount.
                 entity.assistance_payout = entity.assistance_request
                 entity.money_to_rebuild += entity.assistance_payout
@@ -254,7 +255,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                 if write_story == True:
                     entity.story.append(
                         '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                            entity.name,
+                            entity.name.title(),
                             entity.assistance_payout,
                             entity.assistance_get
                             )
@@ -274,7 +275,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                     entity.story.append(
                      '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
                      .format(
-                                entity.name,
+                                entity.name.title(),
                                 entity.assistance_request,
                                 entity.assistance_payout,
                                 entity.assistance_get
@@ -288,7 +289,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                 if write_story == True:
                     entity.story.append(
                     '{0} received no money from FEMA because of inadequate funding. '
-                    .format(entity.name)
+                    .format(entity.name.title())
                     )
             
     # Catch any interrupt from another process.      
@@ -297,7 +298,7 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
         if write_story == True:
             entity.story.append(
                     '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
-                        entity.name, i.cause)
+                        entity.name.title(), i.cause)
                     )
 
     if callbacks is not None:
@@ -344,7 +345,7 @@ def engineering_assessment(simulation, human_capital, entity, write_story = Fals
     if write_story == True:
         entity.story.append(
         '{0} received an engineering assessment {1:.0f} days after the event. '
-        .format(entity.name, entity.assessment_get)
+        .format(entity.name.title(), entity.assessment_get)
         )
 
     if callbacks is not None:
@@ -383,7 +384,7 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
                    
                 entity.story.append(
                     '{0} submitted a loan application {1:.0f} days after the event. '.format(
-                        entity.name, entity.loan_put)
+                        entity.name.title(), entity.loan_put)
                     )
             
             # Request a loan processor.
@@ -416,7 +417,7 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
                 
                     entity.story.append(
                     "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
-                    .format(entity.name, entity.loan_amount, entity.loan_get))
+                    .format(entity.name.title(), entity.loan_amount, entity.loan_get))
 
     # Handle any interrupt from another process.
     except Interrupt as i:
@@ -424,7 +425,7 @@ def loan(simulation, human_capital, entity, write_story = False, callbacks = Non
         if write_story == True:
             entity.story.append(
                     '{0} gave up during the loan approval process after a {1} day search for money. '.format(
-                    entity.name, i.cause))
+                    entity.name.title(), i.cause))
     
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -468,7 +469,7 @@ def permit(simulation, human_capital, entity, write_story = False, callbacks = N
     if write_story == True:
         entity.story.append(
         "{0} received permit approval {1:.0f} days after the event. "
-        .format(entity.name, entity.permit_get)
+        .format(entity.name.title(), entity.permit_get)
         )
 
     if callbacks is not None:
@@ -504,7 +505,7 @@ def reoccupy(simulation, entity, write_story = False, callbacks = None):
         if write_story == True:
             
             entity.story.append(
-                            "{0} terminated {1}\'s lease {2:.0f} days after the event. ".format(entity.landlord.name, entity.name, simulation.now)
+                            "{0} terminated {1}\'s lease {2:.0f} days after the event. ".format(entity.landlord.name.title(), entity.name.title(), simulation.now)
                             )
         
             return
@@ -517,7 +518,7 @@ def reoccupy(simulation, entity, write_story = False, callbacks = None):
 #        if write_story == True:
 #            
 #            entity.story.append(
-#                            "{0} could not afford a rent increase and was displaced. ".format(entity.name)
+#                            "{0} could not afford a rent increase and was displaced. ".format(entity.name.title())
 #                            )
 #        
 #        return
@@ -529,7 +530,7 @@ def reoccupy(simulation, entity, write_story = False, callbacks = None):
     if write_story == True:
         
         entity.story.append(
-                        "{0} reoccupied the {1} {2:.0f} days after the event. ".format(entity.name, entity.residence.occupancy.lower(), simulation.now)
+                        "{0} reoccupied the {1} {2:.0f} days after the event. ".format(entity.name.title(), entity.residence.occupancy.lower(), simulation.now)
                         )
     
     return

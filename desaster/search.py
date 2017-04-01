@@ -57,7 +57,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
         if write_story == True:
             household.story.append(
                 '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
-                household.name, household.residence.occupancy.lower(),
+                household.name.title(), household.residence.occupancy.lower(),
                 household.home_search_start)
                 )
         new_residence = housing_stock.get(lambda getResidence:
@@ -77,7 +77,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
         if write_story == True:
             household.story.append(
                 '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
-                household.name, household.prior_residence.occupancy.lower(),
+                household.name.title(), household.prior_residence.occupancy.lower(),
                 household.home_search_start)
                 )
  
@@ -110,7 +110,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                 'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
                     simulation.now,
                     simulation.now - household.home_search_start, 
-                    household.name
+                    household.name.title()
                     )
                 )
         
@@ -139,7 +139,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
             household.story.append(
                 'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
                     household.home_search_stop,
-                    household.name, household.residence.occupancy.lower(), 
+                    household.name.title(), household.residence.occupancy.lower(), 
                     household.residence.address, 
                     household.residence.value, 
                     household.residence.damage_value
@@ -153,7 +153,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
             household.story.append(
                 'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f} and ${5:,.0f} of damage. '.format(
                     household.home_search_stop,
-                    household.name, household.residence.occupancy.lower(), 
+                    household.name.title(), household.residence.occupancy.lower(), 
                     household.residence.address, 
                     household.residence.cost, 
                     household.residence.damage_value
@@ -196,7 +196,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         if write_story == True:
             entity.story.append(
                 '{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. '.format(
-                                    entity.name,
+                                    entity.name.title(),
                                     entity.money_to_rebuild
                                     )
                                 )
@@ -310,7 +310,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
     if write_story == True:
         entity.story.append(
             'It took {0} {1:.0f} days to receive enough financial assistance and now has ${2:,.0f} to rebuild. '.format(
-                    entity.name,
+                    entity.name.title(),
                     search_duration,
                     entity.money_to_rebuild
                     )
