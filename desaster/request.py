@@ -15,13 +15,15 @@ engineering_assessment(simulation, human_capital, entity, write_story = False,
 loan(simulation, human_capital, entity, write_story = False, callbacks = None)
 permit(simulation, human_capital, entity, write_story = False, 
             callbacks = None)
+reoccupy(simulation, entity, write_story = False, callbacks = None):
 
 @author: Derek Huling, Scott Miles
 """
 from simpy import Interrupt
 from desaster.config import inspection_time, adjuster_time, fema_process_time
 from desaster.config import engineering_assessment_time, loan_process_time
-from desaster.config import permit_process_time
+from desaster.config import permit_process_time, movein_time
+from desaster import entities
 
 def inspection(simulation, human_capital, structure, entity = None, 
     write_story = False, callbacks = None):
@@ -76,7 +78,9 @@ def inspection(simulation, human_capital, structure, entity = None,
         if write_story == True:
             
             entity.story.append(
-                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage.".format(entity.inspection_get, entity.name, entity.residence.damage_value))
+                            "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage.".format(
+                            entity.name, entity.residence.occupancy.lower(),
+                            entity.inspection_get, entity.residence.damage_value))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
@@ -107,12 +111,19 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
     try: 
         # Ensure entity has insurance.
         if entity.insurance <= 0.0:
+            if write_story == True:
+                entity.story.append(
+                    '{0} has no hazard insurance. '.format(
+                        entity.name
+                        )
+                    )
             return
+        
         # Has insurance so submits a claim.
         else:  
             # Record time that claim request is put.
             entity.claim_put = simulation.now   
-            
+
             #If true, write claim submission time to story.
             if write_story == True:
                 entity.story.append(
@@ -120,19 +131,32 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
                         entity.name, entity.claim_put)
                     )
             
-            # Submit request for insurance adjusters.
+            # The insurance deductible is the fraction of home value not
+            # covered by insurance. Dollar amount of the insurance policy coverage
+            # entity.insurance is the percenage of home value covered.
+            # (e.g., if insurance = 0.85, deductible = .15)
+            deductible = entity.residence.value * (1 - entity.insurance)
+            
+            # Determine payout amount and add to entity's rebuild money.
+            # Only payout amount equal to the damage, not the full coverage.
+            if entity.residence.damage_value < deductible:
+                if write_story == True:
+                    entity.story.append(
+                        '{0}\'s insurance deductible is greater than the value of damage. '.format(
+                        entity.name)
+                        )   
+                entity.claim_get = simulation.now
+                return
+            
+            # If damage > deductible, submit request for insurance adjusters.
             request = human_capital.insurance_adjusters.request()
             yield request
 
             # Timeout process to simulate claims processing duration.
             yield simulation.timeout(adjuster_time)  
-            
-            # Determine payout amount and add to entity's rebuild money.
-            # Only payout amount equal to the damage, not the full coverage.
-            if entity.residence.damage_value < entity.insurance:
-                entity.claim_payout = entity.residence.damage_value
-            else:
-                entity.claim_payout = entity.insurance
+          
+            entity.claim_payout = entity.residence.damage_value - deductible
+
             entity.money_to_rebuild += entity.claim_payout
 
             # Record when the time when household gets claim payout
@@ -447,6 +471,69 @@ def permit(simulation, human_capital, entity, write_story = False, callbacks = N
         .format(entity.name, entity.permit_get)
         )
 
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
+
+def reoccupy(simulation, entity, write_story = False, callbacks = None):
+    """Define process for reoccupying building.
+
+    Keyword Arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household(). Defaults to none so that can inspect
+                structures that aren't associated with an entity.
+                *** Currently, this function expects that the entity *is*
+                an entities.Household() object because makes an assignment to
+                Household().residence.inspected***
+    simulation -- A simpy.Environment() object.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    write_story -- Boolean indicating whether to track a households story.
+
+    Returns or Attribute Changes:
+    entity.story -- Summary of process outcome as string.
+    """
+   
+    
+    # If is renter and no longer has a residence (.residence is an empty list) 
+    # add this event to their story as an eviction.
+    if not entity.residence and isinstance(entity, entities.Renter):
+        #If true, write process outcome to story
+        if write_story == True:
+            
+            entity.story.append(
+                            "{0} terminated {1}\'s lease {2:.0f} days after the event. ".format(entity.landlord.name, entity.name, simulation.now)
+                            )
+        
+            return
+            
+    # If is a renter and the monthly cost is greater than 30% of their income
+    # displace them by removing their residence
+    # **** Not used yet. ****
+#    if isinstance(entity, entities.Renter) and entity.residence.cost > 0.3* entity.income:
+#        #If true, write process outcome to story
+#        if write_story == True:
+#            
+#            entity.story.append(
+#                            "{0} could not afford a rent increase and was displaced. ".format(entity.name)
+#                            )
+#        
+#        return
+        
+    # Yield timeout equivalent to time required to move back into home.
+    yield simulation.timeout(movein_time)
+    
+    #If true, write process outcome to story
+    if write_story == True:
+        
+        entity.story.append(
+                        "{0} reoccupied the {1} {2:.0f} days after the event. ".format(entity.name, entity.residence.occupancy.lower(), simulation.now)
+                        )
+    
+    return
+    
     if callbacks is not None:
         yield simulation.process(callbacks)
     else:

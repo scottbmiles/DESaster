@@ -119,19 +119,25 @@ class Building(BuiltCapital):
         simulation -- Pointer to SimPy simulation environment.
         building -- A dataframe row with required building attributes.
         """
+        
+        BuiltCapital.__init__(self, simulation, building)
+        
+        
         self.setAddress(building)
         self.setOccupancy(building)
-        self.setYearBuilt(building)
-        self.setValue(building)
-        self.setDamageState(building)
         self.setDamageValue(building)
-        self.setInspection(building)
+       
+        self.owner = []  # Owner of building as Household() entity %***%
+        self.occupant = [] # %***%
+        
+        self.cost = building['Cost']  # Monthly rent/mortgage of building
+        
     def setAddress(self, building):
         self.address = building['Address']  # Address of building
     def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
     def setBuildingArea(self, building):
-        self.cost = building['Area']  # Floor area of building
+        self.area = building['Area']  # Floor area of building
     def setDamageValue(self, building):
         """Calculate damage value for building based on occupancy type and
         HAZUS damage state.
@@ -165,16 +171,14 @@ class Residence(Building):
         simulation -- Pointer to SimPy simulation environment.
         residence -- A dataframe row with required residence attributes.
         """
-        self.setAddress(residence)
-        self.setBuildingArea(residence)
+        
+        Building.__init__(self, simulation, residence) # %***%s
+        
         self.setOccupancy(residence)
         self.setBedrooms(residence)
         self.setBathrooms(residence)
-        self.setYearBuilt(residence)
-        self.setValue(residence)
-        self.setDamageState(residence)
-        self.setDamageValue(residence)
-        self.setInspection(residence)
+       
+
     def setOccupancy(self, residence):
         # Verify that residence dataframe has expected occupancy types
         if residence['Occupancy'] in ('Single Family Dwelling',

@@ -12,7 +12,7 @@ rebuild_money(simulation, human_capital, financial_capital, entity,
 
 @author: Scott Miles
 """
-from desaster import request
+from desaster import request, entities
 
 def permanent_housing(simulation, household, search_patience, housing_stock, 
                         human_capital, write_story = False):
@@ -44,30 +44,54 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     # If write_story == True, write search start time to household's story
     household.home_search_start = simulation.now
     patience_end = household.home_search_start + search_patience
-    if write_story == True:
-        household.story.append(
-            '{0} started searching for a {1} with a value under ${2:,.0f} {3:,.0f} days after the event. '.format(
-            household.name, household.residence.occupancy,
-            household.residence.value, household.home_search_start)
-            )
+
     
     # Define timeout process representing household's *remaining* search patience.
     # Return 'Gave up' if timeout process completes.
     find_search_patience = simulation.timeout(patience_end - simulation.now, 
         value='Gave up')
 
-    # Define a FilterStore get process to find a new home from the vacant 
-    # housing stock with similar attributes as current home.
-    new_residence = housing_stock.get(lambda getResidence:
-                    (
-                        getResidence.damage_state == 'None'
-                        or getResidence.damage_state == 'Slight'
-                    )
-                    and getResidence.occupancy == household.residence.occupancy
-                    and getResidence.value < household.residence.value
-                    and getResidence.inspected == True
-                   )
+    # Define a FilterStore.get process to find a new home to buy from the vacant 
+    # for sale stock with similar attributes as current home.
+    if isinstance(household, entities.Owner):
+        if write_story == True:
+            household.story.append(
+                '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
+                household.name, household.residence.occupancy.lower(),
+                household.home_search_start)
+                )
+        new_residence = housing_stock.get(lambda getResidence:
+                        (
+                            getResidence.damage_state == 'None'
+                            or getResidence.damage_state == 'Slight'
+                        )
+                        and getResidence.occupancy.lower() == household.residence.occupancy.lower()
+                        and getResidence.bedrooms == household.residence.bedrooms
+                        and getResidence.value < household.residence.value
+                        and getResidence.inspected == True
+                       )
     
+    # Define a FilterStore.get process to find a new home to rent from the vacant 
+    # rental stock with similar attributes as prior home.
+    if isinstance(household, entities.Renter):
+        if write_story == True:
+            household.story.append(
+                '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
+                household.name, household.prior_residence.occupancy.lower(),
+                household.home_search_start)
+                )
+ 
+        new_residence = housing_stock.get(lambda getResidence:
+                        (
+                            getResidence.damage_state == 'None'
+                            or getResidence.damage_state == 'Slight'
+                        )
+                        and getResidence.occupancy.lower() == household.prior_residence.occupancy.lower()
+                        and getResidence.bedrooms == household.prior_residence.bedrooms
+                        and getResidence.cost < household.prior_residence.cost
+                        and getResidence.inspected == True
+                       )
+
     # Yield both the patience timeout and the housing stock FilterStore get.
     # Wait until one or the other process is completed.
     # Assign the process that is completed first to the variable.
@@ -93,8 +117,13 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
         return
     
     # If a new home is found before patience runs out place household's current 
-    # residence in vacant housing stock -- "sell" the house.
-    yield housing_stock.put(household.residence)
+    # residence in vacant housing stock -- "sell" the house. Only do this if
+    # household has a current residence (e.g., renter evicted)
+    if household.residence:
+        yield housing_stock.put(household.residence)
+    
+    # Record household's previous residence
+    household.prior_residence = household.residence
     
     # Set the newly found residence as the household's residence.
     household.residence = home_search_outcome[new_residence]
@@ -102,19 +131,34 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     # Record the time that the housing search ends.
     household.home_search_stop = simulation.now
     
-    # If write_story is True, then write results of successful home search to
-    # household's story.
-    if write_story == True:
-        household.story.append(
-            'On day {0:,.0f}, {1} received a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
-                household.home_search_stop,
-                household.name, household.residence.occupancy, 
-                household.residence.address, 
-                household.residence.value, 
-                household.residence.damage_value
+    # Write story based on whether owner or renter
+    if isinstance(household, entities.Owner):
+        # If write_story is True, then write results of successful home search to
+        # household's story.
+        if write_story == True:
+            household.story.append(
+                'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
+                    household.home_search_stop,
+                    household.name, household.residence.occupancy.lower(), 
+                    household.residence.address, 
+                    household.residence.value, 
+                    household.residence.damage_value
+                    )
                 )
-            )
 
+    if isinstance(household, entities.Renter):
+        # If write_story is True, then write results of successful home search to
+        # household's story.
+        if write_story == True:
+            household.story.append(
+                'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f} and ${5:,.0f} of damage. '.format(
+                    household.home_search_stop,
+                    household.name, household.residence.occupancy.lower(), 
+                    household.residence.address, 
+                    household.residence.cost, 
+                    household.residence.damage_value
+                    )
+                )
 def rebuild_money(simulation, human_capital, financial_capital, entity, 
                     search_patience, write_story = False):
     """A process (generator) representing entity search for money to rebuild or 
