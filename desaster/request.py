@@ -187,7 +187,7 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
     else:
         pass
 
-def fema_assistance(simulation, human_capital, financial_capital, entity, 
+def fema_assistance(simulation, human_capital, fema_aid, entity, 
                     write_story = False, callbacks = None):
     """Define process for entity to submit request for FEMA individual assistance.
 
@@ -237,19 +237,19 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
 
             # Must subtract any insurance payout from FEMA payout and choose the lesser of 
             #max assistance and deducted total
-            entity.assistance_request = min(fema_max_assistance, (entity.residence.damage_value 
+            entity.assistance_request = min(fema_aid.max_grant, (entity.residence.damage_value 
                                         - entity.claim_payout))
 
             # If requesting assistance, determine if FEMA has money left to 
             # provide assistance.
-            if entity.assistance_request <= financial_capital.fema_aid.level and entity.assistance_request != 0:
+            if entity.assistance_request <= fema_aid.level and entity.assistance_request != 0:
                 # FEMA has enough money to fully pay requested amount.
                 entity.assistance_payout = entity.assistance_request
                 entity.money_to_rebuild += entity.assistance_payout
 
                 # Subtract payout amount from the overall amount of assistance
                 # FEMA has available to payout to all requests.
-                yield financial_capital.fema_aid.get(entity.assistance_request)
+                yield fema_aid.get(entity.assistance_request)
                 
                 #If true, write process outcome to story.
                 if write_story == True:
@@ -260,15 +260,15 @@ def fema_assistance(simulation, human_capital, financial_capital, entity,
                             entity.assistance_get
                             )
                         )
-            elif financial_capital.fema_aid.level > 0:
+            elif fema_aid.level > 0:
                 # FEMA has money left but less than requested.
                 # Set payout equal to remaining funds.
-                entity.assistance_payout = financial_capital.fema_aid.level
+                entity.assistance_payout = fema_aid.level
                 entity.money_to_rebuild += entity.assistance_payout
                 
                 # Subtract payout amount from the overall amount of assistance
                 # FEMA has available to payout to all requests.
-                yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
+                yield fema_aid.get(fema_aid.level)
                 
                 #If true, write process outcome to story.
                 if write_story == True:

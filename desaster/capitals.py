@@ -61,28 +61,39 @@ class HumanCapital(object):
         # Initial number of available engineers
         self.engineers = Resource(simulation, human_capital['Engineers'])
 
-class FinancialCapital(object):
+class FinancialCapital(Container):
     """Define class for a collection of SimPy containers that represent different types of
     financial resources used by entities during recovery processes.
     """
-    def __init__(self, simulation, financial_capital):
-        """Initiate class based on current SimPy environment and financial
-        capital dictionary.
-        
-        Keyword Arguments:
-        simulation -- Pointer to SimPy simulation environment.
-        financial_capital -- Dictionary or Pandas Series of all required financial 
-                            capital types (as keys) with associated quantities
-        """
-        # Initial $ amount of overall FEMA aid available to the
-        # recovering area.
-        self.fema_aid = Container(simulation,
-                                    init=financial_capital['FEMA Aid'])
-        # Initial $ amount of overall construction resources available to
-        # the recovering area.
-        self.building_materials = Container(simulation,
-                                    init=financial_capital['Building Materials'])
+    def __init__(self, simulation, init=0):
+        self.balance = init
+        Container.__init__(self, simulation, init=self.balance)
 
+class Grant(FinancialCapital):
+    def __init__(self, simulation, init=0):
+        FinancialCapital.__init__(self, simulation, init)
+        self.max_grant = 10000
+        self.max_income = 30000
+
+class Insurance(FinancialCapital):
+    def __init__(self, simulation, init=0):
+        FinancialCapital.__init__(self, simulation, init)
+        self.deductible = 0.25
+
+class Loan(FinancialCapital):
+    def __init__(self, simulation, init=0):
+        FinancialCapital.__init__(self, simulation, init)
+        self.max_loan = 10000
+        self.interest_rate = 0.1
+        self.max_income = 30000
+        self.min_credit_score = 650
+
+class Materials(FinancialCapital):
+    def __init__(self, simulation, init=0):
+        FinancialCapital.__init__(self, simulation, init)
+        self.unit_cost = 10000
+        self.type = "Miscellaneous"
+                
 class BuiltCapital(object):
     """Define top-level class for representing the attributes and methods
     of types of built capital.
