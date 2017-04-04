@@ -14,7 +14,7 @@ from desaster.config import building_repair_times, materials_cost_pct
 from simpy import Interrupt
 import random
 
-def home(simulation, human_capital, financial_capital, household, write_story = True, callbacks = None):
+def home(simulation, human_capital, building_materials, household, write_story = True, callbacks = None):
     """A process to rebuild a household's residence based on available contractors and
     building materials.
     
@@ -37,12 +37,12 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
         # If household has enough money & there is enough available construction 
         # materials in the region, then rebuild.
         if (household.money_to_rebuild >= household.residence.damage_value and
-        household.residence.damage_value <= financial_capital.building_materials.level):
+        household.residence.damage_value <= building_materials.level):
             # Record time put in request for home rebuild.
             household.home_put = simulation.now
             
             # Put in request for contractors to repair home.
-            contractors_request = human_capital.contractors.request()
+            contractors_request = program.staff.request()
             yield contractors_request
 
             # Get the rebuild time for the household from config.py
@@ -53,13 +53,13 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
             # Obtain necessary construction materials from regional inventory.
             # materials_cost_pct is % of damage value related to building materials 
             # (vs. labor and profit)
-            yield financial_capital.building_materials.get(household.residence.damage_value * materials_cost_pct)
+            yield building_materials.get(household.residence.damage_value * materials_cost_pct)
 
             # Yield timeout equivalent to rebuild time.
             yield simulation.timeout(rebuild_time)
 
             # Release contractors.
-            human_capital.contractors.release(contractors_request)
+            program.staff.release(contractors_request)
 
             # After successful rebuild, set damage to None & $0.
             household.residence.damage_state = 'None'
@@ -78,7 +78,7 @@ def home(simulation, human_capital, financial_capital, household, write_story = 
                 )
         
         # Deal with case that insufficient construction materials are available.
-        if household.residence.damage_value > financial_capital.building_materials.level:
+        if household.residence.damage_value > building_materials.level:
             
             # Subtract the damage_value (as cost of repair/rebuild) from household money to rebuild
             # in case they have additional expenditures

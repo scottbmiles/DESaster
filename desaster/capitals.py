@@ -22,66 +22,51 @@ from simpy import Resource, Container, FilterStore
 from desaster.config import structural_damage_ratios
 from desaster.config import acceleration_damage_ratios
 from desaster.config import drift_damage_ratios
+from desaster import config
+from scipy.stats import uniform, beta, weibull_min
 
-class HumanCapital(object):
-    """Define class for a collection of SimPy resources that represent different types of
-    human resources used by entities during recovery processes.
-    """
-    def __init__(self, simulation, human_capital):
-        """Initiate class based on current SimPy environment and human capital
-        dictionary.
+class ProgramDuration(object):
+    def __init__(self, dist='scalar', loc=0.0, scale=None, shape_a=None, shape_b=None):
+        self.dist = dist
+        self.loc = loc
+        self.scale = scale
+        self.shape_a = shape_a
+        self.shape_b = shape_b
 
-        Keyword Arguments:
-        simulation -- Pointer to SimPy simulation environment.
-        human_capital -- Dictionary or Pandas Series of all required human capital 
-                                types (as keys) with associated quantities
-        """
-
-        # Define a SimPy resource for each type of human capital.
-        # Set initial quantity of each resource equal to the value specified
-        # in the dictionary for the respective capital type.
-
-        # Initial number of available inspectors
-        self.inspectors = Resource(simulation, human_capital['Inspectors'])
-        # Initial number of available insurance claim adjusters
-        self.insurance_adjusters = Resource(simulation,
-                                    human_capital['Insurance Adjusters'])
-        # Initial number of available FEMA processors
-        self.fema_processors = Resource(simulation,
-                                        human_capital['FEMA Processors'])
-        # Initial number of available permit processors
-        self.permit_processors = Resource(simulation,
-                                        human_capital['Permit Processors'])
-        # Initial number of available contractors
-        self.contractors = Resource(simulation,
-                                    human_capital['Contractors'])
-        # Initial number of available loan processors
-        self.loan_processors = Resource(simulation,
-                                        human_capital['Loan Processors'])
-        # Initial number of available engineers
-        self.engineers = Resource(simulation, human_capital['Engineers'])
-
-class FinancialCapital(object):
-    """Define class for a collection of SimPy containers that represent different types of
-    financial resources used by entities during recovery processes.
-    """
-    def __init__(self, simulation, financial_capital):
-        """Initiate class based on current SimPy environment and financial
-        capital dictionary.
+class RecoveryProgram(object):
+    def __init__(self, simulation, duration=None, staff=float('inf'), budget=float('inf'),
+                    max_outlay=float('inf'), max_income=float('inf'), deductible=0.0,
+                    interest_rate=0.0):
         
-        Keyword Arguments:
-        simulation -- Pointer to SimPy simulation environment.
-        financial_capital -- Dictionary or Pandas Series of all required financial 
-                            capital types (as keys) with associated quantities
-        """
-        # Initial $ amount of overall FEMA aid available to the
-        # recovering area.
-        self.fema_aid = Container(simulation,
-                                    init=financial_capital['FEMA Aid'])
-        # Initial $ amount of overall construction resources available to
-        # the recovering area.
-        self.building_materials = Container(simulation,
-                                    init=financial_capital['Building Materials'])
+        self.staff = Resource(simulation, capacity=staff)
+        self.budget = Container(simulation, init=budget)
+        self.max_outlay = max_outlay
+        self.max_income = max_income
+        self.deductible = deductible
+        self.interest_rate = interest_rate
+        
+        try:
+            if duration.dist == "scalar" or duration == None:
+                self.duration = lambda : duration.loc
+            elif duration.dist == "uniform":
+                self.duration = lambda : uniform.rvs(loc=duration.loc, 
+                                                        scale=duration.scale)
+            elif duration.dist == "beta":
+                self.duration = lambda : beta.rvs(a=duration.shape_a, 
+                                                    b=duration.shape_b, 
+                                                    loc=duration.loc, 
+                                                    scale=duration.scale) 
+            elif duration.dist == "weibull":
+                self.duration = lambda : weibull_min.rvs(c=duration.shape_a, 
+                                                    loc=duration.loc, 
+                                                    scale=duration.scale)
+            else:
+                raise ValueError("Task distibution type not specified or supported.")
+                return 
+        except TypeError as te:  
+            print("Task distribution object not specified: ", te)
+            return    
+
                 
 class BuiltCapital(object):
     """Define top-level class for representing the attributes and methods
