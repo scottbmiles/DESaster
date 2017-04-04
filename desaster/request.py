@@ -187,124 +187,124 @@ def insurance_claim(simulation, human_capital, entity, write_story = False,
     else:
         pass
 
-def fema_assistance(simulation, human_capital, fema_aid, entity, 
-                    write_story = False, callbacks = None):
-    """Define process for entity to submit request for FEMA individual assistance.
+        def fema_assistance(simulation, human_capital, financial_capital, entity, 
+                            write_story = False, callbacks = None):
+            """Define process for entity to submit request for FEMA individual assistance.
 
-    entity -- An entity object from the entity.py module, for example
-                entities.Household().
-    simulation -- A simpy.Environment() object.
-    human_capital -- A capitals.HumanCapital() object.
-    financial_capital -- A capitals.FinancialCapital() object.
-    write_story -- Boolean indicating whether to track a households story.
-    callbacks -- a generator function containing processes to start after the 
-                    completion of this process.
+            entity -- An entity object from the entity.py module, for example
+                        entities.Household().
+            simulation -- A simpy.Environment() object.
+            human_capital -- A capitals.HumanCapital() object.
+            financial_capital -- A capitals.FinancialCapital() object.
+            write_story -- Boolean indicating whether to track a households story.
+            callbacks -- a generator function containing processes to start after the 
+                            completion of this process.
 
-    Returns or Attribute Changes:
-    entity.assistance_put -- Records sim time of fema processor request
-    entity.assistance_get -- Records sim time of fema assistance reciept
-    entity.assistance_request -- The amount of assistance requested.
-    entity.assistance_payout -- Amount of FEMA aid given to the entity.
-    """
-    # Exception handling in case interrupted by another process.
-    try:
-        #Ensure that entity does not have enough money to rebuild already.
-        if entity.money_to_rebuild >= entity.residence.damage_value:
-            return
-        # If does not have enough money to rebuild, submit request to FEMA.
-        else: 
-            # Record time requests FEMA assistance.
-            entity.assistance_put = simulation.now  
-            #If true, write FEMA request time to story.
-            if write_story == True:    
-                entity.story.append(
-                    '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
-                        entity.name.title(), entity.assistance_put
-                        )
-                    )
-            # Request a FEMA processor to review aid application.
-            request = human_capital.fema_processors.request()
-            yield request
-            
-            # Yield timeout for duration necessary to process FEMA aid request.
-            yield simulation.timeout(fema_process_time)
+            Returns or Attribute Changes:
+            entity.assistance_put -- Records sim time of fema processor request
+            entity.assistance_get -- Records sim time of fema assistance reciept
+            entity.assistance_request -- The amount of assistance requested.
+            entity.assistance_payout -- Amount of FEMA aid given to the entity.
+            """
+            # Exception handling in case interrupted by another process.
+            try:
+                #Ensure that entity does not have enough money to rebuild already.
+                if entity.money_to_rebuild >= entity.residence.damage_value:
+                    return
+                # If does not have enough money to rebuild, submit request to FEMA.
+                else: 
+                    # Record time requests FEMA assistance.
+                    entity.assistance_put = simulation.now  
+                    #If true, write FEMA request time to story.
+                    if write_story == True:    
+                        entity.story.append(
+                            '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
+                                entity.name.title(), entity.assistance_put
+                                )
+                            )
+                    # Request a FEMA processor to review aid application.
+                    request = human_capital.fema_processors.request()
+                    yield request
+                    
+                    # Yield timeout for duration necessary to process FEMA aid request.
+                    yield simulation.timeout(fema_process_time)
 
-            # Release FEMA processors. 
-            human_capital.fema_processors.release(request)
-            
-            # Record time received FEMA assistance.
-            entity.assistance_get = simulation.now
+                    # Release FEMA processors. 
+                    human_capital.fema_processors.release(request)
+                    
+                    # Record time received FEMA assistance.
+                    entity.assistance_get = simulation.now
 
-            # Must subtract any insurance payout from FEMA payout and choose the lesser of 
-            #max assistance and deducted total
-            entity.assistance_request = min(fema_aid.max_grant, (entity.residence.damage_value 
-                                        - entity.claim_payout))
+                    # Must subtract any insurance payout from FEMA payout and choose the lesser of 
+                    #max assistance and deducted total
+                    entity.assistance_request = min(fema_max_assistance, (entity.residence.damage_value 
+                                                - entity.claim_payout))
 
-            # If requesting assistance, determine if FEMA has money left to 
-            # provide assistance.
-            if entity.assistance_request <= fema_aid.level and entity.assistance_request != 0:
-                # FEMA has enough money to fully pay requested amount.
-                entity.assistance_payout = entity.assistance_request
-                entity.money_to_rebuild += entity.assistance_payout
+                    # If requesting assistance, determine if FEMA has money left to 
+                    # provide assistance.
+                    if entity.assistance_request <= financial_capital.fema_aid.level and entity.assistance_request != 0:
+                        # FEMA has enough money to fully pay requested amount.
+                        entity.assistance_payout = entity.assistance_request
+                        entity.money_to_rebuild += entity.assistance_payout
 
-                # Subtract payout amount from the overall amount of assistance
-                # FEMA has available to payout to all requests.
-                yield fema_aid.get(entity.assistance_request)
-                
+                        # Subtract payout amount from the overall amount of assistance
+                        # FEMA has available to payout to all requests.
+                        yield financial_capital.fema_aid.get(entity.assistance_request)
+                        
+                        #If true, write process outcome to story.
+                        if write_story == True:
+                            entity.story.append(
+                                '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
+                                    entity.name.title(),
+                                    entity.assistance_payout,
+                                    entity.assistance_get
+                                    )
+                                )
+                    elif financial_capital.fema_aid.level > 0:
+                        # FEMA has money left but less than requested.
+                        # Set payout equal to remaining funds.
+                        entity.assistance_payout = financial_capital.fema_aid.level
+                        entity.money_to_rebuild += entity.assistance_payout
+                        
+                        # Subtract payout amount from the overall amount of assistance
+                        # FEMA has available to payout to all requests.
+                        yield financial_capital.fema_aid.get(financial_capital.fema_aid.level)
+                        
+                        #If true, write process outcome to story.
+                        if write_story == True:
+                            entity.story.append(
+                             '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
+                             .format(
+                                        entity.name.title(),
+                                        entity.assistance_request,
+                                        entity.assistance_payout,
+                                        entity.assistance_get
+                                    )
+                                )    
+                    else:
+                        # FEMA has no money left to make payout.
+                        entity.assistance_payout = 0.0
+                        
+                        #If true, write process outcome to story.
+                        if write_story == True:
+                            entity.story.append(
+                            '{0} received no money from FEMA because of inadequate funding. '
+                            .format(entity.name.title())
+                            )
+                    
+            # Catch any interrupt from another process.      
+            except Interrupt as i:
                 #If true, write process outcome to story.
                 if write_story == True:
                     entity.story.append(
-                        '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                            entity.name.title(),
-                            entity.assistance_payout,
-                            entity.assistance_get
+                            '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
+                                entity.name.title(), i.cause)
                             )
-                        )
-            elif fema_aid.level > 0:
-                # FEMA has money left but less than requested.
-                # Set payout equal to remaining funds.
-                entity.assistance_payout = fema_aid.level
-                entity.money_to_rebuild += entity.assistance_payout
-                
-                # Subtract payout amount from the overall amount of assistance
-                # FEMA has available to payout to all requests.
-                yield fema_aid.get(fema_aid.level)
-                
-                #If true, write process outcome to story.
-                if write_story == True:
-                    entity.story.append(
-                     '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
-                     .format(
-                                entity.name.title(),
-                                entity.assistance_request,
-                                entity.assistance_payout,
-                                entity.assistance_get
-                            )
-                        )    
+
+            if callbacks is not None:
+                yield simulation.process(callbacks)
             else:
-                # FEMA has no money left to make payout.
-                entity.assistance_payout = 0.0
-                
-                #If true, write process outcome to story.
-                if write_story == True:
-                    entity.story.append(
-                    '{0} received no money from FEMA because of inadequate funding. '
-                    .format(entity.name.title())
-                    )
-            
-    # Catch any interrupt from another process.      
-    except Interrupt as i:
-        #If true, write process outcome to story.
-        if write_story == True:
-            entity.story.append(
-                    '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
-                        entity.name.title(), i.cause)
-                    )
-
-    if callbacks is not None:
-        yield simulation.process(callbacks)
-    else:
-        pass
+                pass
 
 def engineering_assessment(simulation, human_capital, entity, write_story = False, 
                             callbacks = None):
