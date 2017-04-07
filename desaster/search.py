@@ -15,7 +15,7 @@ rebuild_money(simulation, human_capital, financial_capital, entity,
 from desaster import request, entities
 
 def permanent_housing(simulation, household, search_patience, housing_stock, 
-                        human_capital, write_story = False):
+                        write_story = False):
     """A process (generator) representing household search for permanent housing
     based on housing preferences, available housing stock, and patience finding 
     a new home.
@@ -159,7 +159,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                     household.residence.damage_value
                     )
                 )
-def rebuild_money(simulation, human_capital, financial_capital, entity, 
+def rebuild_money(simulation, insurance_program, fema_program, loan_program, entity, 
                     search_patience, write_story = False):
     """A process (generator) representing entity search for money to rebuild or 
     repair home based on requests for insurance and/or FEMA aid and/or loan.
@@ -219,7 +219,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         try_insurance = simulation.process(
                                             request.insurance_claim(
                                                                     simulation, 
-                                                                    human_capital,
+                                                                    insurance_program,
                                                                     entity, 
                                                                     write_story
                                                                     )
@@ -249,12 +249,11 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
                                                 )
         
         # Define FEMA aid request process. Pass data about available
-        # FEMA processors.
+        # FEMA processors, budget, and maximum grant amount.
         try_fema = simulation.process(
                                         request.fema_assistance(
                                                                 simulation,
-                                                                human_capital,
-                                                                financial_capital, 
+                                                                fema_program, 
                                                                 entity, write_story
                                                                 )
                                     )
@@ -284,7 +283,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         try_loan = simulation.process(
                                         request.loan(
                                                     simulation, 
-                                                    human_capital, 
+                                                    loan_program, 
                                                     entity, 
                                                     write_story
                                                     )

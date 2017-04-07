@@ -14,7 +14,7 @@ from desaster.config import building_repair_times, materials_cost_pct
 from simpy import Interrupt
 import random
 
-def home(simulation, human_capital, building_materials, household, write_story = True, callbacks = None):
+def home(simulation, program, household, write_story = True, callbacks = None):
     """A process to rebuild a household's residence based on available contractors and
     building materials.
     
@@ -37,7 +37,7 @@ def home(simulation, human_capital, building_materials, household, write_story =
         # If household has enough money & there is enough available construction 
         # materials in the region, then rebuild.
         if (household.money_to_rebuild >= household.residence.damage_value and
-        household.residence.damage_value <= building_materials.level):
+        household.residence.damage_value <= program.budget.level):
             # Record time put in request for home rebuild.
             household.home_put = simulation.now
             
@@ -53,7 +53,7 @@ def home(simulation, human_capital, building_materials, household, write_story =
             # Obtain necessary construction materials from regional inventory.
             # materials_cost_pct is % of damage value related to building materials 
             # (vs. labor and profit)
-            yield building_materials.get(household.residence.damage_value * materials_cost_pct)
+            yield program.budget.get(household.residence.damage_value * materials_cost_pct)
 
             # Yield timeout equivalent to rebuild time.
             yield simulation.timeout(rebuild_time)
@@ -78,7 +78,7 @@ def home(simulation, human_capital, building_materials, household, write_story =
                 )
         
         # Deal with case that insufficient construction materials are available.
-        if household.residence.damage_value > building_materials.level:
+        if household.residence.damage_value > program.budget.level:
             
             # Subtract the damage_value (as cost of repair/rebuild) from household money to rebuild
             # in case they have additional expenditures
@@ -168,4 +168,66 @@ def stock(simulation, structure_stock, fix_probability):
             structure_stock.put(put_structure)
 
     print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, simulation.now))
+
+def reoccupy(simulation, entity, write_story = False, callbacks = None):
+    """Define process for reoccupying building.
+
+    Keyword Arguments:
+    entity -- An entity object from the entity.py module, for example
+                entities.Household(). Defaults to none so that can inspect
+                structures that aren't associated with an entity.
+                *** Currently, this function expects that the entity *is*
+                an entities.Household() object because makes an assignment to
+                Household().residence.inspected***
+    simulation -- A simpy.Environment() object.
+    callbacks -- a generator function containing processes to start after the 
+                    completion of this process.
+
+    write_story -- Boolean indicating whether to track a households story.
+
+    Returns or Attribute Changes:
+    entity.story -- Summary of process outcome as string.
+    """
+   
     
+    # If is renter and no longer has a residence (.residence is an empty list) 
+    # add this event to their story as an eviction.
+    if not entity.residence and isinstance(entity, entities.Renter):
+        #If true, write process outcome to story
+        if write_story == True:
+            
+            entity.story.append(
+                            "{0} terminated {1}\'s lease {2:.0f} days after the event. ".format(entity.landlord.name.title(), entity.name.title(), simulation.now)
+                            )
+        
+            return
+            
+    # If is a renter and the monthly cost is greater than 30% of their income
+    # displace them by removing their residence
+    # **** Not used yet. ****
+#    if isinstance(entity, entities.Renter) and entity.residence.cost > 0.3* entity.income:
+#        #If true, write process outcome to story
+#        if write_story == True:
+#            
+#            entity.story.append(
+#                            "{0} could not afford a rent increase and was displaced. ".format(entity.name.title())
+#                            )
+#        
+#        return
+        
+    # Yield timeout equivalent to time required to move back into home.
+    yield simulation.timeout(14)  # **** Timeout for move-in duration currently set manually. ****
+    
+    #If true, write process outcome to story
+    if write_story == True:
+        
+        entity.story.append(
+                        "{0} reoccupied the {1} {2:.0f} days after the event. ".format(entity.name.title(), entity.residence.occupancy.lower(), simulation.now)
+                        )
+    
+    return
+    
+    if callbacks is not None:
+        yield simulation.process(callbacks)
+    else:
+        pass
