@@ -15,7 +15,7 @@ rebuild_money(simulation, human_capital, financial_capital, entity,
 from desaster import request, entities
 
 def permanent_housing(simulation, household, search_patience, housing_stock, 
-                        human_capital, write_story = False):
+                       write_story = False):
     """A process (generator) representing household search for permanent housing
     based on housing preferences, available housing stock, and patience finding 
     a new home.
