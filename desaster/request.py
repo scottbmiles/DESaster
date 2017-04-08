@@ -20,7 +20,6 @@ reoccupy(simulation, entity, write_story = False, callbacks = None):
 @author: Derek Huling, Scott Miles
 """
 from simpy import Interrupt
-from desaster import entities
 
 def inspection(simulation, program, structure, entity = None, 
                 write_story = False, callbacks = None):
@@ -128,13 +127,13 @@ def insurance_claim(simulation, program, entity, write_story = False,
                         entity.name.title(), entity.claim_put)
                     )
             
-            # The insurance deductible is the fraction of home value not
-            # covered by insurance. 
-            deductible = entity.residence.value * (1 - entity.insurance)
+            # The insurance deductible amount is the home value multiplied by the 
+            # coverage ratio multipled by the deductible percentage.
+            deductible_amount = entity.residence.value * entity.insurance * program.deductible
             
             # Determine payout amount and add to entity's rebuild money.
             # Only payout amount equal to the damage, not the full coverage.
-            if entity.residence.damage_value < deductible:
+            if entity.residence.damage_value < deductible_amount:
                 if write_story == True:
                     entity.story.append(
                         '{0}\'s insurance deductible is greater than the value of damage. '.format(
@@ -150,7 +149,7 @@ def insurance_claim(simulation, program, entity, write_story = False,
             # Timeout process to simulate claims processing duration.
             yield simulation.timeout(program.duration())  
           
-            entity.claim_payout = entity.residence.damage_value - deductible
+            entity.claim_payout = entity.residence.damage_value - deductible_amount
 
             entity.money_to_rebuild += entity.claim_payout
 

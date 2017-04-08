@@ -12,95 +12,6 @@ Household(object)
 from desaster.capitals import Residence 
 import names
 
-#class Household(object):
-#    """Define a Household() class to represent a group of persons that reside 
-#    together as a single analysis unit with attributes and methods.
-#    """
-#    def __init__(self, simulation, housing_stock, household_df, write_story = False):
-#        """Define household inputs and outputs attributes.
-#        Initiate household's story list string. 
-#        
-#        simulation -- Pointer to SimPy simulation environment.
-#        household_df -- Dataframe row w/ household input attributes.
-#        housing_stock -- a SimPy FilterStore that acts as an occupied housing stock
-#        write_story -- Boolean indicating whether to track a households story.
-#        """
-#        
-#        # Household simulation inputs
-#        self.household = household_df  # Dataframe w/ household input attributes
-#        self.name = household_df['Name']   # Name associated with household
-#        self.savings = household_df['Savings']  # Amount of household savings in $
-#        self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage in $
-#        self.tenure_pref = household_df['Tenure Pref'] # Indicator of the household's preference between rent or own %***%
-#        self.tenure = household_df['Tenure'] # Indicator of the household's *actual* tenure between rent or own %***%
-#        self.occupancy_pref = household_df['Occupancy Pref'] # Indicator of the household's preference between occupancy types %***%
-#        
-#        self.owner = [] # %***%
-#         
-#        # Household simulation outputs
-#        self.story = []  # The story of events for each household
-#        self.inspection_put = 0.0  # Time put request in for house inspection
-#        self.inspection_get = 0.0  # Time get  house inspection
-#        self.claim_put = 0.0  # Time put request in for insurance settlement
-#        self.claim_get = 0.0  # Time get insurance claim settled
-#        self.claim_payout = 0.0  # Amount of insurance claim payout
-#        self.assistance_put = 0.0  # Time put request in for FEMA assistance
-#        self.assistance_get = 0.0  # Time get FEMA assistance
-#        self.assistance_request = 0.0  # Amount of money requested from FEMA
-#        self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
-#        self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
-#        self.home_put = 0.0  # Time put request in for house rebuild
-#        self.home_get = 0.0  # Time get house rebuild completed
-#        self.loan_put = 0.0  # Time put request for loan
-#        self.loan_get = 0.0  # Time get requested loan
-#        self.loan_amount = 0.0  # Amount of loan received
-#        self.permit_put = 0.0  # Time put request for building permit
-#        self.permit_get = 0.0  # Time get requested building permit
-#        self.home_search_start = 0.0  # Time started searching for a new home
-#        self.home_search_stop = 0.0  # Time found a new home
-#        self.money_search_start = 0.0  # Time that household started search for money
-#        self.money_search_stop = 0.0  # Time that household found rebuild money
-#        self.gave_up_money_search = False  # Whether household gave up search for money
-#        self.gave_up_home_search = False  # Whether household gave up search for home 
-#        
-#        # Initial method calls
-#        
-#        self.setResidence(simulation, housing_stock, household_df)
-#        self.setStory(write_story)  # Start stories with non-disaster attributes
-#    
-#    def setResidence(self, simulation, housing_stock, household_df):
-#        """Initiate the household's residence based on input attributes
-#        then add their residence to the housing stock FilterStore.
-#        
-#        Keyword Arguments:
-#        simulation -- Pointer to SimPy simulation environment.
-#        household_df -- Dataframe row w/ household input attributes.
-#        housing_stock -- a SimPy FilterStore that acts as an occupied housing stock
-#        """
-#        self.residence = Residence(simulation, household_df) 
-#        housing_stock.put(self.residence)
-#        
-#    def setStory(self, write_story):
-#        """Initiate the household's story based on input attributes.
-#        
-#        Keyword Arguments:
-#        write_story -- Boolean indicating whether to track a households story.
-#        """
-#        if write_story == True:
-#            # Set story with non-disaster attributes.
-#            self.story.append(
-#            '{0} lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(self.name, 
-#                                                            self.residence.bedrooms, 
-#                                                            self.residence.occupancy,
-#                                                            self.residence.address,
-#                                                            self.residence.value
-#                                                            )
-#            )
-#
-#    def story_to_text(self): 
-#        """Join list of story strings into a single story string."""
-#        return ''.join(self.story)
-
 class Household(object):
     """Define a Household() class to represent a group of persons that reside 
     together as a single analysis unit with attributes and methods.
@@ -172,7 +83,7 @@ class Owner(Household):
                            write_story = False)
         
         # Owner attributes
-        self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage in $
+        self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage: coverage / residence.value
 
          
         # Owner simulation outputs
@@ -186,13 +97,15 @@ class Owner(Household):
         self.assistance_request = 0.0  # Amount of money requested from FEMA
         self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
         self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
-        self.home_put = None  # Time put request in for house rebuild
-        self.home_get = None  # Time get house rebuild completed
+        self.rebuild_put = None  # Time put request in for house rebuild
+        self.rebuild_get = None  # Time get house rebuild completed
         self.loan_put = None  # Time put request for loan
         self.loan_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
         self.permit_put = None  # Time put request for building permit
         self.permit_get = None  # Time get requested building permit
+        self.assessment_put = None  # Time put request for engineering assessment
+        self.assessment_get = None  # Time put request for engineering assessment
         
         # Initial method calls
         
@@ -301,12 +214,15 @@ class Landlord(object):
         self.assistance_request = 0.0  # Amount of money requested from FEMA
         self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
 
-        self.home_put = None  # Time put request in for house rebuild
-        self.home_get = None  # Time get house rebuild completed
+        self.rebuild_put = None  # Time put request in for house rebuild
+        self.rebuild_get = None  # Time get house rebuild completed
         self.loan_put = None  # Time put request for loan
         self.loan_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
         self.permit_put = None  # Time put request for building permit
+        self.permit_get = None  # Time get requested building permit
+        self.assessment_put = None  # Time put request for engineering assessment
+        self.assessment_get = None  # Time put request for engineering assessment
         self.permit_get = None  # Time get requested building permit
         self.money_search_start = None  # Time that household started search for money
         self.money_search_stop = None  # Time that household found rebuild money

@@ -25,7 +25,7 @@ from desaster.config import drift_damage_ratios
 from desaster import config
 from scipy.stats import uniform, beta, weibull_min
 
-class ProgramDuration(object):
+class ProcessDuration(object):
     def __init__(self, dist='scalar', loc=0.0, scale=None, shape_a=None, shape_b=None):
         self.dist = dist
         self.loc = loc
@@ -34,7 +34,7 @@ class ProgramDuration(object):
         self.shape_b = shape_b
 
 class RecoveryProgram(object):
-    def __init__(self, simulation, duration=None, staff=float('inf'), budget=float('inf'),
+    def __init__(self, simulation, duration, staff=float('inf'), budget=float('inf'),
                     max_outlay=float('inf'), max_income=float('inf'), deductible=0.0,
                     interest_rate=0.0):
         
@@ -46,7 +46,7 @@ class RecoveryProgram(object):
         self.interest_rate = interest_rate
         
         try:
-            if duration.dist == "scalar" or duration == None:
+            if duration.dist == "scalar":
                 self.duration = lambda : duration.loc
             elif duration.dist == "uniform":
                 self.duration = lambda : uniform.rvs(loc=duration.loc, 
@@ -67,7 +67,48 @@ class RecoveryProgram(object):
             print("Task distribution object not specified: ", te)
             return    
 
+class InspectionProgram(RecoveryProgram):
+    def __init__(self, simulation, duration, staff=float('inf'), budget=float('inf'),
+                    max_outlay=float('inf'), max_income=float('inf'), deductible=0.0,
+                    interest_rate=0.0):
+        RecoveryProgram.__init__(self, simulation, duration, staff, budget,
+                        max_outlay, max_income, deductible,
+                        interest_rate)      
+
+    def process(self, simulation, structure, entity = None, 
+                    write_story = False, callbacks = None):
+        
+        # Only record inspection request time if structure associated with an entity.
+        if entity != None:
+            # Put in request for an inspector (shared resource)
+            entity.inspection_put = simulation.now
+        
+        # Request inspectors
+        inspectors_request = self.staff.request()
+        yield inspectors_request
+
+        # Yield timeout equivalent to time from hazard event to end of inspection.
+        yield simulation.timeout(self.duration())
+        
+        # Set attribute of structure to indicate its been inspected.
+        structure.inspected = True
+        
+        # Release inspectors now that inspection is complete.
+        self.staff.release(inspectors_request) 
+        
+        # Only record inspection time and write story if structure associated with 
+        # an entity.
+        if entity != None:
+            entity.inspection_get = simulation.now
+            
+            #If true, write process outcome to story
+            if write_story == True:
                 
+                entity.story.append(
+                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage.".format(
+                                entity.name.title(), entity.residence.occupancy.lower(),
+                                entity.inspection_get, entity.residence.damage_value))
+
 class BuiltCapital(object):
     """Define top-level class for representing the attributes and methods
     of types of built capital.
@@ -84,6 +125,8 @@ class BuiltCapital(object):
         self.setValue(asset)
         self.setDamageState(asset)
         self.setInspection(asset)
+        self.setPermit(asset)
+        self.setAssessment(asset)
     def setYearBuilt(self, asset):
         self.age = asset['Year Built']  # Year asset was built
     def setValue(self, asset):
@@ -92,6 +135,10 @@ class BuiltCapital(object):
         self.damage_state = asset['Damage State']  # HAZUS damage state
     def setInspection(self, asset):
         self.inspected = False  # Whether the asset has been inspected
+    def setPermit(self, asset):
+        self.permit = False  # Whether the asset has a permit
+    def setAssessment(self, asset):
+        self.assessment = False  # Whether the asset has had engineering assessment
 
 class Building(BuiltCapital):
     """Define class that inherits from BuiltCapital() for representing the
