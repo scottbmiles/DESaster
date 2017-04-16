@@ -1,6 +1,17 @@
 # DESaster Modules
 
-***Read modules to see import dependencies.***
+**Dependencies**
+Read modules to see all import dependencies. Easiest thing to do is to install Anaconda and then install simpy.
+
+Some dependencies include:
+[`Python 3.5+`](https://www.python.org/downloads/)
+[`simpy`](https://simpy.readthedocs.io/en/latest/)
+[`numpy`](http://www.numpy.org)
+[`pandas`](http://pandas.pydata.org)
+[`seaborn`](https://seaborn.pydata.org)
+[`Jupyter`](http://jupyter.readthedocs.io/en/latest/install.html)
+[`names`](https://pypi.python.org/pypi/names/)
+
 
 `entities.py` **Module of classes for implementing DESaster entities, such as households and businesses.**
 
