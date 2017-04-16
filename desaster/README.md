@@ -17,10 +17,15 @@ Some dependencies include:
 
 Classes:
 `Entity(object)`
+
 `Owner(Entity)`
+
 `Household(Entity)`
+
 `OwnerHousehold(Owner, Household)`
+
 `RenterHousehold(Entity, Household)`
+
 `Landlord(Owner)`
 
 `structures.py` **Module of classes that represent different types of buildings used by DESaster entities.**
