@@ -39,7 +39,7 @@ Classes:
 `RecoveryPolicy`
 `Insurance_IA_Loan_Sequential(RecoveryPolicy)`
 
-'io.py' **Module of classes and functions for input/output related to DESaster.**
+`io.py` **Module of classes and functions for input/output related to DESaster.**
 
 Classes:
 `DurationProbabilityDistribution`
