@@ -7,6 +7,7 @@ A discrete event disaster recovery simulation built on top of the [Simpy](https:
 
 
 **Funding Support for DESaster**
+
 National Science Foundation, Critical Resilient Interdependent Infrastructure Systems and Processes Program, "Simulation-Based Hypothesis Testing of Socio-Technical Community Resilience Using Distributed Optimization and Natural Language Processing" #1541025
 
 
