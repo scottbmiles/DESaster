@@ -1,5 +1,7 @@
 # DESaster Modules
 
+***Read modules to see import dependencies.***
+
 `entities.py` **Module of classes for implementing DESaster entities, such as households and businesses.**
 
 Classes:

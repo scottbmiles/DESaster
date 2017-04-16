@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+Module of classes and functions for input/output related to DESaster.
 
+Classes:
+DurationProbabilityDistribution
+random_duration_function
+importSingleFamilyResidenceStock
 
 @author: Scott Miles (milessb@uw.edu), Derek Huling
 """
