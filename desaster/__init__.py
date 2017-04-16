@@ -2,15 +2,15 @@
 """
 desaster package initiation file.
 
-@author: Derek Huling, Scott Miles
+@author: Scott Miles (milessb@uw.edu), Derek Huling
 """
-from desaster import entities, capitals, request, io, movement, search, config, rebuild
-from desaster.entities import Household
-from desaster.capitals import HumanCapital
-from desaster.capitals import FinancialCapital
-from desaster.capitals import BuiltCapital
-from desaster.capitals import Building
-from desaster.capitals import Residence
+from desaster import entities, structures, config, financial, technical, policies, io
+from desaster.entities import Entity, Owner, Household, OwnerHousehold, RenterHousehold, Landlord
+from desaster.technical import TechnicalRecoveryProgram, RepairProgram, InspectionProgram
+from desaster.technical import EngineeringAssessment, PermitProgram, RepairStockProgram
+from desaster.financial import FinancialRecoveryProgram, IndividualAssistance, OwnersInsurance, HomeLoan
+from desaster.structures import Building, SingleFamilyResidential
+from desaster.io import DurationProbabilityDistribution
 
-__all__ = ["entities", "capitals", "request", "search", "config", "rebuild"]
-
+__all__ = ["technical", "financial", "structures", 
+            "entities", "policies", "config", "io"]
