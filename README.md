@@ -1,10 +1,8 @@
-# `DESaster` 
+![DESaster object diagram](desaster_logo.png "Object diagram of DESaster")
+
 A discrete event disaster recovery simulation built on top of the [Simpy](https://simpy.readthedocs.io/en/latest/) discrete event simulation Python library. 
 
 *Principal Investigator:* [Scott B. Miles](https://www.hcde.washington.edu/miles), [University of Washington](http://www.washington.edu), [Department of Human Centered Design and Engineering](https://www.hcde.washington.edu)
-
-![DESaster object diagram](desaster_logo.png "Object diagram of DESaster")
-
 
 **Funding Support for DESaster**
 
