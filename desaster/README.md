@@ -61,6 +61,6 @@ Functions
 `random_duration_function`, 
 `importSingleFamilyResidenceStock` 
 
-`config.py` **Module for defining variables for a suite of DESaster parameters. **
+`config.py` **Module for defining variables for a suite of DESaster parameters.**
 
 
