@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Module of classes for implementing DESaster entities, such as entitys and
+Module of classes for implementing DESaster entities, such as households and
 businesses.
 
 Classes:

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Module of classes that implement compound policies for recovery programs.
+Module of classes that implement compound policies for custom arrangements of
+DESaster recovery programs.
 
 Classes:
-Insurance_IA_Loan_Sequential(env, human_capital, financial_capital, entity,
-                    search_patience, write_story = False):
+RecoveryPolicy
+Insurance_IA_Loan_Sequential
 
 @author: Scott Miles (milessb@uw.edu)
 """

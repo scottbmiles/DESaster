@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+Module of classes for implementing DESaster technical recovery programs.
 
+Classes:
+InspectionProgram
+PermitProgram
+EngineeringAssessment
+RepairProgram
+RepairStockProgram
 
 @author: Scott Miles (milessb@uw.edu), Derek Huling
 """

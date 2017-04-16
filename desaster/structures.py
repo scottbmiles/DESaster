@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Module of classes that represent different types of capitals used by DESaster
+Module of classes that represent different types of buildings used by DESaster
 entities.
-
-DESaster capitals are basically fancy wrappers of SimPy resources, containers,
-stores.
 
 Classes:
 Building(object)
 SingleFamilyResidential(Building)
-
 
 @author: Scott Miles (milessb@uw.edu)
 """
