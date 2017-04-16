@@ -63,4 +63,7 @@ Functions
 
 `config.py` **Module for defining variables for a suite of DESaster parameters.**
 
+![DESaster object diagram](classes_desaster.png "Object diagram of DESaster")
+
+
 
