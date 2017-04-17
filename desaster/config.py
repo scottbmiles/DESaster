@@ -18,7 +18,7 @@ import pandas as pd
 
 # Excel workbook with lookup tables from HAZUS-MH earthquake model technical
 # manual. (http://www.fema.gov/media-library/assets/documents/24609)
-hazus_parameters_file = "../inputs/hazus_building_lookup_tables.xlsx"
+hazus_parameters_file = "../config/hazus_building_lookup_tables.xlsx"
 
 # Building repair time lookup table from HAZUS-MH earthquake model technical
 # manual Table 15.9 (http://www.fema.gov/media-library/assets/documents/24609)
