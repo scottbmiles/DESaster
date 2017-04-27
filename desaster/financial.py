@@ -38,12 +38,11 @@ class FinancialRecoveryProgram(object):
         self.budget = Container(self.env, init=budget)
         self.duration = random_duration_function(duration_prob_dist)
         
-    def process(self, entity = None):
+    def process(self, entity = None, callbacks = None):
         """Define generic financial recovery program process for entity.
 
         entity -- An entity object from the entities.py module, for example
                     entities.Household().
-        env -- A simpy.Environment() object.
         callbacks -- a generator function containing processes to start after the
                         completion of this process.
 
@@ -83,6 +82,11 @@ class FinancialRecoveryProgram(object):
                                                                                         )
                                 )
                                 
+        if callbacks is not None:
+            yield self.env.process(callbacks)
+        else:
+            pass                        
+
 class IndividualAssistance(FinancialRecoveryProgram):
     """A class for operationalizing FEMA's individual assistance grant program. 
     The class process enforces a maximum budget for the program (after which
@@ -115,7 +119,6 @@ class IndividualAssistance(FinancialRecoveryProgram):
 
         entity -- An entity object from the entities.py module, for example
                     entities.OwnerHousehold().
-        env -- A simpy.Environment() object.
         callbacks -- a generator function containing processes to start after the
                         completion of this process.
 

@@ -240,6 +240,7 @@ class OwnerHousehold(Owner, Household):
                 self.name.title(), self.property.occupancy.lower(),
                 self.home_search_start)
                 )
+        
         new_home = building_stock.get(lambda findHome:
                         (
                             findHome.damage_state == 'None'
@@ -248,9 +249,9 @@ class OwnerHousehold(Owner, Household):
                         and findHome.occupancy.lower() == self.property.occupancy.lower()
                         and findHome.bedrooms >= self.property.bedrooms
                         and findHome.value <= self.property.value
-                        and findHome.inspected == True
+                        # and findHome.inspected == True
                        )
-        print(new_home)
+
         # Yield both the patience timeout and the housing stock FilterStore get.
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
@@ -260,7 +261,7 @@ class OwnerHousehold(Owner, Household):
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-
+        
             # If write_story, note in the story that the entity gave up
             # the search.
             if self.write_story:
@@ -460,12 +461,12 @@ class RenterHousehold(Household):
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
         home_search_outcome = yield find_search_patience | new_home
-
+    
+        
         # Exit the function if the patience timeout completes before a suitable
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-
             # If write_story, note in the story that the entity gave up
             # the search.
             if self.write_story:

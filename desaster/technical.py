@@ -189,7 +189,6 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         """Define process for entity to request an engineering assessment of their
         building.
 
-        
         Keyword Arguments:
         structure -- Some structures.py object, such as structures.SingleFamilyResidential()
         entity -- An entity (e.g., entities.OwnerHousehold()) that initiates 
@@ -411,6 +410,7 @@ class RepairProgram(TechnicalRecoveryProgram):
 
                 # After successful rebuild, set damage to None & $0.
                 structure.damage_state = 'None'
+                structure.damage_value = 0.0
 
                 # Record time when entity gets home.
                 entity.rebuild_get = self.env.now
@@ -439,103 +439,71 @@ class RepairProgram(TechnicalRecoveryProgram):
         else:
             pass
 
-class RepairStockProgram(TechnicalRecoveryProgram):
-    """ A class to represent a large-scale/bulk program for expedited repairing
-    of a building stock. Conceptually this is intended to rebuild vacant building
-    stocks that do not have entities associated with them to rebuild them. This bulk
-    rebuilding potentially provides additional homes for entities to purchase or rent.
-    
-    *** CURRENTLY BROKEN ***
-    
-    Methods:
-    __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, building_stock, rebuild_fraction, rebuild_start)
-    """
-    
-    def __init__(self, env, duration_prob_dist, staff=float('inf')):
-        """Initiate RepairStockProgram object.
-        
-        Keyword Arguments:
-        env -- simpy.Envionment() object
-        duration_prob_dist -- io.DurationProbabilityDistribution() object
-        staff -- Integer, indicating number of staff assigned to the program
-        
-        Inheritance:
-        Subclass of technical.TechnicalRecoveryProgram()
-        """    
-        TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
+# class RepairStockProgram(TechnicalRecoveryProgram):
+#     """ A class to represent a large-scale/bulk program for expedited repairing
+#     of a building stock. Conceptually this is intended to rebuild vacant building
+#     stocks that do not have entities associated with them to rebuild them. This bulk
+#     rebuilding potentially provides additional homes for entities to purchase or rent.
+#     
+#     *** CURRENTLY BROKEN ***
+#     
+#     Methods:
+#     __init__(self, env, duration_prob_dist, staff=float('inf'))
+#     process(self, building_stock, rebuild_fraction, rebuild_start)
+#     """
+#     
+#     def __init__(self, env, duration_prob_dist, staff=float('inf')):
+#         """Initiate RepairStockProgram object.
+#         
+#         Keyword Arguments:
+#         env -- simpy.Envionment() object
+#         duration_prob_dist -- io.DurationProbabilityDistribution() object
+#         staff -- Integer, indicating number of staff assigned to the program
+#         
+#         Inheritance:
+#         Subclass of technical.TechnicalRecoveryProgram()
+#         """    
+#         TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
 
-    def process(self, building_stock, rebuild_fraction, rebuild_start):
-        """Process to repair a part or an entire building stock (FilterStore) based
-        on available contractors and specified proportion/probability.
-
-        Keyword Arguments:
-        building_stock -- A SimPy FilterStore that contains one or more
-            structures.BuiltCapital(), structures.Building(), or structures.Residence()
-            objects that represent vacant structures for purchase.
-        rebuild_fraction -- A value to set approximate percentage of number of structures
-            in the stock to rebuild.
-        rebuild_start -- Duration to timeout prior to rebuilding commences.
-
-        Attribute Changes:
-        put_structure.damage_state -- Changed to 'None' for selected structures.
-        put_structure.damage_value = Changed to $0.0 for selected structures.
-        """
-        yield self.env.timeout(rebuild_start)
-        
-        potential_buildings = []  # Empty list to temporarily place FilterStore objects.
-        num_fixed = 0  # Counter
-        
-        for building in building_stock.items:
-            # if (building.damage_state == 'Complete'
-            #     or building.damage_state == 'Extensive'
-            #     or building.damage_state == 'Moderate'):
-            #     potential_buildings.append(building)
-            building.inspected = True
-            building.assessment = True
-            building.permit = True
-            building.damage_state = 'None'
-            building.damage_value = 0.0
-            num_fixed += 1
-        
-        choice_size = int(rebuild_fraction*len(potential_buildings))
-        chosen_buildings = choice(potential_buildings, choice_size, replace=False)
-        
-
-        
-        # # Iterate through structures, do processing, put back into the FilterStore
-        # for building in potential_buildings:
-        #     building.inspected = True
-        #     building.assessment = True
-        #     building.permit = True
-        #     building.damage_state = 'None'
-        #     building.damage_value = 0.0
-        #     num_fixed += 1
-                    
-        print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, self.env.now))
-
-# def repair_stock(building_stock, rebuild_fraction)):
+# def repair_stock(building_stock, repair_fraction):
+#     """Process to repair a part or an entire building stock (FilterStore) based
+#     on available contractors and specified proportion/probability.
 # 
-#         potential_buildings = []  # Empty list to temporarily place FilterStore objects.
+#     Keyword Arguments:
+#     building_stock -- A SimPy FilterStore that contains one or more
+#         structures.BuiltCapital(), structures.Building(), or structures.Residence()
+#         objects that represent vacant structures for purchase.
+#     rebuild_fraction -- A value to set approximate percentage of number of structures
+#         in the stock to rebuild.
+#     rebuild_start -- Duration to timeout prior to rebuilding commences.
 # 
-#         for building in building_stock.items:
-#             if (building.damage_state == 'Complete'
-#                 or building.damage_state == 'Extensive'
-#                 or building.damage_state == 'Moderate'):
-#                 potential_buildings.append(building)
-#         
-#         choice_size = int(rebuild_fraction*len(potential_buildings))
-#         chosen_buildings = choice(potential_buildings, choice_size, replace=False)
-#         
-#         num_fixed = 0  # Counter
-#         
-#         # Iterate through structures, do processing, put back into the FilterStore
-#         for building in chosen_buildings:
-#             building.inspected = True
-#             building.assessment = True
-#             building.permit = True
-#             building.damage_state = 'None'
-#             building.damage_value = 0.0
-#             num_fixed += 1
-#                     
-#         print('{0} homes in the vacant building stock were fixed on day {1:,.0f}.'.format(num_fixed, self.env.now))
+#     Attribute Changes:
+#     put_structure.damage_state -- Changed to 'None' for selected structures.
+#     put_structure.damage_value = Changed to $0.0 for selected structures.
+#     """ 
+#     # yield self.env.timeout(rebuild_start)
+# 
+#     num_fixed = 0  # Counter
+# 
+#     filter_fxn = lambda x : x.damage_state != 'None'
+# 
+#     filtered_stock = list(
+#                     filter(
+#                             filter_fxn, 
+#                             building_stock.items))
+# 
+#     sample_size = int(repair_fraction*len(filtered_stock))
+#     sample_stock = random.sample(filtered_stock, sample_size)
+# 
+# 
+#     # Iterate through structures, do processing, put back into the FilterStore
+#     for building in sample_stock:
+#         building.inspected = True
+#         building.assessment = True
+#         building.permit = True
+#         building.damage_state = 'None'
+#         building.damage_value = 0.0
+#         num_fixed += 1
+#                 
+#     print('{0} homes in the vacant building stock were repaired.'.format(num_fixed))
+# 
