@@ -66,7 +66,8 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
                             or getResidence.damage_state == 'Slight'
                         )
                         and getResidence.occupancy == household.residence.occupancy
-                        and getResidence.value < household.residence.value
+                        and getResidence.value <= household.residence.value
+                        and getResidence.value <= household.money_to_rebuild
                         and getResidence.inspected == True
                        )
         yield housing_stock.put(household.residence)
@@ -106,6 +107,7 @@ def permanent_housing(simulation, household, search_patience, housing_stock,
     
     # Record the time that the housing search ends.
     household.home_search_stop = simulation.now
+    household.home_get = simulation.now
     
     # If write_story is True, then write results of successful home search to
     # household's story.
@@ -156,7 +158,7 @@ def rebuild_money(simulation, human_capital, financial_capital, entity,
         # If True, append search outcome to story.
         if write_story == True:
             entity.story.append(
-                "{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. ".format(
+                "{0} already had enough money to rebuild {1:,.0f} and did not seek assistance. ".format(
                                     entity.name.title(),
                                     entity.money_to_rebuild
                                     )

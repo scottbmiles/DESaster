@@ -10,6 +10,7 @@ Household(object)
 """
 # Import Residence() class in order to assign households a residence.
 from desaster.capitals import Residence 
+import numpy as np
 
 class Household(object):
     """Define a Household() class to represent a group of persons that reside 
@@ -25,7 +26,7 @@ class Household(object):
         """
          # Household simulation inputs
         self.household = household_df  # Dataframe w/ household input attributes
-        self.name = household_df['Name']   # Name associated with household
+        self.name = household_df['Name'].title()   # Name associated with household
         self.savings = household_df['Savings']  # Amount of household savings in $
         self.insurance = household_df['Insurance']  # Hazard-specific insurance coverage in $
         self.residence = Residence(simulation, household_df)  # Pointer to household's Residence() object
@@ -38,13 +39,13 @@ class Household(object):
         self.claim_get = None  # Time get insurance claim settled
         self.claim_payout = 0  # Amount of insurance claim payout
         self.assistance_put = None  # Time put request in for FEMA assistance
-        self.assistance_get = None  # Time get FEMA assistance
+        self.assistance_get = np.nan  # Time get FEMA assistance
         self.assistance_request = 0  # Amount of money requested from FEMA
         self.assistance_payout = 0  # Amount of assistance provided by FEMA
         self.money_to_rebuild = self.savings  # Total funds available to household to rebuild house
         self.home_put = None  # Time put request in for house rebuild
         self.home_get = None  # Time get house rebuild completed
-        self.loan_put = None  # Time put request for loan
+        self.loan_put = None  # Time puts request for loan
         self.loan_get = None  # Time get requested loan
         self.loan_amount = 0  # Amount of loan received
         self.permit_put = None  # Time put request for building permit

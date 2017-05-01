@@ -95,20 +95,14 @@ class BuiltCapital(object):
         simulation -- Pointer to SimPy simulation environment.
         asset -- A dataframe row with required built capital attributes.
         """
-        self.setYearBuilt(asset)
-        self.setValue(asset)
-        self.setDamageState(asset)
-        self.setInspection(asset)
-    def setYearBuilt(self, asset):
+
         try:
             self.age = asset['Year Built']  # Year asset was built
         except KeyError as e:
-            self.age = random.randint(1900,2000)
-    def setValue(self, asset):
+            self.age = None
         self.value = asset['Value']  # Value of the asset in $
-    def setDamageState(self, asset):
         self.damage_state = asset['Damage State']  # HAZUS damage state
-    def setInspection(self, asset):
+        self.damage_state_start = asset['Damage State'] # Archive damage state at start
         self.inspected = False  # Whether the asset has been inspected
 
 class Building(BuiltCapital):
@@ -127,19 +121,14 @@ class Building(BuiltCapital):
         #the structure
         BuiltCapital.__init__(self, simulation, building) 
         
-        self.setAddress(building)
-        self.setOccupancy(building)
         self.setDamageValue(building)
-        self.setCoordinates(building)
-        self.setBuildingArea(building)
-        
-    def setAddress(self, building):
+
+
         try: #if address isn't in dataframe, we'll just set it to none
             self.address = building['Address']  # Address of building
         except KeyError as e:
             self.address = None
             
-    def setCoordinates(self, building):
         try: #if lat/long aren't in data, we'll set to none
             self.latitude = building['Latitude']
             self.longitude = building['Longitude']
@@ -147,10 +136,8 @@ class Building(BuiltCapital):
             self.latitude = None
             self.longitude = None
             
-                
-    def setOccupancy(self, building):
         self.occupancy = building['Occupancy']  # Occupancy type of building
-    def setBuildingArea(self, building):
+
         self.area = building['Area']  # Floor area of building
     def setDamageValue(self, building):
         """Calculate damage value for building based on occupancy type and
@@ -173,6 +160,7 @@ class Building(BuiltCapital):
         self.damage_value = building['Value']*(struct_repair_ratio +
                                                 accel_repair_ratio +
                                                 drift_repair_ratio)
+        self.damage_value_start = self.damage_value
 
 class Residence(Building):
     """Define class that inherits from Building() for representing the
@@ -187,25 +175,12 @@ class Residence(Building):
         """
         Building.__init__(self, simulation, residence)
 
-        self.setOccupancy(residence) #overriding base method for verification
-        self.setBedrooms(residence)
-        self.setBathrooms(residence)
-        self.id = residence["ID Number"]
-    def setOccupancy(self, residence):
-        # Verify that residence dataframe has expected occupancy types
-        if residence['Occupancy'] in ('Single Family Dwelling',
-                            'Multi Family Dwelling', 'Mobile Home', 'Condo'):
-            self.occupancy = residence['Occupancy']
-        else:
-            raise AttributeError(residence['Occupancy'])
-            
-    def setBedrooms(self, residence):
+
         try:
             self.bedrooms = residence['Bedrooms']  # Number of bedrooms in residence
         except KeyError as e:
             self.bedrooms = random.randint(2, 5)            
         
-    def setBathrooms(self, residence):
         try:
             self.bathrooms = residence['Bathrooms']  # Number of bathrooms in residence
         except KeyError as e:
