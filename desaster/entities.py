@@ -69,12 +69,11 @@ class Household(object):
         if write_story == True:
             # Set story with non-disaster attributes.
             self.story.append(
-            "{0} lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. Its damage level from the event was {5}.".format(self.name.title(), 
+            "{0} lives in a {1} bedroom {2} at {3} worth ${4:,.0f}. ".format(self.name.title(), 
                                                             self.residence.bedrooms, 
-                                                            self.residence.occupancy,
+                                                            self.residence.occupancy.lower(),
                                                             self.residence.address,
-                                                            self.residence.value,
-                                                            self.residence.damage_state
+                                                            self.residence.value
                                                             )
             )
 

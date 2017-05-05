@@ -76,7 +76,9 @@ def inspection(simulation, human_capital, structure, entity = None,
         if write_story == True:
             
             entity.story.append(
-                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage. ".format(entity.inspection_get, entity.name.title(), entity.residence.damage_value))
+                            "{1}'s house was inspected {0:.0f} days after the event and suffered ${2:,.0f} of damage, with a damage level of {3}. ".format(entity.inspection_get, 
+                            entity.name.title(), entity.residence.damage_value,
+                            entity.residence.damage_state.lower()))
 
     if callbacks is not None:
         yield simulation.process(callbacks)
