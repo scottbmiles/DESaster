@@ -15,6 +15,7 @@ from desaster.config import acceleration_damage_ratios
 from desaster.config import drift_damage_ratios
 from desaster import config
 import pandas as pd
+import warnings, sys
 
 class Building(object):
     """Top-level class for representing attributes and methods of different types 
@@ -38,6 +39,7 @@ class Building(object):
         self.age = building['Year Built']  # Year building was built
         self.value = building['Value']  # Value of the building in $
         self.damage_state = building['Damage State']  # HAZUS damage state
+        self.damage_state_start = building['Damage State']  # Archive starting damage state
         self.inspected = False  # Whether the building has been inspected
         self.permit = False  # Whether the building has a permit
         self.assessment = False  # Whether the building has had engineering assessment    
@@ -77,6 +79,7 @@ class Building(object):
         self.damage_value = building['Value']*(struct_repair_ratio +
                                                 accel_repair_ratio +
                                                 drift_repair_ratio)
+        self.damage_value_start = self.damage_value # Archive original damage value
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the
@@ -105,5 +108,9 @@ class SingleFamilyResidential(Building):
         
         # Verify that building dataframe has expected occupancy types
         if not building['Occupancy'].lower() in ('single family dwelling', 'mobile home'):
-            print('Warning: SingleFamilyResidential not compatible with given occupancy type: {0}'.format(
-                    building['Occupancy'].title())) 
+            # print('Warning: SingleFamilyResidential not compatible with given occupancy type: {0}'.format(
+            #         building['Occupancy'].title())) 
+            
+            warnings.showwarning('Warning: SingleFamilyResidential not compatible with given occupancy type: {0}'.format(
+                    building['Occupancy'].title()), DeprecationWarning, filename = sys.stderr,
+                                    lineno=661)

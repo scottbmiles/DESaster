@@ -14,9 +14,9 @@ Landlord(Owner)
 @author: Scott Miles (milessb@uw.edu), Derek Huling
 """
 # Import Residence() class in order to assign entitys a residence.
-from desaster.structures import SingleFamilyResidential
+from desaster.structures import SingleFamilyResidential, Building
 from desaster.io import random_duration_function
-import names
+import names, warnings, sys
 
 class Entity(object):
     """A base class for representing entities, such as households, businesses, 
@@ -56,9 +56,9 @@ class Owner(Entity):
     is to define subclasses with Owner() attributes.
     
     Methods:
-    __init__(self, env, name, attributes_df, building_stock = None, write_story = False)
+    __init__(self, env, name, attributes_df, building_stock, write_story = False)
     """
-    def __init__(self, env, name, attributes_df, building_stock = None, write_story = False):
+    def __init__(self, env, name, attributes_df, building_stock, write_story = False):
         """Initiate several attributes related to an Owner entity.
         No universal methods have been define for the Owner class yet. methods
         are currently specified in subclasses of Owner.
@@ -103,13 +103,14 @@ class Owner(Entity):
                                             # process; obviously can't keep track 
                                             # of multiple give ups
         self.prior_property = None
-
-        # If no housing stock was specified, it indicates that do not want to 
-        # associate a property with the entity. Useful for bulk processing of 
-        # building stocks.
-        if building_stock != None:
+    
+        if (attributes_df['Occupancy'].lower() == 'single family dwelling' 
+                or attributes_df['Occupancy'].lower() == 'mobile home'):
             self.property = SingleFamilyResidential(attributes_df)
-            building_stock.put(self.property)
+        else: 
+            self.property = Building(attributes_df)
+        
+        building_stock.put(self.property)
             
         if self.write_story:
             # Start stories with non-disaster attributes
@@ -240,6 +241,7 @@ class OwnerHousehold(Owner, Household):
                 self.name.title(), self.property.occupancy.lower(),
                 self.home_search_start)
                 )
+        
         new_home = building_stock.get(lambda findHome:
                         (
                             findHome.damage_state == 'None'
@@ -248,9 +250,9 @@ class OwnerHousehold(Owner, Household):
                         and findHome.occupancy.lower() == self.property.occupancy.lower()
                         and findHome.bedrooms >= self.property.bedrooms
                         and findHome.value <= self.property.value
-                        and findHome.inspected == True
+                        # and findHome.inspected == True
                        )
-        print(new_home)
+
         # Yield both the patience timeout and the housing stock FilterStore get.
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
@@ -260,7 +262,7 @@ class OwnerHousehold(Owner, Household):
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-
+        
             # If write_story, note in the story that the entity gave up
             # the search.
             if self.write_story:
@@ -460,12 +462,12 @@ class RenterHousehold(Household):
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
         home_search_outcome = yield find_search_patience | new_home
-
+    
+        
         # Exit the function if the patience timeout completes before a suitable
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-
             # If write_story, note in the story that the entity gave up
             # the search.
             if self.write_story:
@@ -583,7 +585,7 @@ class Landlord(Owner):
                                                         )
                                 )
 
-def importHouseholds(env, building_stock, entities_df, write_story = False):
+def importOwners(env, building_stock, entities_df, write_story = False):
     """Return list of entities.Household() objects from dataframe containing
     data describing entities' attributes.
 
@@ -594,13 +596,53 @@ def importHouseholds(env, building_stock, entities_df, write_story = False):
     write_story -- Boolean indicating whether to track a entitys story.
     """
 
-    entitys = []
+    entities = []
 
     # Population the env with entitys from the entitys dataframe
     for i in entities_df.index:
-        entitys.append(Household(env, building_stock, entities_df.iloc[i], write_story))
-    return entitys
+        entities.append(Owner(env, building_stock, entities_df.iloc[i], write_story))
+    return entities
 
+def importEntities(env, building_stock, entities_df, entity_type, write_story = False):
+        """Return list of entities.OwnerHouseholds() objects from dataframe containing
+        data describing entities' attributes.
+
+        Keyword Arguments:
+        env -- Pointer to SimPy env environment.
+        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
+        entities_df -- Dataframe row w/ entities' input attributes.
+        entity_type -- Indicate class of entity: Household, Owner, OwnerHousehold etc.
+        write_story -- Boolean indicating whether to track a entitys story.
+        """
+        entities = []
+        
+        if entity_type.lower() == 'household':
+            # Populate the env with entitys from the entitys dataframe
+            for i in entities_df.index:
+                entities.append(Household(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
+            return entities
+        elif entity_type.lower() == 'owner':
+            # Populate the env with entitys from the entitys dataframe
+            for i in entities_df.index:
+                entities.append(Owner(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
+            return entities
+        elif entity_type.lower() == 'ownerhousehold':
+            # Populate the env with entitys from the entitys dataframe
+            for i in entities_df.index:
+                entities.append(OwnerHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
+            return entities
+        elif entity_type.lower() == 'renterhousehold':
+            # Populate the env with entitys from the entitys dataframe
+            for i in entities_df.index:
+                entities.append(RenterHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
+            return entities
+        elif entity_type.lower() == 'landlord':
+            # Populate the env with entitys from the entitys dataframe
+            for i in entities_df.index:
+                entities.append(Landlord(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
+            return entities
+        else:
+            raise AttributeError("Entity class type not specified or recognized. Can't complete import.")
 
 def importOwnerHouseholds(env, building_stock, entities_df, write_story = False):
     """Return list of entities.OwnerHouseholds() objects from dataframe containing
@@ -612,12 +654,14 @@ def importOwnerHouseholds(env, building_stock, entities_df, write_story = False)
     entities_df -- Dataframe row w/ entity input attributes.
     write_story -- Boolean indicating whether to track a entitys story.
     """
-    owners = []
+    
+    warnings.showwarning('importOwnerHouseholds depricated. Use importEntities.', 
+                            DeprecationWarning, filename = sys.stderr,
+                            lineno=643)
+    
+    entities = importEntities(env, building_stock, entities_df, 'ownerhousehold', write_story)
 
-    # Population the env with entitys from the entitys dataframe
-    for i in entities_df.index:
-        owners.append(OwnerHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-    return owners
+    return entities
 
 def importRenterHouseholds(env, building_stock, entities_df, write_story = False):
     """Return list of entities.RenterHousehold() objects from dataframe containing
@@ -629,9 +673,11 @@ def importRenterHouseholds(env, building_stock, entities_df, write_story = False
     entities_df -- Dataframe row w/ entity input attributes.
     write_story -- Boolean indicating whether to track a entitys story.
     """
-    renters = []
-
-    # Population the env with entitys from the entitys dataframe
-    for i in entities_df.index:
-        renters.append(RenterHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-    return renters
+    
+    warnings.showwarning('importRenterHouseholds depricated. Use importEntities.', 
+                            DeprecationWarning, filename = sys.stderr,
+                            lineno=661)
+    
+    entities = importEntities(env, building_stock, entities_df, 'renterhousehold', write_story)
+    
+    return entities

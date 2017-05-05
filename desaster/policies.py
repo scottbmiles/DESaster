@@ -9,13 +9,17 @@ Insurance_IA_Loan_Sequential
 
 @author: Scott Miles (milessb@uw.edu)
 """
+import random
+random.seed(15)
+from desaster.entities import Owner
+
 
 class RecoveryPolicy(object):
     def __init__(self, env):
         self.env = env
     def policy(self):
         pass
-    
+
 class Insurance_IA_Loan_Sequential(RecoveryPolicy):
     def __init__(self, env):
         RecoveryPolicy.__init__(self, env)
@@ -178,3 +182,61 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
                         entity.money_to_rebuild
                         )
                 )
+                
+class RepairVacantBuilding(RecoveryPolicy):
+    """ A class to represent a large-scale/bulk policy for expedited repairing
+    of a building stock. Conceptually this is intended to rebuild vacant building
+    stocks that do not have entities associated with them to rebuild them. This bulk
+    rebuilding potentially provides additional homes for entities to purchase or rent.
+    
+    
+    Methods:
+    __init__(self, env, duration_prob_dist, staff=float('inf'))
+    process(self, building_stock, rebuild_fraction, rebuild_start)
+    """
+    
+    def __init__(self, env):
+        """Initiate RepairVacantBuilding object.
+        
+        Keyword Arguments:
+        env -- simpy.Envionment() object
+        
+        Inheritance:
+        Subclass of policies.RecoveryPolicy()
+        """    
+        RecoveryPolicy.__init__(self, env)
+
+    def policy(self, inspection_program, assessment_program, permit_program, 
+                rebuild_program, entity, building_stock, repair_probability = 1.0, wait_time = 0.0):
+        """Process to repair a part or an entire building stock (FilterStore) based
+        on available contractors and specified proportion/probability.
+
+        Keyword Arguments:
+        building_stock -- A SimPy FilterStore that contains one or more
+           structures.BuiltCapital(), structures.Building(), or structures.Residence()
+           objects that represent vacant structures for purchase.
+        repair_probability -- A value to set approximate percentage of number of structures
+           in the stock to rebuild.
+        wait_time -- Duration that simulates time to get recovery assistance.
+
+        Attribute Changes:
+        get_building.damage_state -- Changed to 'None' for selected structures.
+        get_building.damage_value = Changed to $0.0 for selected structures.
+        """
+        
+        if entity.property.damage_state != 'None':
+            
+            if random.uniform(0, 1.0) > repair_probability:
+                return
+            
+            get_building = yield building_stock.get(lambda getBuilding:
+                                                        getBuilding.address.lower() == entity.property.address.lower()
+                                                )
+
+            yield self.env.process(inspection_program.process(entity.property, entity))
+            yield self.env.timeout(wait_time)
+            yield self.env.process(assessment_program.process(entity.property, entity))
+            yield self.env.process(permit_program.process(entity.property, entity))
+            yield self.env.process(rebuild_program.process(entity.property, entity))
+            yield building_stock.put(get_building)
+            
