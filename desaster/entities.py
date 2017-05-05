@@ -325,13 +325,16 @@ class OwnerHousehold(Owner, Household):
         # Make the entity's property also their residence
         self.residence = self.property
         
+        # Record time got home
+        self.home_get = self.env.now
+        
         #If true, write process outcome to story
         if self.write_story:
             self.story.append(
                             "{0} occupied the {1} {2:.0f} days after the event. ".format(
                                                                                             self.name.title(),
                                                                                             self.residence.occupancy.lower(),
-                                                                                            self.env.now)
+                                                                                            self.home_get)
                             )
 
         if callbacks is not None:
@@ -530,6 +533,9 @@ class RenterHousehold(Household):
         
         # Yield timeout equivalent to time required to move back into home.
         yield self.env.timeout(calc_duration())
+        
+        # Record time got home
+        self.home_get = self.env.now
 
         #If true, write process outcome to story
         if self.write_story:
