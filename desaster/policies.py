@@ -10,6 +10,7 @@ Insurance_IA_Loan_Sequential
 @author: Scott Miles (milessb@uw.edu)
 """
 import random
+random.seed(15)
 from desaster.entities import Owner
 
 
@@ -182,7 +183,7 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
                         )
                 )
                 
-class RepairBuildingStock(RecoveryPolicy):
+class RepairVacantBuilding(RecoveryPolicy):
     """ A class to represent a large-scale/bulk policy for expedited repairing
     of a building stock. Conceptually this is intended to rebuild vacant building
     stocks that do not have entities associated with them to rebuild them. This bulk
@@ -194,9 +195,8 @@ class RepairBuildingStock(RecoveryPolicy):
     process(self, building_stock, rebuild_fraction, rebuild_start)
     """
     
-    def __init__(self, env, inspection_program, assessment_program, 
-                        permit_program, repair_program):
-        """Initiate RepairBuildingStock object.
+    def __init__(self, env):
+        """Initiate RepairVacantBuilding object.
         
         Keyword Arguments:
         env -- simpy.Envionment() object
@@ -205,72 +205,38 @@ class RepairBuildingStock(RecoveryPolicy):
         Subclass of policies.RecoveryPolicy()
         """    
         RecoveryPolicy.__init__(self, env)
-        
-        self.inspection = inspection_program
-        self.assessment = assessment_program
-        self.permit = permit_program
-        self.repair = repair_program
 
-    def policy(self, building_stock, repair_fraction, start_time):
+    def policy(self, inspection_program, assessment_program, permit_program, 
+                rebuild_program, entity, building_stock, repair_probability = 1.0, wait_time = 0.0):
         """Process to repair a part or an entire building stock (FilterStore) based
         on available contractors and specified proportion/probability.
 
         Keyword Arguments:
         building_stock -- A SimPy FilterStore that contains one or more
-            structures.BuiltCapital(), structures.Building(), or structures.Residence()
-            objects that represent vacant structures for purchase.
-        rebuild_fraction -- A value to set approximate percentage of number of structures
-            in the stock to rebuild.
-        rebuild_start -- Duration to timeout prior to rebuilding commences.
+           structures.BuiltCapital(), structures.Building(), or structures.Residence()
+           objects that represent vacant structures for purchase.
+        repair_probability -- A value to set approximate percentage of number of structures
+           in the stock to rebuild.
+        wait_time -- Duration that simulates time to get recovery assistance.
 
         Attribute Changes:
-        put_structure.damage_state -- Changed to 'None' for selected structures.
-        put_structure.damage_value = Changed to $0.0 for selected structures.
-        """ 
-        dummy_entity_dict = {'Name': 'Rebuild Entity', 'Savings': float('inf'), 'Owner Insurance': 1.0}
-        dummy_entity = Owner(self.env, dummy_entity_dict['Name'], dummy_entity_dict)
+        get_building.damage_state -- Changed to 'None' for selected structures.
+        get_building.damage_value = Changed to $0.0 for selected structures.
+        """
         
-        # Inpsect all buildings in the building stock immediately
-        # for building in building_stock.items:
-        #     yield self.env.process(self.inspection.process(building, dummy_entity)) 
-
-        random.seed(15)
-
-        damaged_buildings = []  # Empty list to temporarily place FilterStore objects.
-
-        # Remove all structures from the FilterStore; put in a list for processing.
-        while building_stock.items:
-            get_building = yield building_stock.get(lambda getBuilding:
-                                                            getBuilding.damage_state != 'None'
-                                                    )
-            damaged_buildings.append(get_building)
-        
-        # Timeout until repair stock policy start time
-        yield self.env.timeout(start_time)
-        
-        num_fixed = 0  # Counter
-        
-        # Iterate through buildings, do processing, 
-        for building in damaged_buildings:
+        if entity.property.damage_state != 'None':
             
-            # Compare uniform random to prob to estimate percentage to fix.
-            # Then yield assessment, permit, and repair processes
-            # Put back into the FilterStore
-            if random.uniform(0, 1.0) <= repair_fraction:
-                print(self.env.now)
-                yield self.env.process(self.assessment.process(building, dummy_entity))
-                print(self.env.now)
-                yield self.env.process(self.permit.process(building, dummy_entity))
-                print(self.env.now)
-                yield self.env.process(self.repair.process(building, dummy_entity))
-                print(self.env.now)
-    
-                # building.damage_state = 'None'
-                # building.damage_value = 0.0
-                # building_stock.put(building)
-                num_fixed += 1
-            else:
-                # Put back in FilterStore if not chosen to be fixed.
-                building_stock.put(building)
-              
-        print('{0} homes in the vacant building stock were repaired on day {1}.'.format(num_fixed, self.env.now))
+            if random.uniform(0, 1.0) > repair_probability:
+                return
+            
+            get_building = yield building_stock.get(lambda getBuilding:
+                                                        getBuilding.address.lower() == entity.property.address.lower()
+                                                )
+
+            yield self.env.process(inspection_program.process(entity.property, entity))
+            yield self.env.timeout(wait_time)
+            yield self.env.process(assessment_program.process(entity.property, entity))
+            yield self.env.process(permit_program.process(entity.property, entity))
+            yield self.env.process(rebuild_program.process(entity.property, entity))
+            yield building_stock.put(get_building)
+            

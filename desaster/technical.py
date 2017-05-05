@@ -155,9 +155,10 @@ class InspectionProgram(TechnicalRecoveryProgram):
             if entity.write_story:
 
                 entity.story.append(
-                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage.".format(
+                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}).".format(
                                 entity.name.title(), structure.occupancy.lower(),
-                                entity.inspection_get, structure.damage_value))
+                                entity.inspection_get, structure.damage_value,
+                                structure.damage_state.lower()))
 
 class EngineeringAssessment(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with 
