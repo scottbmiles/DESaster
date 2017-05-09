@@ -19,11 +19,11 @@ from desaster.io import random_duration_function
 import names, warnings, sys
 
 class Entity(object):
-    """A base class for representing entities, such as households, businesses, 
-    agencies, NGOs, etc. At the moment moment the only attribute in common for 
+    """A base class for representing entities, such as households, businesses,
+    agencies, NGOs, etc. At the moment moment the only attribute in common for
     all entities are having a name and the potential to record the story of their
     recovery events.
-    
+
     Methods:
     __init__(self, env, name, write_story = False)
     """
@@ -36,7 +36,7 @@ class Entity(object):
         write_story -- Boolean indicating whether to track an entity's story.
         """
         self.env = env
-        
+
         # Household attributes
         self.name = name   # Name associated with occupant of the home %***%
         self.write_story = write_story # Boolean. Whether to track the entity's story.
@@ -51,10 +51,10 @@ class Entity(object):
 class Owner(Entity):
     """An class that inherits from the Entity() class to represent any entity
     that owns property. Such entities require having attributes of insurance and
-    savings (to facilate repairing or replacing the property). An owner does not 
+    savings (to facilate repairing or replacing the property). An owner does not
     necessarily have a residence (e.g., landlord). For the most part this is class
     is to define subclasses with Owner() attributes.
-    
+
     Methods:
     __init__(self, env, name, attributes_df, building_stock, write_story = False)
     """
@@ -69,7 +69,7 @@ class Owner(Entity):
         building_stock -- a SimPy FilterStore that acts as an occupied building stock.
                         The owner's property is added to the occupied building stock.
         write_story -- Boolean indicating whether to track the entity's story.
-        
+
         Inheritance:
         Subclass of entities.Entity()
         """
@@ -79,6 +79,24 @@ class Owner(Entity):
         self.insurance = attributes_df['Owner Insurance']  # Hazard-specific insurance coverage: coverage / residence.value
         self.savings = attributes_df['Savings']  # Amount of entity savings in $
 
+        # TEMPORARY: If property is not a SFR or mobile home, create a generic building
+        if (attributes_df['Occupancy'].lower() == 'single family dwelling'
+                or attributes_df['Occupancy'].lower() == 'mobile home'):
+            self.property = SingleFamilyResidential(attributes_df)
+        else:
+            self.property = Building(attributes_df)
+
+        # Set owner of the entity's property
+        self.property.owner = self
+        # Assign what building stock the property is associated w/
+        self.property.stock = building_stock
+        # Place the newly initiated property into the associatd building stock
+        self.property.stock.put(self.property)
+
+        if self.write_story:
+            # Start stories with non-disaster attributes
+            self.story.append('{0} owns a residence. '.format(self.name))
+            
         # Owner env outputs
         self.inspection_put = None  # Time put request in for house inspection
         self.inspection_get = None  # Time get  house inspection
@@ -99,36 +117,28 @@ class Owner(Entity):
         self.permit_get = None  # Time get requested building permit
         self.assessment_put = None  # Time put request for engineering assessment
         self.assessment_get = None  # Time put request for engineering assessment
-        self.gave_up_funding_search = None  # Time entity gave up on some funding 
-                                            # process; obviously can't keep track 
+        self.gave_up_funding_search = None  # Time entity gave up on some funding
+                                            # process; obviously can't keep track
                                             # of multiple give ups
-        self.prior_property = None
-    
-        if (attributes_df['Occupancy'].lower() == 'single family dwelling' 
-                or attributes_df['Occupancy'].lower() == 'mobile home'):
-            self.property = SingleFamilyResidential(attributes_df)
-        else: 
-            self.property = Building(attributes_df)
-        
-        building_stock.put(self.property)
-            
-        if self.write_story:
-            # Start stories with non-disaster attributes
-            self.story.append('{0} owns a residence. '.format(self.name))
+        self.prior_property = []
+
+
+
+
 
 class Household(Entity):
     """Define a Household() class to represent a group of persons that reside
     together as a single dwelling unit. A Household() object can not own property,
-    but does have a residence. For the most part this is class is to define 
+    but does have a residence. For the most part this is class is to define
     subclasses with Household() attributes.
-    
+
     Methods:
     __init__(self, env, name, attributes_df, residence, write_story = False)
     """
     def __init__(self, env, name, attributes_df, residence, write_story = False):
         """Initiate a entities.Household() object.
 
-        Keyword Arguments:  
+        Keyword Arguments:
         env -- Pointer to SimPy env environment.
         name -- A string indicating the entity's name.
         attributes_df -- Dataframe row w/ entity input attributes.
@@ -145,16 +155,16 @@ class Household(Entity):
         self.home_search_start = None  # Time started searching for a new home
         self.home_search_stop = None  # Time found a new home
         self.gave_up_home_search = None  # Whether entity gave up search for home
-        self.home_put = None # The time when the entity put's in a request for a home. 
+        self.home_put = None # The time when the entity put's in a request for a home.
                                 # None if request never made.
-        self.home_get = None # The time when the entity receives a home. 
+        self.home_get = None # The time when the entity receives a home.
                                 # None if never received.
-        self.prior_residence = [] # An empty list to record each residence that 
+        self.prior_residence = [] # An empty list to record each residence that
                                     # the entity vacates.
 
         if self.write_story:
             self.story.append('{0} resides at {1}. '.format(
-                                                            self.name, 
+                                                            self.name,
                                                             self.residence.address
                                                             )
                             )
@@ -165,7 +175,7 @@ class OwnerHousehold(Owner, Household):
     do not have to be the same. The OwnerHousehold() class includes methods to
     look for a new home to purchase (property), as well as to occupy a residence
     (not necessarily it's property).
-    
+
     Methods:
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_prob_dist, callbacks = None)
@@ -197,7 +207,7 @@ class OwnerHousehold(Owner, Household):
                                                             )
                                 )
 
-    def replace_home(self, search_patience, building_stock):
+    def replace_home(self, search_patience, search_stock):
         """A process (generator) representing entity search for permanent housing
         based on housing preferences, available housing stock, and patience finding
         a new home.
@@ -206,16 +216,16 @@ class OwnerHousehold(Owner, Household):
         search_patience -- The search duration in which the entity is willing to wait
                             to find a new home. Does not include the process of
                             securing money.
-        building_stock -- A SimPy FilterStore that contains one or more
-                        residential building objects (e.g., structures.SingleFamilyResidential) 
-                        that represent vacant homes for purchase.
+        search_stock -- A SimPy FilterStore that contains one or more
+                        residential building objects (e.g., structures.SingleFamilyResidential)
+                        that represent homes owner is searching to purchase.
 
         Returns or Attribute Changes:
         self.story -- Process outcomes appended to story.
         self.home_search_start -- Record time home search starts
         self.home_search_stop -- Record time home search stops
         self.residence -- Potentially assigned a new residence object.
-        self.gave_up_home_search -- Set with env.now to indicate if and when 
+        self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
         self.story -- If write_story == True, append entity story strings
         """
@@ -224,9 +234,6 @@ class OwnerHousehold(Owner, Household):
         # If write_story, write search start time to entity's story
         self.home_search_start = self.env.now
         patience_end = self.home_search_start + search_patience
-
-        # Record entity's previous residence
-        self.prior_property = self.property
 
         # Define timeout process representing entity's *remaining* search patience.
         # Return 'Gave up' if timeout process completes.
@@ -241,8 +248,8 @@ class OwnerHousehold(Owner, Household):
                 self.name.title(), self.property.occupancy.lower(),
                 self.home_search_start)
                 )
-        
-        new_home = building_stock.get(lambda findHome:
+
+        new_home = search_stock.get(lambda findHome:
                         (
                             findHome.damage_state == 'None'
                             or findHome.damage_state == 'Slight'
@@ -250,7 +257,7 @@ class OwnerHousehold(Owner, Household):
                         and findHome.occupancy.lower() == self.property.occupancy.lower()
                         and findHome.bedrooms >= self.property.bedrooms
                         and findHome.value <= self.property.value
-                        # and findHome.inspected == True
+                        and findHome.listed == True
                        )
 
         # Yield both the patience timeout and the housing stock FilterStore get.
@@ -262,7 +269,7 @@ class OwnerHousehold(Owner, Household):
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-        
+
             # If write_story, note in the story that the entity gave up
             # the search.
             if self.write_story:
@@ -275,13 +282,26 @@ class OwnerHousehold(Owner, Household):
                     )
             return
 
-        # If a new home is found before patience runs out place entity's current
-        # residence in vacant housing stock -- "sell" the home.
+        # If a new home is found before patience runs out set current property's
+        # listed attributed to True -- put home up for sale.
+        # get and put from FilterStore to tell SimPy object's state changed
         if self.property:
-            yield building_stock.put(self.property)
+            yield self.property.stock.get(self.property)
+            self.prior_property.append(self.property) # Record entity's previous property
+            self.property.listed = True
+            yield self.property.stock.put(self.property)
 
         # Set the newly found home as the entity's property.
+        # Take it off the market and place back in housing stock
+        # (in orde for SimPy to register the resource state change)
         self.property = home_search_outcome[new_home]
+        self.property.listed = False
+        self.property.stock.put(self.property)
+
+        # Record current residence as prior residence
+        # Make the entity's property also their residence
+        self.prior_residence.append(self.residence)
+        self.residence = self.property
 
         # Record the time that the housing search ends.
         self.home_search_stop = self.env.now
@@ -298,11 +318,11 @@ class OwnerHousehold(Owner, Household):
                     self.property.damage_value
                     )
                 )
-    
+
     def occupy(self, duration_prob_dist, callbacks = None):
         """Define process for occupying a residence. Currently the method only
         allows for the case of occupying a property (assigning property as its
-        residence). Potentially, eventually need logic that allows for occupying residences 
+        residence). Potentially, eventually need logic that allows for occupying residences
         that are not it's property.
 
         Keyword Arguments:
@@ -318,16 +338,15 @@ class OwnerHousehold(Owner, Household):
         self.residence -- Assign the owner's property object as residence.
         """
         calc_duration = random_duration_function(duration_prob_dist)
-        
+
         # Yield timeout equivalent to time required to move back into home.
         yield self.env.timeout(calc_duration())
 
-        # Make the entity's property also their residence
-        self.residence = self.property
-        
+
+
         # Record time got home
         self.home_get = self.env.now
-        
+
         #If true, write process outcome to story
         if self.write_story:
             self.story.append(
@@ -343,12 +362,12 @@ class OwnerHousehold(Owner, Household):
             pass
 
 class RenterHousehold(Household):
-    """The RenterHousehold() class has attributes of both entities.Entity() and 
+    """The RenterHousehold() class has attributes of both entities.Entity() and
     entities.Household() classes. The class does not have associated property, but
     does have an associated landlord (entities.Landlord() object). So RenterHousehold()
-    objects can have both residences and landlords assigned and unassigned to 
+    objects can have both residences and landlords assigned and unassigned to
     represent, e.g., evictions.
-    
+
     Methods:
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_prob_dist, callbacks = None)
@@ -361,21 +380,21 @@ class RenterHousehold(Household):
         attributes_df -- Dataframe row w/ entity input attributes.
         building_stock -- a SimPy FilterStore that acts as an occupied rental stock
         write_story -- Boolean indicating whether to track a entitys story.
-        
+
         Changed Attributes:
-        self.landlord -- Assigns a entities.Landlord() object based on attributes_df 
+        self.landlord -- Assigns a entities.Landlord() object based on attributes_df
         self.story -- If write_story == True, append story strings.
-        
+
         Inheritance:
         Subclass of entities.Household()
         """
 
         # Attributes
-        self.landlord = Landlord(env, attributes_df['Landlord'], self, attributes_df, 
+        self.landlord = Landlord(env, attributes_df['Landlord'], self, attributes_df,
                                     building_stock, write_story)
 
         # Initial method calls; This needs to go after landlord assignment.
-        Household.__init__(self, env, name, attributes_df, self.landlord.property, 
+        Household.__init__(self, env, name, attributes_df, self.landlord.property,
                                                                         write_story)
 
         if self.write_story:
@@ -390,7 +409,7 @@ class RenterHousehold(Household):
                                                             )
                                 )
 
-    def replace_home(self, search_patience, building_stock):
+    def replace_home(self, search_patience, search_stock):
         """A process (generator) representing RenterHousehold search for rental housing
         based on housing preferences, available rental stock, and patience for finding
         a new home.
@@ -408,7 +427,7 @@ class RenterHousehold(Household):
         self.home_search_start -- Record time home search starts
         self.home_search_stop -- Record time home search stops
         self.residence -- Potentially assigned a new structures.Residence() object.
-        self.gave_up_home_search -- Set with env.now to indicate if and when 
+        self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
         """
         # Record when housing search starts
@@ -426,14 +445,15 @@ class RenterHousehold(Household):
         # for rent stock with similar attributes as current home.
 
         # Need to handle eviction case (.prior_residence) and non-eviction case (.residence)
-        if self.residence != None:
+        if self.residence:
             if self.write_story:
                 self.story.append(
                     '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
                     self.name.title(), self.residence.occupancy.lower(),
                     self.home_search_start)
                     )
-            new_home = building_stock.get(lambda findHome:
+
+            new_home = search_stock.get(lambda findHome:
                             (
                                 findHome.damage_state == 'None'
                                 or findHome.damage_state == 'Slight'
@@ -441,7 +461,7 @@ class RenterHousehold(Household):
                             and findHome.occupancy.lower() == self.residence.occupancy.lower()
                             and findHome.bedrooms >= self.residence.bedrooms
                             and findHome.cost <= self.residence.cost
-                            and findHome.inspected == True
+                            and findHome.listed == True
                            )
         else:
             if self.write_story:
@@ -450,7 +470,7 @@ class RenterHousehold(Household):
                     self.name.title(), self.prior_residence[-1].occupancy.lower(),
                     self.home_search_start)
                     )
-            new_home = building_stock.get(lambda findHome:
+            new_home = search_stock.get(lambda findHome:
                             (
                                 findHome.damage_state == 'None'
                                 or findHome.damage_state == 'Slight'
@@ -458,15 +478,15 @@ class RenterHousehold(Household):
                             and findHome.occupancy.lower() == self.prior_residence[-1].occupancy.lower()
                             and findHome.bedrooms >= self.prior_residence[-1].bedrooms
                             and findHome.cost <= self.prior_residence[-1].cost
-                            and findHome.inspected == True
+                            and findHome.listed == True
                            )
 
         # Yield both the patience timeout and the housing stock FilterStore get.
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
         home_search_outcome = yield find_search_patience | new_home
-    
-        
+
+
         # Exit the function if the patience timeout completes before a suitable
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
@@ -483,13 +503,18 @@ class RenterHousehold(Household):
                     )
             return
 
-        # If a new home is found before patience runs out place entity's current
-        # residence in vacant housing stock -- "sell" the home.
-        if self.residence != None:
-            yield building_stock.put(self.residence)
+        # If a new home is found before patience runs change residence's listed
+        # state to True to indicate residence is for rent.
+        # Record prior residence
+        if self.residence:
+            yield self.residence.stock.get(self.residence)
+            self.prior_residence.append(self.residence)
+            self.residence.listed = True
+            yield self.residence.stock.put(self.residence)
 
         # Set the newly found home as the entity's property.
         self.residence = home_search_outcome[new_home]
+        self.residence.listed = False
 
         # Record the time that the housing search ends.
         self.home_search_stop = self.env.now
@@ -508,7 +533,7 @@ class RenterHousehold(Household):
                 )
     def occupy(self, duration_prob_dist, callbacks = None):
         """A process for a RenterHousehold to occupy a residence.
-        At the moment all this does is represent some duration it takes for the 
+        At the moment all this does is represent some duration it takes for the
         entity to move into a new residence. Potentially eventually can add logic
         related to, e.g., rent increases.
 
@@ -525,15 +550,15 @@ class RenterHousehold(Household):
         """
 
         calc_duration = random_duration_function(duration_prob_dist)
-        
+
         ####
         #### Hopefully put code here for checking if renter can still afford
         #### the rent. Obviously need a function somewhere that estimates rent increases.
-        #### 
-        
+        ####
+
         # Yield timeout equivalent to time required to move back into home.
         yield self.env.timeout(calc_duration())
-        
+
         # Record time got home
         self.home_get = self.env.now
 
@@ -553,7 +578,7 @@ class RenterHousehold(Household):
 
 class Landlord(Owner):
     """A Landlord() class is a subclass of entiites.Owner() but has an attributes
-    that allows it to have a tenant (e.g., entities.RenterHousehold). Otherwise, 
+    that allows it to have a tenant (e.g., entities.RenterHousehold). Otherwise,
     currently the same as entities.Owner().
 
     """
@@ -569,7 +594,7 @@ class Landlord(Owner):
         building_stock -- a SimPy FilterStore that acts as an occupied building stock.
                         The owner's property is added to the occupied building stock.
         write_story -- Boolean indicating whether to track a entitys story.
-        
+
         Inheritance:
         Subclass of entities.Owner()
         """
@@ -590,100 +615,3 @@ class Landlord(Owner):
                                                         self.property.value
                                                         )
                                 )
-
-def importOwners(env, building_stock, entities_df, write_story = False):
-    """Return list of entities.Household() objects from dataframe containing
-    data describing entities' attributes.
-
-    Keyword Arguments:
-    env -- Pointer to SimPy env environment.
-    building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-    entities_df -- Dataframe row w/ entity input attributes.
-    write_story -- Boolean indicating whether to track a entitys story.
-    """
-
-    entities = []
-
-    # Population the env with entitys from the entitys dataframe
-    for i in entities_df.index:
-        entities.append(Owner(env, building_stock, entities_df.iloc[i], write_story))
-    return entities
-
-def importEntities(env, building_stock, entities_df, entity_type, write_story = False):
-        """Return list of entities.OwnerHouseholds() objects from dataframe containing
-        data describing entities' attributes.
-
-        Keyword Arguments:
-        env -- Pointer to SimPy env environment.
-        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-        entities_df -- Dataframe row w/ entities' input attributes.
-        entity_type -- Indicate class of entity: Household, Owner, OwnerHousehold etc.
-        write_story -- Boolean indicating whether to track a entitys story.
-        """
-        entities = []
-        
-        if entity_type.lower() == 'household':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Household(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'owner':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Owner(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'ownerhousehold':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(OwnerHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'renterhousehold':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(RenterHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'landlord':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Landlord(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        else:
-            raise AttributeError("Entity class type not specified or recognized. Can't complete import.")
-
-def importOwnerHouseholds(env, building_stock, entities_df, write_story = False):
-    """Return list of entities.OwnerHouseholds() objects from dataframe containing
-    data describing entities' attributes.
-
-    Keyword Arguments:
-    env -- Pointer to SimPy env environment.
-    building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-    entities_df -- Dataframe row w/ entity input attributes.
-    write_story -- Boolean indicating whether to track a entitys story.
-    """
-    
-    warnings.showwarning('importOwnerHouseholds depricated. Use importEntities.', 
-                            DeprecationWarning, filename = sys.stderr,
-                            lineno=643)
-    
-    entities = importEntities(env, building_stock, entities_df, 'ownerhousehold', write_story)
-
-    return entities
-
-def importRenterHouseholds(env, building_stock, entities_df, write_story = False):
-    """Return list of entities.RenterHousehold() objects from dataframe containing
-    dataframe describing entities' attributes.
-
-    Keyword Arguments:
-    env -- Pointer to SimPy env environment.
-    building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-    entities_df -- Dataframe row w/ entity input attributes.
-    write_story -- Boolean indicating whether to track a entitys story.
-    """
-    
-    warnings.showwarning('importRenterHouseholds depricated. Use importEntities.', 
-                            DeprecationWarning, filename = sys.stderr,
-                            lineno=661)
-    
-    entities = importEntities(env, building_stock, entities_df, 'renterhousehold', write_story)
-    
-    return entities

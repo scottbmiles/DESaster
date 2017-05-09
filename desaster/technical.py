@@ -19,49 +19,49 @@ from simpy import Resource, Container
 from desaster.io import random_duration_function
 
 class TechnicalRecoveryProgram(object):
-    """The base class for operationalizing technical recovery programs. 
-    All such programs staff implemented as simpy resources . 
-    
-    All other classes of technical recovery programs should inherit from this class, 
-    either directly or indirectly. The process for TechnicalRecoveryProgram is 
+    """The base class for operationalizing technical recovery programs.
+    All such programs staff implemented as simpy resources .
+
+    All other classes of technical recovery programs should inherit from this class,
+    either directly or indirectly. The process for TechnicalRecoveryProgram is
     useless and should only be used as an example of how to implement a process in a
     subclass of TechnicalRecoveryProgram.
-    
+
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
     process(self, entity = None)
     """
     def __init__(self, env, duration_prob_dist, staff=float('inf')):
         """Initiate a TechnicalRecoveryProgram object.
-        
+
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_prob_dist -- io.DurationProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
-                    
+
         Attribute Changes:
         self.staff -- A simpy.Resource() object with a capacity == staff arg
-        self.duration -- A function that is used to calculate random durations 
+        self.duration -- A function that is used to calculate random durations
                             for the program process
         """
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
         self.duration = random_duration_function(duration_prob_dist)
-        
-    def process(self, entity = None):
+
+    def process(self, structure):
         """The process for TechnicalRecoveryProgram for requesting staff and issuing
         SimPy timeouts to represent duration of associated technical process.
-        
+
         entity -- Some entities.py object that initiates and benefits from the recovery program.
         """
         ###
         ### The contents of this function are an example of what can be done
-        ### in a subclass of this class. It demonstrates the use of SimPy 
+        ### in a subclass of this class. It demonstrates the use of SimPy
         ### Resources and Containiners. The function itself is useless.
         ### It is meant to help create your own function after creating
         ### a subclass that inherits from this class.
-        ### 
-        
+        ###
+
         # Request staff
         staff_request = self.staff.request()
         yield staff_request
@@ -88,50 +88,48 @@ class TechnicalRecoveryProgram(object):
                                 )
 
 class InspectionProgram(TechnicalRecoveryProgram):
-    """ A class for representing staff allocation and process duration associated 
+    """ A class for representing staff allocation and process duration associated
     with post-event building inspections or tagging. No actual damage
-    assessment (valuation) is done by the class process. It is done in the 
+    assessment (valuation) is done by the class process. It is done in the
     instantiation of the building object (e.g., entities.SingleFamilyResidential.damage_value)
     based on inputted damage_state and HAZUS lookup tables.
-    
+
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, structure, entity = None, callbacks = None)
+    process(self, structure, entity, callbacks = None)
     """
     def __init__(self, env, duration_prob_dist, staff=float('inf')):
         """Initiate an InspectionProgram object.
-        
+
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_prob_dist -- io.DurationProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
-        
+
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
         """
         TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
 
-    def process(self, structure, entity = None, callbacks = None):
-        """Process to allocate staff and simulate duration associated 
-        with post-event building inspections. 
-        
+    def process(self, structure, entity, callbacks = None):
+        """Process to allocate staff and simulate duration associated
+        with post-event building inspections.
+
         Keyword Arguments:
         structure -- Some structures.py object, such as structures.SingleFamilyResidential()
-        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates 
+        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates
                     and benefits from the process.
         callbacks -- a generator function containing processes to start after the
                     completion of this process.
-                    
+
         Changed Attributes:
         entity.story -- Append story strings to entity's story
         entity.inspection_put -- Time request for inspection was put in
         entity.inspection_get -- Time structure was inspected
         structure.inspected = True, if successfully inspected
         """
-        # Only record inspection request time if structure associated with an entity.
-        if entity != None:
-            # Put in request for an inspector (shared resource)
-            entity.inspection_put = self.env.now
+        # Put in request for an inspector (shared resource)
+        entity.inspection_put = self.env.now
 
         # Request inspectors
         staff_request = self.staff.request()
@@ -155,32 +153,32 @@ class InspectionProgram(TechnicalRecoveryProgram):
             if entity.write_story:
 
                 entity.story.append(
-                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}).".format(
+                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}). ".format(
                                 entity.name.title(), structure.occupancy.lower(),
                                 entity.inspection_get, structure.damage_value,
                                 structure.damage_state.lower()))
 
 class EngineeringAssessment(TechnicalRecoveryProgram):
-    """A class to represent staff allocation and process duration associated with 
+    """A class to represent staff allocation and process duration associated with
     building engineering assessments. Conceptually this intended as a detailed
     damage assessment prior to design, permitting, and repair/construction of
     a building. No actual damage valuation is done by the class process, though
-    it would conceputally make sense. It is done in the instantiation of the 
+    it would conceputally make sense. It is done in the instantiation of the
     building object (e.g., entities.SingleFamilyResidential.damage_value)
     based on inputted damage_state and HAZUS lookup tables.
-    
+
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, structure, entity = None, callbacks = None)
+    process(self, structure, entity, callbacks = None)
     """
     def __init__(self, env, duration_prob_dist, staff=float('inf'), ):
         """Initiate EngineeringAssessment object.
-        
+
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_prob_dist -- io.DurationProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
-        
+
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
         """
@@ -192,11 +190,11 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
 
         Keyword Arguments:
         structure -- Some structures.py object, such as structures.SingleFamilyResidential()
-        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates 
+        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates
                     and benefits from the process.
         callbacks -- a generator function containing processes to start after the
                     completion of this process.
-        
+
         Returns or Attribute Changes:
         entity.story -- Append story strings to entity's story
         entity.assessment_put -- Records sim time of assessment request
@@ -234,25 +232,25 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
             pass
 
 class PermitProgram(TechnicalRecoveryProgram):
-    """A class to represent staff allocation and process duration associated with 
+    """A class to represent staff allocation and process duration associated with
     building permit processing. Conceptually this intended prior to building
     repairs or construction.
-    
+
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, structure, entity = None, callbacks = None)
+    process(self, structure, entity, callbacks = None)
     """
     def __init__(self, env, duration_prob_dist, staff=float('inf'), ):
         """Initiate PermitProgram object.
-        
+
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_prob_dist -- io.DurationProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
-        
+
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
-        """    
+        """
         TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
 
     def process(self, structure, entity, callbacks = None):
@@ -261,11 +259,11 @@ class PermitProgram(TechnicalRecoveryProgram):
 
         Keyword Arguments:
         structure -- Some structures.py object, such as structures.SingleFamilyResidential()
-        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates 
+        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates
                     and benefits from the process.
         callbacks -- a generator function containing processes to start after the
                     completion of this process.
-        
+
         Returns or Attribute Changes:
         entity.story -- Append story strings to entity's story
         entity.permit_put -- Records sim time of permit request
@@ -303,50 +301,50 @@ class PermitProgram(TechnicalRecoveryProgram):
             pass
 
 class RepairProgram(TechnicalRecoveryProgram):
-    """A class to represent staff allocation and process duration associated with 
-    building repair. The class also represents building/concstruction materials in 
+    """A class to represent staff allocation and process duration associated with
+    building repair. The class also represents building/concstruction materials in
     a simplified way--a single simpy.Container representing the inventory dollar
     value of undifferented materials
-    
+
     *** Currently no conceptual or algorithmic difference is made
     between repairs and reconstruction. Potentially eventually this should be done,
     likely as a separate program together with another program for demolition.
-    Currently building materials are undifferentiad. Potentially eventually can 
-    represent different material types with separate simpy Containers (e.g., 
+    Currently building materials are undifferentiad. Potentially eventually can
+    represent different material types with separate simpy Containers (e.g.,
     wood, metal, aggregate, etc.)***
-    
+
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, structure, entity = None, callbacks = None)
+    process(self, structure, entity, callbacks = None)
     """
     def __init__(self, env, duration_prob_dist, staff=float('inf'), materials=float('inf'), ):
         """Initiate RepairProgram object.
-        
+
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_prob_dist -- io.DurationProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
-        
+
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
-        """    
+        """
         TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
-        
+
         # Simpy Container to represent bulding materials as inventory dollar value
         # of undifferented materials.
-        self.materials = Container(self.env, init=materials) 
-        
+        self.materials = Container(self.env, init=materials)
+
     def process(self, structure, entity, callbacks = None):
-        """A process to rebuild a building structure based on available contractors 
+        """A process to rebuild a building structure based on available contractors
         and building materials.
 
         Keyword Arguments:
         structure -- Some structures.py object, such as structures.SingleFamilyResidential()
-        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates 
+        entity -- An entity (e.g., entities.OwnerHousehold()) that initiates
                     and benefits from the process.
         callbacks -- a generator function containing processes to start after the
                     completion of this process.
-        
+
         Returns or Attribute Changes:
         entity.story -- Process outcomes appended to story.
         entity.rebuild_put -- Record time money search starts
@@ -445,31 +443,31 @@ class RepairProgram(TechnicalRecoveryProgram):
 #     of a building stock. Conceptually this is intended to rebuild vacant building
 #     stocks that do not have entities associated with them to rebuild them. This bulk
 #     rebuilding potentially provides additional homes for entities to purchase or rent.
-#     
+#
 #     *** CURRENTLY BROKEN ***
-#     
+#
 #     Methods:
 #     __init__(self, env, duration_prob_dist, staff=float('inf'))
 #     process(self, building_stock, rebuild_fraction, rebuild_start)
 #     """
-#     
+#
 #     def __init__(self, env, duration_prob_dist, staff=float('inf')):
 #         """Initiate RepairStockProgram object.
-#         
+#
 #         Keyword Arguments:
 #         env -- simpy.Envionment() object
 #         duration_prob_dist -- io.DurationProbabilityDistribution() object
 #         staff -- Integer, indicating number of staff assigned to the program
-#         
+#
 #         Inheritance:
 #         Subclass of technical.TechnicalRecoveryProgram()
-#         """    
+#         """
 #         TechnicalRecoveryProgram.__init__(self, env, duration_prob_dist, staff)
 
 # def repair_stock(building_stock, repair_fraction):
 #     """Process to repair a part or an entire building stock (FilterStore) based
 #     on available contractors and specified proportion/probability.
-# 
+#
 #     Keyword Arguments:
 #     building_stock -- A SimPy FilterStore that contains one or more
 #         structures.BuiltCapital(), structures.Building(), or structures.Residence()
@@ -477,26 +475,26 @@ class RepairProgram(TechnicalRecoveryProgram):
 #     rebuild_fraction -- A value to set approximate percentage of number of structures
 #         in the stock to rebuild.
 #     rebuild_start -- Duration to timeout prior to rebuilding commences.
-# 
+#
 #     Attribute Changes:
 #     put_structure.damage_state -- Changed to 'None' for selected structures.
 #     put_structure.damage_value = Changed to $0.0 for selected structures.
-#     """ 
+#     """
 #     # yield self.env.timeout(rebuild_start)
-# 
+#
 #     num_fixed = 0  # Counter
-# 
+#
 #     filter_fxn = lambda x : x.damage_state != 'None'
-# 
+#
 #     filtered_stock = list(
 #                     filter(
-#                             filter_fxn, 
+#                             filter_fxn,
 #                             building_stock.items))
-# 
+#
 #     sample_size = int(repair_fraction*len(filtered_stock))
 #     sample_stock = random.sample(filtered_stock, sample_size)
-# 
-# 
+#
+#
 #     # Iterate through structures, do processing, put back into the FilterStore
 #     for building in sample_stock:
 #         building.inspected = True
@@ -505,6 +503,6 @@ class RepairProgram(TechnicalRecoveryProgram):
 #         building.damage_state = 'None'
 #         building.damage_value = 0.0
 #         num_fixed += 1
-#                 
+#
 #     print('{0} homes in the vacant building stock were repaired.'.format(num_fixed))
-# 
+#
