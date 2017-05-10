@@ -16,7 +16,6 @@ import random
 from numpy.random import choice
 from simpy import Interrupt
 from simpy import Resource, Container
-from desaster.io import random_duration_function
 
 class TechnicalRecoveryProgram(object):
     """The base class for operationalizing technical recovery programs.
@@ -46,7 +45,7 @@ class TechnicalRecoveryProgram(object):
         """
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
-        self.duration = random_duration_function(duration_prob_dist)
+        self.duration = duration_prob_dist.duration()
 
     def process(self, structure):
         """The process for TechnicalRecoveryProgram for requesting staff and issuing

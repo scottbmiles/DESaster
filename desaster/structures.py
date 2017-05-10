@@ -27,40 +27,39 @@ class Building(object):
     Functions:
     setDamageValue(self, building)
     """
-    def __init__(self, building):
-        """Run initial methods for defining building attributes.
+    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+                    latitude = None, value = None, cost = None, area = None,
+                    listed = False, damage_state = None, building_stock = None):
+        """
 
         Keyword Arguments:
         building -- A dataframe row with required building attributes.
         """
-
-        self.owner = None  # Owner of building as Household() entity %***%
-        self.cost = building['Cost']  # Monthly rent/mortgage of building
-        self.age = building['Year Built']  # Year building was built
-        self.value = building['Value']  # Value of the building in $
-        self.damage_state = building['Damage State']  # HAZUS damage state
-        self.damage_state_start = building['Damage State']  # Archive starting damage state
+        # Attributes
+        self.owner = owner  # Owner of building as Household() entity
+        self.cost = cost  # Monthly rent/mortgage of building
+        self.value = value  # Value of the building in $
+        self.damage_state = damage_state  # HAZUS damage state
+        self.damage_state_start = damage_state  # Archive starting damage state
+        self.occupancy = occupancy  # Occupancy type of building
+        self.area = area  # Floor area of building
+        try:
+            self.listed = distutils.util.strtobool(listed)
+        except:
+            self.listed = listed
+        self.address = address # Address of building
+        self.latitude = latitude
+        self.longitude = longitude
+        self.stock = building_stock # The building stock FilterStor the building belongs to
+        self.setDamageValue()  # Use HAZUS lookup tables to assign damage value.
+        
+        # Outputs and intermediate variables
         self.inspected = False  # Whether the building has been inspected
         self.permit = False  # Whether the building has a permit
         self.assessment = False  # Whether the building has had engineering assessment
-        self.occupancy = building['Occupancy']  # Occupancy type of building
-        self.area = building['Area']  # Floor area of building
-        # self.listed = distutils.util.strtobool(building['Listed'])
-        self.listed = building['Listed']
-        try: #if address isn't in dataframe, we'll just set it to none
-            self.address = building['Address']  # Address of building
-        except:
-            self.address = 'unknown address'
-        try: #if lat/long aren't in data, we'll set to none
-            self.latitude = building['Latitude']
-            self.longitude = building['Longitude']
-        except:
-            self.latitude = None
-            self.longitude = None
+        
 
-        self.setDamageValue(building)  # Use HAZUS lookup tables to assign damage value.
-
-    def setDamageValue(self, building):
+    def setDamageValue(self):
         """Calculate damage value for building based on occupancy type and
         HAZUS damage state.
 
@@ -75,10 +74,10 @@ class Building(object):
         acceleration_damage_ratios -- dataframe set in config.py
         drift_damage_ratios -- dataframe set in config.py
         """
-        struct_repair_ratio = structural_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
-        accel_repair_ratio = acceleration_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
-        drift_repair_ratio = drift_damage_ratios.ix[building['Occupancy']][building['Damage State']] / 100.0
-        self.damage_value = building['Value']*(struct_repair_ratio +
+        struct_repair_ratio = structural_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
+        accel_repair_ratio = acceleration_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
+        drift_repair_ratio = drift_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
+        self.damage_value = self.value*(struct_repair_ratio +
                                                 accel_repair_ratio +
                                                 drift_repair_ratio)
         self.damage_value_start = self.damage_value # Archive original damage value
@@ -89,7 +88,10 @@ class SingleFamilyResidential(Building):
     just adds attribues of bedrooms and bathroom and verifies a HAZUS-compatible
     residential building type is specified.
     """
-    def __init__(self, building):
+    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+                    latitude = None, value = None, cost = None, area = None,
+                    bedrooms = None, bathrooms = None, listed = False, damage_state = None,
+                    building_stock = None):
         """Run initial methods for defining building attributes.
 
         Keyword Arguments:
@@ -97,22 +99,16 @@ class SingleFamilyResidential(Building):
         building -- A dataframe row with required building attributes.
         """
 
-        Building.__init__(self, building) # %***%s
+        Building.__init__(self, owner, occupancy, address, longitude,
+                        latitude, value, cost, area,
+                        listed, damage_state, building_stock) 
 
-        try:
-            self.bedrooms = building['Bedrooms']  # Number of bedrooms in building
-        except:
-            self.bedrooms = 0
-        try:
-            self.bathrooms = building['Bathrooms']  # Number of bedrooms in building
-        except:
-            self.bathrooms = 0
+        self.bedrooms = bedrooms  # Number of bedrooms in building
+        self.bathrooms = bathrooms # Number of bedrooms in building
 
         # Verify that building dataframe has expected occupancy types
-        if not building['Occupancy'].lower() in ('single family dwelling', 'mobile home'):
-            # print('Warning: SingleFamilyResidential not compatible with given occupancy type: {0}'.format(
-            #         building['Occupancy'].title()))
-
+        # Raise warning, if not (but continue with simulation)
+        if not occupancy.lower() in ('single family dwelling', 'mobile home'):
             warnings.showwarning('Warning: SingleFamilyResidential not compatible with given occupancy type: {0}'.format(
-                    building['Occupancy'].title()), DeprecationWarning, filename = sys.stderr,
+                    occupancy.title()), DeprecationWarning, filename = sys.stderr,
                                     lineno=661)

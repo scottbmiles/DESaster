@@ -6,7 +6,6 @@
 """
 from simpy import Interrupt
 from simpy import Resource, Container
-from desaster.io import random_duration_function
 
 class FinancialRecoveryProgram(object):
     """The base class for operationalizing financial recovery programs. 
@@ -36,7 +35,7 @@ class FinancialRecoveryProgram(object):
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
         self.budget = Container(self.env, init=budget)
-        self.duration = random_duration_function(duration_prob_dist)
+        self.duration = duration_prob_dist.duration()
         
     def process(self, entity = None, callbacks = None):
         """Define generic financial recovery program process for entity.

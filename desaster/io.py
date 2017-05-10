@@ -11,7 +11,8 @@ importSingleFamilyResidenceStock
 """
 from scipy.stats import uniform, beta, weibull_min
 from simpy import FilterStore
-from desaster.structures import SingleFamilyResidential
+from desaster.entities import Owner, Household, OwnerHousehold, RenterHousehold, Landlord
+from desaster.structures import SingleFamilyResidential, Building
 
 class DurationProbabilityDistribution(object):
     """A general class to hold parameters for defining different probability
@@ -35,42 +36,42 @@ class DurationProbabilityDistribution(object):
         self.shape_b = shape_b # Float. Numpy.stats shape parameter "b". (e.g., for Beta)
         self.shape_c = shape_c # Float. Numpy.stats shape parameter "c". (e.g., for Weibull)
         
-def random_duration_function(duration_prob_dist):
-    """A function that returns a pointer to a lambda function that will 
-    dynamically randomly sample a duration for a given process based on distribution 
-    type and parameters specified by inputted io.DurationProbabilityDistribution. 
-    Random number generators for different distributions from numpy.stats. 
-    
-    Supported numpy.stats Distributions:
-    scalar (determistic scalar location)
-    uniform.rvs
-    beta.rvs
-    weibull_min.rvs
-    
-    Returns
-    lambda numpy.stats.[DurationProbabilityDistribution].rvs()
-    """
-    try:
-        if duration_prob_dist.dist == "scalar":
-            return lambda : duration_prob_dist.loc
-        elif duration_prob_dist.dist == "uniform":
-            return lambda : uniform.rvs(loc=duration_prob_dist.loc,
-                                                    scale=duration_prob_dist.scale)
-        elif duration_prob_dist.dist == "beta":
-            return lambda : beta.rvs(a=duration_prob_dist.shape_a,
-                                                b=duration_prob_dist.shape_b,
-                                                loc=duration_prob_dist.loc,
-                                                scale=duration_prob_dist.scale)
-        elif duration_prob_dist.dist == "weibull":
-            return lambda : weibull_min.rvs(c=duration_prob_dist.shape_c,
-                                                loc=duration_prob_dist.loc,
-                                                scale=duration_prob_dist.scale)
-        else:
-            raise ValueError("Probability distibution type not specified or supported.")
+    def duration(self):
+        """A function that returns a pointer to a lambda function that will 
+        dynamically randomly sample a duration for a given process based on distribution 
+        type and parameters specified by inputted io.DurationProbabilityDistribution. 
+        Random number generators for different distributions from numpy.stats. 
+        
+        Supported numpy.stats Distributions:
+        scalar (determistic scalar location)
+        uniform.rvs
+        beta.rvs
+        weibull_min.rvs
+        
+        Returns
+        lambda numpy.stats.[DurationProbabilityDistribution].rvs()
+        """
+        try:
+            if self.dist == "scalar":
+                return lambda : self.loc
+            elif self.dist == "uniform":
+                return lambda : uniform.rvs(loc=self.loc,
+                                                        scale=self.scale)
+            elif self.dist == "beta":
+                return lambda : beta.rvs(a=self.shape_a,
+                                                    b=self.shape_b,
+                                                    loc=self.loc,
+                                                    scale=self.scale)
+            elif self.dist == "weibull":
+                return lambda : weibull_min.rvs(c=self.shape_c,
+                                                    loc=self.loc,
+                                                    scale=self.scale)
+            else:
+                raise ValueError("Probability distibution type not specified or supported.")
+                return
+        except TypeError as te:
+            print("Duration probability distribution not specified: ", te)
             return
-    except TypeError as te:
-        print("Duration probability distribution not specified: ", te)
-        return
 
 def importSingleFamilyResidenceStock(env, stock_df):
     """Define, populate and return a SimPy FilterStore with SingleFamilyResidential() 
@@ -87,65 +88,210 @@ def importSingleFamilyResidenceStock(env, stock_df):
         stock_fs.put(SingleFamilyResidential(stock_df.loc[i]))
 
     return stock_fs
-    
-    def importOwners(env, building_stock, entities_df, write_story = False):
-        """Return list of entities.Household() objects from dataframe containing
-        data describing entities' attributes.
 
-        Keyword Arguments:
-        env -- Pointer to SimPy env environment.
-        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-        entities_df -- Dataframe row w/ entity input attributes.
-        write_story -- Boolean indicating whether to track a entitys story.
-        """
+def importEntities(env, entities_df, entity_type, building_stock = None, write_story = False):
+    """Return list of entities.OwnerHouseholds() objects from dataframe containing
+    data describing entities' attributes.
 
-        entities = []
-
-        # Population the env with entitys from the entitys dataframe
+    Keyword Arguments:
+    env -- Pointer to SimPy env environment.
+    building_stock -- a SimPy FilterStore that acts as an occupied building stock.
+    entities_df -- Dataframe row w/ entities' input attributes.
+    entity_type -- Indicate class of entity: Household, Owner, OwnerHousehold etc.
+    write_story -- Boolean indicating whether to track a entities story.
+    """
+    # try:
+    entities = []
+    if entity_type.lower() == 'household':
+        # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
-            entities.append(Owner(env, building_stock, entities_df.iloc[i], write_story))
+            
+            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+                                    'single family dwelling', 'single family residence',
+                                    'sfr', 'sfh', 'sfd', 'mobile home']:
+                
+                residence = SingleFamilyResidential(
+                                    occupancy = entities_df.iloc[i]['Occupancy'],
+                                    address = entities_df.iloc[i]['Address'],
+                                    longitude = entities_df.iloc[i]['Longitude'],
+                                    latitude = entities_df.iloc[i]['Latitude'],
+                                    value = entities_df.iloc[i]['Value'],
+                                    cost = entities_df.iloc[i]['Cost'],
+                                    area = entities_df.iloc[i]['Area'],
+                                    bedrooms = entities_df.iloc[i]['Bedrooms'],
+                                    bathrooms = entities_df.iloc[i]['Bathrooms'],
+                                    listed = entities_df.iloc[i]['Listed'],
+                                    damage_state = entities_df.iloc[i]['Damage State'],
+                                    building_stock = building_stock
+                                    )
+            else:
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                return
+            
+            entity = Household(env, 
+                                name = entities_df.iloc[i]['Name'],
+                                write_story = write_story,
+                                residence = residence
+                                )
+            
+            entities.append(entity)
         return entities
+    elif entity_type.lower() == 'owner':
+        # Populate the env with entities from the entities dataframe
+        for i in entities_df.index:
+            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+                                    'single family dwelling', 'single family residence',
+                                    'sfr', 'sfh', 'sfd', 'mobile home']:
+                real_property = SingleFamilyResidential(
+                                            occupancy = entities_df.iloc[i]['Occupancy'],
+                                            address = entities_df.iloc[i]['Address'],
+                                            longitude = entities_df.iloc[i]['Longitude'],
+                                            latitude = entities_df.iloc[i]['Latitude'],
+                                            value = entities_df.iloc[i]['Value'],
+                                            cost = entities_df.iloc[i]['Cost'],
+                                            area = entities_df.iloc[i]['Area'],
+                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
+                                            listed = entities_df.iloc[i]['Listed'],
+                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            building_stock = building_stock
+                                                    )
+            else:
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                return
+                
+            entity = Owner(env, 
+                            name = entities_df.iloc[i]['Name'],
+                            savings = entities_df.iloc[i]['Owner Savings'],
+                            insurance = entities_df.iloc[i]['Owner Insurance'],
+                            write_story = write_story,
+                            real_property = real_property
+                            )
 
-def importEntities(env, building_stock, entities_df, entity_type, write_story = False):
-        """Return list of entities.OwnerHouseholds() objects from dataframe containing
-        data describing entities' attributes.
+            entity.property.owner = entity
+            entities.append(entity)    
+        return entities
+    
+    elif entity_type.lower() == 'ownerhousehold' or entity_type.lower() == 'owner household':
+        # Populate the env with entities from the entities dataframe
+        for i in entities_df.index:
+            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+                                    'single family dwelling', 'single family residence',
+                                    'sfr', 'sfh', 'sfd', 'mobile home']:                  
+                real_property = SingleFamilyResidential(
+                                                    occupancy = entities_df.iloc[i]['Occupancy'],
+                                                    address = entities_df.iloc[i]['Address'],
+                                                    longitude = entities_df.iloc[i]['Longitude'],
+                                                    latitude = entities_df.iloc[i]['Latitude'],
+                                                    value = entities_df.iloc[i]['Value'],
+                                                    cost = entities_df.iloc[i]['Cost'],
+                                                    area = entities_df.iloc[i]['Area'],
+                                                    bedrooms = entities_df.iloc[i]['Bedrooms'],
+                                                    bathrooms = entities_df.iloc[i]['Bathrooms'],
+                                                    listed = entities_df.iloc[i]['Listed'],
+                                                    damage_state = entities_df.iloc[i]['Damage State'],
+                                                    building_stock = building_stock
+                                                    )
+            else:
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                return
+            
+            entity = OwnerHousehold(env, 
+                                    name = entities_df.iloc[i]['Name'],
+                                    savings = entities_df.iloc[i]['Owner Savings'],
+                                    insurance = entities_df.iloc[i]['Owner Insurance'],
+                                    real_property = real_property,
+                                    write_story = write_story
+                                    )
 
-        Keyword Arguments:
-        env -- Pointer to SimPy env environment.
-        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-        entities_df -- Dataframe row w/ entities' input attributes.
-        entity_type -- Indicate class of entity: Household, Owner, OwnerHousehold etc.
-        write_story -- Boolean indicating whether to track a entitys story.
-        """
-        entities = []
+            entity.property.owner = entity                                
+            entities.append(entity)
+        return entities
+    elif entity_type.lower() == 'renterhousehold' or entity_type.lower() == 'renter household':
+        # Populate the env with entities from the entities dataframe
+        for i in entities_df.index:
+            
+            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+                                    'single family dwelling', 'single family residence',
+                                    'sfr', 'sfh', 'sfd', 'mobile home']:                           
+                real_property = SingleFamilyResidential(
+                                            occupancy = entities_df.iloc[i]['Occupancy'],
+                                            address = entities_df.iloc[i]['Address'],
+                                            longitude = entities_df.iloc[i]['Longitude'],
+                                            latitude = entities_df.iloc[i]['Latitude'],
+                                            value = entities_df.iloc[i]['Value'],
+                                            cost = entities_df.iloc[i]['Cost'],
+                                            area = entities_df.iloc[i]['Area'],
+                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
+                                            listed = entities_df.iloc[i]['Listed'],
+                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            building_stock = building_stock
+                                                        )
+            else:
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                return                      
 
-        if entity_type.lower() == 'household':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Household(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'owner':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Owner(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'ownerhousehold':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(OwnerHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'renterhousehold':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(RenterHousehold(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        elif entity_type.lower() == 'landlord':
-            # Populate the env with entitys from the entitys dataframe
-            for i in entities_df.index:
-                entities.append(Landlord(env, entities_df.iloc[i]['Name'], entities_df.iloc[i], building_stock, write_story))
-            return entities
-        else:
-            raise AttributeError("Entity class type not specified or recognized. Can't complete import.")
+            entity = RenterHousehold(env, 
+                                        name = entities_df.iloc[i]['Name'],
+                                        write_story = write_story,
+                                        residence = real_property
+                                        )
+            
+            entity.landlord = Landlord(env, 
+                                        name = entities_df.iloc[i]['Landlord'],
+                                        savings = entities_df.iloc[i]['Owner Savings'],
+                                        insurance = entities_df.iloc[i]['Owner Insurance'],
+                                        real_property = real_property,
+                                        write_story = write_story
+                                        )
+                    
+            entity.landlord.tenant = entity
+            entity.landlord.property.owner = entity.landlord
+            entities.append(entity)
+        return entities
+    elif entity_type.lower() == 'landlord':
+        # Populate the env with entities from the entities dataframe
+        for i in entities_df.index:
+            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+                                    'single family dwelling', 'single family residence',
+                                    'sfr', 'sfh', 'sfd', 'mobile home']: 
+                real_property = SingleFamilyResidential(
+                                            occupancy = entities_df.iloc[i]['Occupancy'],
+                                            address = entities_df.iloc[i]['Address'],
+                                            longitude = entities_df.iloc[i]['Longitude'],
+                                            latitude = entities_df.iloc[i]['Latitude'],
+                                            value = entities_df.iloc[i]['Value'],
+                                            cost = entities_df.iloc[i]['Cost'],
+                                            area = entities_df.iloc[i]['Area'],
+                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
+                                            listed = entities_df.iloc[i]['Listed'],
+                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            building_stock = building_stock
+                                                        )
+            else:
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                return
+                                                        
+            entity = Landlord(env, 
+                                        name = entities_df.iloc[i]['Landlord'],
+                                        savings = entities_df.iloc[i]['Owner Savings'],
+                                        insurance = entities_df.iloc[i]['Owner Insurance'],
+                                        real_property = real_property,
+                                        write_story = write_story
+                                        )
+            
+            entity.property.owner = entity
+            entities.append(entity)                                            
+        return entities
+    else:
+        raise AttributeError("Entity type ({0}) not recognized. Can't complete import.".format(entity_type))
+        return
+    # except:
+    #     warnings.showwarning('importEntities: Unexpected missing attribute. Attribute value set to None.',
+    #                             DeprecationWarning, filename = sys.stderr,
+    #                             lineno=312)
 
 def importOwnerHouseholds(env, building_stock, entities_df, write_story = False):
     """Return list of entities.OwnerHouseholds() objects from dataframe containing
@@ -155,16 +301,13 @@ def importOwnerHouseholds(env, building_stock, entities_df, write_story = False)
     env -- Pointer to SimPy env environment.
     building_stock -- a SimPy FilterStore that acts as an occupied building stock.
     entities_df -- Dataframe row w/ entity input attributes.
-    write_story -- Boolean indicating whether to track a entitys story.
+    write_story -- Boolean indicating whether to track a entities story.
     """
 
     warnings.showwarning('importOwnerHouseholds depricated. Use importEntities.',
                             DeprecationWarning, filename = sys.stderr,
-                            lineno=643)
+                            lineno=296)
 
-    entities = importEntities(env, building_stock, entities_df, 'ownerhousehold', write_story)
-
-    return entities 
 
 def importRenterHouseholds(env, building_stock, entities_df, write_story = False):
     """Return list of entities.RenterHousehold() objects from dataframe containing
@@ -174,13 +317,10 @@ def importRenterHouseholds(env, building_stock, entities_df, write_story = False
     env -- Pointer to SimPy env environment.
     building_stock -- a SimPy FilterStore that acts as an occupied building stock.
     entities_df -- Dataframe row w/ entity input attributes.
-    write_story -- Boolean indicating whether to track a entitys story.
+    write_story -- Boolean indicating whether to track a entities story.
     """
 
     warnings.showwarning('importRenterHouseholds depricated. Use importEntities.',
                             DeprecationWarning, filename = sys.stderr,
-                            lineno=661)
+                            lineno=312)
 
-    entities = importEntities(env, building_stock, entities_df, 'renterhousehold', write_story)
-
-    return entities

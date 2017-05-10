@@ -13,9 +13,7 @@ Landlord(Owner)
 
 @author: Scott Miles (milessb@uw.edu), Derek Huling
 """
-# Import Residence() class in order to assign entitys a residence.
 from desaster.structures import SingleFamilyResidential, Building
-from desaster.io import random_duration_function
 import names, warnings, sys
 
 class Entity(object):
@@ -27,7 +25,7 @@ class Entity(object):
     Methods:
     __init__(self, env, name, write_story = False)
     """
-    def __init__(self, env, name, write_story = False):
+    def __init__(self, env, name = None, write_story = False):
         """
 
         Keyword Arguments:
@@ -58,7 +56,7 @@ class Owner(Entity):
     Methods:
     __init__(self, env, name, attributes_df, building_stock, write_story = False)
     """
-    def __init__(self, env, name, attributes_df, building_stock, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, write_story = False):
         """Initiate several attributes related to an Owner entity.
         No universal methods have been define for the Owner class yet. methods
         are currently specified in subclasses of Owner.
@@ -76,22 +74,16 @@ class Owner(Entity):
         Entity.__init__(self, env, name, write_story)
 
         # Attributes
-        self.insurance = attributes_df['Owner Insurance']  # Hazard-specific insurance coverage: coverage / residence.value
-        self.savings = attributes_df['Savings']  # Amount of entity savings in $
+        self.insurance = insurance  # Hazard-specific insurance coverage: coverage / residence.value
+        self.savings = savings  # Amount of entity savings in $
+        self.property = real_property # 
 
-        # TEMPORARY: If property is not a SFR or mobile home, create a generic building
-        if (attributes_df['Occupancy'].lower() == 'single family dwelling'
-                or attributes_df['Occupancy'].lower() == 'mobile home'):
-            self.property = SingleFamilyResidential(attributes_df)
-        else:
-            self.property = Building(attributes_df)
-
-        # Set owner of the entity's property
-        self.property.owner = self
-        # Assign what building stock the property is associated w/
-        self.property.stock = building_stock
-        # Place the newly initiated property into the associatd building stock
-        self.property.stock.put(self.property)
+        # # Set owner of the entity's property
+        # self.property.owner = self
+        # # Assign what building stock the property is associated w/
+        # self.property.stock = building_stock
+        # # Place the newly initiated property into the associatd building stock
+        # self.property.stock.put(self.property)
 
         if self.write_story:
             # Start stories with non-disaster attributes
@@ -123,9 +115,6 @@ class Owner(Entity):
         self.prior_property = []
 
 
-
-
-
 class Household(Entity):
     """Define a Household() class to represent a group of persons that reside
     together as a single dwelling unit. A Household() object can not own property,
@@ -135,7 +124,7 @@ class Household(Entity):
     Methods:
     __init__(self, env, name, attributes_df, residence, write_story = False)
     """
-    def __init__(self, env, name, attributes_df, residence, write_story = False):
+    def __init__(self, env, name = None, residence = None, write_story = False):
         """Initiate a entities.Household() object.
 
         Keyword Arguments:
@@ -180,7 +169,7 @@ class OwnerHousehold(Owner, Household):
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_prob_dist, callbacks = None)
     """
-    def __init__(self, env, name, attributes_df, building_stock, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, write_story = False):
         """Define entity inputs and outputs attributes.
         Initiate entity's story list string.
 
@@ -190,8 +179,8 @@ class OwnerHousehold(Owner, Household):
         building_stock -- a SimPy FilterStore that acts as an occupied housing stock
         write_story -- Boolean indicating whether to track a entitys story.
         """
-        Owner.__init__(self, env, name, attributes_df, building_stock, write_story)
-        Household.__init__(self, env, name, attributes_df, self.property, write_story)
+        Owner.__init__(self, env, name, savings, insurance, real_property, write_story)
+        Household.__init__(self, env, name, self.property, write_story)
 
         # Attributes
 
@@ -337,7 +326,7 @@ class OwnerHousehold(Owner, Household):
         self.story -- Summary of process outcome as string.
         self.residence -- Assign the owner's property object as residence.
         """
-        calc_duration = random_duration_function(duration_prob_dist)
+        calc_duration = duration_prob_dist.duration()
 
         # Yield timeout equivalent to time required to move back into home.
         yield self.env.timeout(calc_duration())
@@ -372,7 +361,7 @@ class RenterHousehold(Household):
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_prob_dist, callbacks = None)
     """
-    def __init__(self, env, name, attributes_df, building_stock, write_story = False):
+    def __init__(self, env, name = None, residence = None, landlord = None, write_story = False):
         """
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
@@ -390,12 +379,10 @@ class RenterHousehold(Household):
         """
 
         # Attributes
-        self.landlord = Landlord(env, attributes_df['Landlord'], self, attributes_df,
-                                    building_stock, write_story)
+        self.landlord = landlord
 
         # Initial method calls; This needs to go after landlord assignment.
-        Household.__init__(self, env, name, attributes_df, self.landlord.property,
-                                                                        write_story)
+        Household.__init__(self, env, name, residence, write_story)
 
         if self.write_story:
             # Set story with non-disaster attributes.
@@ -549,7 +536,7 @@ class RenterHousehold(Household):
         self.story -- Summary of process outcome as string.
         """
 
-        calc_duration = random_duration_function(duration_prob_dist)
+        calc_duration = duration_prob_dist.duration()
 
         ####
         #### Hopefully put code here for checking if renter can still afford
@@ -582,7 +569,7 @@ class Landlord(Owner):
     currently the same as entities.Owner().
 
     """
-    def __init__(self, env, name, tenant, attributes_df, building_stock, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, tenant = None, write_story = False):
         """Define landlord's inputs and outputs attributes.
         Initiate landlord's story list string.
 
@@ -598,7 +585,7 @@ class Landlord(Owner):
         Inheritance:
         Subclass of entities.Owner()
         """
-        Owner.__init__(self, env, name, attributes_df, building_stock, write_story)
+        Owner.__init__(self, env, name, savings, insurance, real_property, write_story)
 
         # Landlord env inputs
         self.tenant = tenant
