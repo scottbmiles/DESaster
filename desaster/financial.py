@@ -6,7 +6,8 @@
 """
 from simpy import Interrupt
 from simpy import Resource, Container
-
+        
+        
 class FinancialRecoveryProgram(object):
     """The base class for operationalizing financial recovery programs. 
     All such programs staff and budget implemented as simpy resources or containers. 
@@ -16,12 +17,12 @@ class FinancialRecoveryProgram(object):
     useless and should only be used as an example of how to implement a process in a
     subclass of  FinancialRecoveryProgram.
     """
-    def __init__(self, env, duration_prob_dist, staff=float('inf'), budget=float('inf')):
+    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf')):
         """Initiate financial recovery program attributes.
         
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_prob_dist -- io.DurationProbabilityDistribution() object
+        duration_distribution -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
@@ -35,7 +36,7 @@ class FinancialRecoveryProgram(object):
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
         self.budget = Container(self.env, init=budget)
-        self.duration = duration_prob_dist.duration()
+        self.duration_distribution = duration_distribution
         
     def process(self, entity = None, callbacks = None):
         """Define generic financial recovery program process for entity.
@@ -61,7 +62,7 @@ class FinancialRecoveryProgram(object):
         yield staff_request
 
         # Yield timeout equivalent to program's process duration
-        yield self.env.timeout(self.duration())
+        yield self.env.timeout(self.duration_distribution.value())
 
         # Release release staff after process duation is complete.
         self.staff.release(staff_request)
@@ -94,13 +95,13 @@ class IndividualAssistance(FinancialRecoveryProgram):
     
 
     """
-    def __init__(self, env, duration_prob_dist, staff=float('inf'), budget=float('inf'),
+    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
                 max_outlay=float('inf')):
         """Initiate FEMA individual assistance recovery program attributes.
         
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_prob_dist -- io.DurationProbabilityDistribution() object
+        duration_distribution -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
@@ -109,7 +110,7 @@ class IndividualAssistance(FinancialRecoveryProgram):
         Inheritance:
         Subclass of financial.FinancialRecoveryProgram()
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_prob_dist, staff, budget)
+        FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
 
         self.max_outlay = max_outlay
 
@@ -148,7 +149,7 @@ class IndividualAssistance(FinancialRecoveryProgram):
                 yield request
 
                 # Yield timeout for duration necessary to process FEMA aid request.
-                yield self.env.timeout(self.duration())
+                yield self.env.timeout(self.duration_distribution.value())
 
                 # Release FEMA processors.
                 self.staff.release(request)
@@ -218,7 +219,7 @@ class IndividualAssistance(FinancialRecoveryProgram):
             #If true, write process outcome to story.
             if entity.write_story:
                 entity.story.append(
-                        '{0} gave up during the FEMA assistance process after a {1} day search for money. '.format(
+                        '{0} gave up during the FEMA assistance process {1} days after the event. '.format(
                             entity.name.title(), i.cause)
                         )
 
@@ -233,13 +234,13 @@ class OwnersInsurance(FinancialRecoveryProgram):
     insurance claim payout will be.
     
     """
-    def __init__(self, env, duration_prob_dist, staff=float('inf'), budget=float('inf'),
+    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
                 deductible=0.0):
         """Initiate owners insurance recovery program attributes.
         
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_prob_dist -- io.DurationProbabilityDistribution() object
+        duration_distribution -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program. *** Not currently used, but could be used
@@ -251,7 +252,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
         Inheritance:
         Subclass of financial.FinancialRecoveryProgram()
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_prob_dist, staff, budget)
+        FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
 
         self.deductible = deductible
 
@@ -315,7 +316,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 yield request
 
                 # Timeout process to simulate claims processing duration.
-                yield self.env.timeout(self.duration())
+                yield self.env.timeout(self.duration_distribution.value())
 
                 entity.claim_payout = entity.property.damage_value - deductible_amount
 
@@ -341,7 +342,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
             #If true, write that the process was interrupted to the story.
             if entity.write_story:
                 entity.story.append(
-                        '{0} gave up during the insurance claim process after a {1} day search for money. '.format(
+                        '{0} gave up during the insurance claim process {1} days after the event. '.format(
                         entity.name.title(), i.cause))
 
         if callbacks is not None:
@@ -349,33 +350,41 @@ class OwnersInsurance(FinancialRecoveryProgram):
         else:
             pass
 
-class HomeLoan(FinancialRecoveryProgram):
+class LoanSBA(FinancialRecoveryProgram):
     """A class to represent a home loan program. The class process enforces a maximum 
     loan amount. *** For the most part this class is a placeholder. Loan eligibility
     and loan amount criteria need to be added. ***
     
     """
-    def __init__(self, env, duration_prob_dist, staff=float('inf'), budget=float('inf'),
-                max_loan=float('inf'), min_income=float('inf')):
+    def __init__(self, env, duration_distribution, inspectors=float('inf'), 
+                officers=float('inf'), budget=float('inf'), max_loan=float('inf'),
+                min_credit=0, min_debt_income_ratio=0):
                 
         """Initiate owner's home loan recovery program attributes.
         
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_prob_dist -- io.DurationProbabilityDistribution() object
-        staff -- Integer, indicating number of staff assigned to the programs
+        duration_distribution -- io.ProbabilityDistribution() object
+        inspectors -- Integer, indicating number of staff assigned to the programs
+        officers --
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
         max_loan -- The maximum amount ($) of loan that any one entity can receive
-        min_income -- *** Not currently used *** Minimum income for entity to
-                        qualify for loan.
+        min_debt_income_ratio -- %%%% NOT IMPLEMENTED BUT COULD USE FOR LOW CREDIT SCORE ENTITIES
+        min_credit --
                     
         Inheritance:
         Subclass of financial.FinancialRecoveryProgram()
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_prob_dist, staff, budget)
-
-        self.min_income = min_income
+        FinancialRecoveryProgram.__init__(self, env, duration_distribution, budget)
+        
+        # Define staff/personnel specific to this class
+        self.officers = Resource(self.env, capacity=officers)
+        self.inspectors = Resource(self.env, capacity=inspectors)
+        
+        # New attributes
+        self.min_credit = min_credit
+        self.min_debt_income_ratio = min_debt_income_ratio
         self.max_loan = max_loan
 
     def process(self, entity, callbacks = None):
@@ -401,28 +410,7 @@ class HomeLoan(FinancialRecoveryProgram):
                 # Does not have enough money to rebuild.
                 # Record time application submitted.
                 entity.loan_put = self.env.now
-
-                # If true, write loan request time to story.
-                if entity.write_story:
-
-                    entity.story.append(
-                        '{0} submitted a loan application {1:.0f} days after the event. '.format(
-                            entity.name.title(), entity.loan_put)
-                        )
-
-                # Request a loan processor.
-                request = self.staff.request()
-                yield request
-
-                # Yield process timeout for duration needed to process loan request.
-                yield self.env.timeout(self.duration())
-
-                # Release loan processor so that they can process other loans.
-                self.staff.release(request)
-
-                # Record time loan is given.
-                entity.loan_get = self.env.now
-
+                
                 # Subtract any insurance or FEMA payouts from damage value to
                 # arrive at loan amount.
                 entity.loan_amount = min(self.max_loan, (
@@ -430,24 +418,82 @@ class HomeLoan(FinancialRecoveryProgram):
                                         - entity.claim_payout
                                         - entity.assistance_payout
                                     ) )
+                                    
+                # If true, write loan request time to story.
+                if entity.write_story:
 
-                # Add loan amount to entity's money to rebuild.
-                if entity.loan_amount > 0.0:
-                    entity.money_to_rebuild += entity.loan_amount
+                    entity.story.append(
+                        '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. '.format(
+                            entity.name.title(), entity.loan_amount, entity.loan_put)
+                        )
 
-                    #If true, write process outcome to story.
+                # Request a loan processor.
+                officer_request = self.officers.request()
+                yield officer_request
+
+                
+                # Yield process timeout for duration needed for officer to process application.
+                try: # Assume it is DurationDistributionHomeLoanSBA
+                    yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
+                                                                            min_credit = self.min_credit)
+                                                                            )
+                except: # if not, it's ProbabilityDistribution
+                    yield self.env.timeout(self.duration_distribution.value())
+
+                
+                if entity.credit < self.min_credit:
+                    # If true, write loan request time to story.
                     if entity.write_story:
 
                         entity.story.append(
-                        "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
-                        .format(entity.name.title(), entity.loan_amount, entity.loan_get))
+                            '{0}\'s SBA loan application was denied because {0} had a credit score of {1}. '.format(
+                                entity.name.title(), entity.credit)
+                                            )
+                    
+                    return
+                
+                # Release loan officer so that they can process other loans.
+                self.officers.release(officer_request)
+                
+                # If approved (enough credit), request an inspector. Then release it. 
+                # %%% This increases duration by amount of time it takes
+                # to get an inspector. No timeout for inspection taken. %%%%
+                inspector_request = self.inspectors.request()
+                yield inspector_request
+                self.inspectors.release(inspector_request)
+                
+                # If loan amount is greater than $25k, it requires collateral and inspection
+                if entity.loan_amount > 25000:
+                    # Receives $25k immediately as initial disbursement
+                    entity.money_to_rebuild += 25000     
+                    
+                    # if entity.write_story:
+                    #     entity.story.append(
+                    #         "{0} received an initial disbursement of $25,000 {1} days after the event. "
+                    #         .format(entity.name.title(), self.env.now))     
+                    #                            
+                    # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED
+            
+                    entity.money_to_rebuild += (entity.loan_amount - 25000) 
+                else:
+                    # Add loan amount to entity's money to rebuild.
+                    entity.money_to_rebuild += entity.loan_amount
+                
+                # Record time full loan is disbursed.
+                entity.loan_get = self.env.now
+
+                #If true, write process outcome to story.
+                if entity.write_story:
+                    entity.story.append(
+                    "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
+                    .format(entity.name.title(), entity.loan_amount, entity.loan_get))
 
         # Handle any interrupt from another process.
         except Interrupt as i:
             #If true, write interrupt outcome to story.
             if entity.write_story:
                 entity.story.append(
-                        '{0} gave up during the loan approval process after a {1} day search for money. '.format(
+                        '{0} gave up during the SBA loan application process {1} days after the event. '.format(
                         entity.name.title(), i.cause))
 
         if callbacks is not None:

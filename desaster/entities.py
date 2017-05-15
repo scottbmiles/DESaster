@@ -56,7 +56,7 @@ class Owner(Entity):
     Methods:
     __init__(self, env, name, attributes_df, building_stock, write_story = False)
     """
-    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, real_property = None, write_story = False):
         """Initiate several attributes related to an Owner entity.
         No universal methods have been define for the Owner class yet. methods
         are currently specified in subclasses of Owner.
@@ -76,14 +76,8 @@ class Owner(Entity):
         # Attributes
         self.insurance = insurance  # Hazard-specific insurance coverage: coverage / residence.value
         self.savings = savings  # Amount of entity savings in $
+        self.credit = credit # A FICO-like credit score
         self.property = real_property # 
-
-        # # Set owner of the entity's property
-        # self.property.owner = self
-        # # Assign what building stock the property is associated w/
-        # self.property.stock = building_stock
-        # # Place the newly initiated property into the associatd building stock
-        # self.property.stock.put(self.property)
 
         if self.write_story:
             # Start stories with non-disaster attributes
@@ -102,6 +96,8 @@ class Owner(Entity):
         self.money_to_rebuild = self.savings  # Total funds available to entity to rebuild house
         self.repair_put = None  # Time put request in for house rebuild
         self.repair_get = None  # Time get house rebuild completed
+        self.demolition_put = None # Time demolition requested
+        self.demolition_get = None  # Time demolition occurs
         self.loan_put = None  # Time put request for loan
         self.loan_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
@@ -167,9 +163,9 @@ class OwnerHousehold(Owner, Household):
 
     Methods:
     replace_home(self, search_patience, building_stock)
-    occupy(self, duration_prob_dist, callbacks = None)
+    occupy(self, duration_distribution, callbacks = None)
     """
-    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, real_property = None, write_story = False):
         """Define entity inputs and outputs attributes.
         Initiate entity's story list string.
 
@@ -179,7 +175,7 @@ class OwnerHousehold(Owner, Household):
         building_stock -- a SimPy FilterStore that acts as an occupied housing stock
         write_story -- Boolean indicating whether to track a entitys story.
         """
-        Owner.__init__(self, env, name, savings, insurance, real_property, write_story)
+        Owner.__init__(self, env, name, savings, insurance, credit, real_property, write_story)
         Household.__init__(self, env, name, self.property, write_story)
 
         # Attributes
@@ -308,14 +304,14 @@ class OwnerHousehold(Owner, Household):
                     )
                 )
 
-    def occupy(self, duration_prob_dist, callbacks = None):
+    def occupy(self, duration_distribution, callbacks = None):
         """Define process for occupying a residence. Currently the method only
         allows for the case of occupying a property (assigning property as its
         residence). Potentially, eventually need logic that allows for occupying residences
         that are not it's property.
 
         Keyword Arguments:
-        duration_prob_dist -- A io.DurationProbabilityDistribution object that defines
+        duration_distribution -- A io.DurationProbabilityDistribution object that defines
                                 the duration related to how long it takes the entity
                                 to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
@@ -326,12 +322,9 @@ class OwnerHousehold(Owner, Household):
         self.story -- Summary of process outcome as string.
         self.residence -- Assign the owner's property object as residence.
         """
-        calc_duration = duration_prob_dist.duration()
 
         # Yield timeout equivalent to time required to move back into home.
-        yield self.env.timeout(calc_duration())
-
-
+        yield self.env.timeout(duration_distribution.value())
 
         # Record time got home
         self.home_get = self.env.now
@@ -359,7 +352,7 @@ class RenterHousehold(Household):
 
     Methods:
     replace_home(self, search_patience, building_stock)
-    occupy(self, duration_prob_dist, callbacks = None)
+    occupy(self, duration_distribution, callbacks = None)
     """
     def __init__(self, env, name = None, residence = None, landlord = None, write_story = False):
         """
@@ -518,14 +511,14 @@ class RenterHousehold(Household):
                     self.residence.damage_value
                     )
                 )
-    def occupy(self, duration_prob_dist, callbacks = None):
+    def occupy(self, duration_distribution, callbacks = None):
         """A process for a RenterHousehold to occupy a residence.
         At the moment all this does is represent some duration it takes for the
         entity to move into a new residence. Potentially eventually can add logic
         related to, e.g., rent increases.
 
         Keyword Arguments:
-        duration_prob_dist -- A io.DurationProbabilityDistribution object that defines
+        duration_distribution -- A io.DurationProbabilityDistribution object that defines
                                 the duration related to how long it takes the entity
                                 to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
@@ -536,15 +529,13 @@ class RenterHousehold(Household):
         self.story -- Summary of process outcome as string.
         """
 
-        calc_duration = duration_prob_dist.duration()
-
         ####
         #### Hopefully put code here for checking if renter can still afford
         #### the rent. Obviously need a function somewhere that estimates rent increases.
         ####
 
         # Yield timeout equivalent to time required to move back into home.
-        yield self.env.timeout(calc_duration())
+        yield self.env.timeout(duration_distribution.value())
 
         # Record time got home
         self.home_get = self.env.now
@@ -569,7 +560,7 @@ class Landlord(Owner):
     currently the same as entities.Owner().
 
     """
-    def __init__(self, env, name = None, savings = 0, insurance = 0, real_property = None, tenant = None, write_story = False):
+    def __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, real_property = None, tenant = None, write_story = False):
         """Define landlord's inputs and outputs attributes.
         Initiate landlord's story list string.
 
@@ -585,7 +576,7 @@ class Landlord(Owner):
         Inheritance:
         Subclass of entities.Owner()
         """
-        Owner.__init__(self, env, name, savings, insurance, real_property, write_story)
+        Owner.__init__(self, env, name, savings, insurance, credit, real_property, write_story)
 
         # Landlord env inputs
         self.tenant = tenant

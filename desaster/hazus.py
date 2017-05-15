@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Module for defining variables for a suite of DESaster paramaters. 
+Module for parameterizing DESaster variables based on HAZUS associated lookup
+tables.
 
 @author: Scott Miles
 """
-
-#configs
 import pandas as pd
 
 #### HAZUS LOOKUP TABLE INPUT/OUTPUT #########################################
@@ -43,9 +42,26 @@ acceleration_damage_ratios = pd.read_excel(hazus_parameters_file,
 drift_damage_ratios = pd.read_excel(hazus_parameters_file, 
                         sheetname='Deflect non-struc repair cost', 
                         index_col='Occupancy')
-##### END HAZUS LOOKUP TABLE INPUT/OUTPUT ############################
-                                                 
-# % of damage value related to building materials (vs. labor and profit)
-materials_cost_pct = 1.0 
 
-                     
+def setDamageValueHAZUS(building_value, occupancy, damage_state):
+    """Calculate damage value for building based on occupancy type and
+    HAZUS damage state.
+
+    Function uses three lookup tables (Table 15.2, 15.3, 15.4) from the HAZUS-MH earthquake model
+    technical manual for structural damage, acceleration related damage,
+    and for drift related damage, respectively. Estimated damage value for
+    each type of damage is summed for total damage value.
+    http://www.fema.gov/media-library/buildings/documents/24609
+
+    Keyword Arguments:
+    structural_damage_ratios -- HAZUS damage lookup table (see above)
+    acceleration_damage_ratios -- HAZUS damage lookup table (see above)
+    drift_damage_ratios -- HAZUS damage lookup table (see above)
+    """
+    struct_repair_ratio = structural_damage_ratios.ix[occupancy][damage_state] / 100.0
+    accel_repair_ratio = acceleration_damage_ratios.ix[occupancy][damage_state] / 100.0
+    drift_repair_ratio = drift_damage_ratios.ix[occupancy][damage_state] / 100.0
+    
+    return building_value * (struct_repair_ratio + accel_repair_ratio + drift_repair_ratio)
+
+##### END HAZUS LOOKUP TABLE INPUT/OUTPUT ############################

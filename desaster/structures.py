@@ -10,10 +10,7 @@ SingleFamilyResidential(Building)
 @author: Scott Miles (milessb@uw.edu)
 """
 
-from desaster.config import structural_damage_ratios
-from desaster.config import acceleration_damage_ratios
-from desaster.config import drift_damage_ratios
-from desaster import config
+from desaster.hazus import setDamageValueHAZUS
 import pandas as pd
 import warnings, sys, distutils.util
 
@@ -51,7 +48,8 @@ class Building(object):
         self.latitude = latitude
         self.longitude = longitude
         self.stock = building_stock # The building stock FilterStor the building belongs to
-        self.setDamageValue()  # Use HAZUS lookup tables to assign damage value.
+        self.damage_value = setDamageValueHAZUS(value, occupancy, damage_state) # Use HAZUS lookup tables to assign damage value.
+        self.damage_value_start = self.damage_value # Archive original damage value
         
         # Outputs and intermediate variables
         self.inspected = False  # Whether the building has been inspected
@@ -59,28 +57,7 @@ class Building(object):
         self.assessment = False  # Whether the building has had engineering assessment
         
 
-    def setDamageValue(self):
-        """Calculate damage value for building based on occupancy type and
-        HAZUS damage state.
 
-        Function uses three lookup tables (Table 15.2, 15.3, 15.4) from the HAZUS-MH earthquake model
-        technical manual for structural damage, acceleration related damage,
-        and for drift related damage, respectively. Estimated damage value for
-        each type of damage is summed for total damage value.
-        http://www.fema.gov/media-library/buildings/documents/24609
-
-        Keyword Arguments:
-        structural_damage_ratios -- dataframe set in config.py
-        acceleration_damage_ratios -- dataframe set in config.py
-        drift_damage_ratios -- dataframe set in config.py
-        """
-        struct_repair_ratio = structural_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
-        accel_repair_ratio = acceleration_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
-        drift_repair_ratio = drift_damage_ratios.ix[self.occupancy][self.damage_state] / 100.0
-        self.damage_value = self.value*(struct_repair_ratio +
-                                                accel_repair_ratio +
-                                                drift_repair_ratio)
-        self.damage_value_start = self.damage_value # Archive original damage value
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the

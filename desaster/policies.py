@@ -58,7 +58,7 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
             # If True, append search outcome to story.
             if entity.write_story:
                 entity.story.append(
-                    '{0} already had enough money to rebuild (1:,.0f) and did not seek assistance. '.format(
+                    '{0} already had enough money to rebuild (${1:,.0f}) and did not seek assistance. '.format(
                                         entity.name.title(),
                                         entity.money_to_rebuild
                                         )
@@ -90,7 +90,7 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
             if money_search_outcome == {find_search_patience: 'Gave up'}:
                 if try_insurance.is_alive:
                     entity.gave_up_funding_search = self.env.now
-                    try_insurance.interrupt(entity.gave_up_funding_search - money_search_start)
+                    try_insurance.interrupt(self.env.now)
                     return
                 else:
                     entity.gave_up_funding_search = self.env.now
@@ -121,7 +121,7 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
             if money_search_outcome == {find_search_patience: 'Gave up'}:
                 if try_fema.is_alive:
                     entity.gave_up_funding_search = self.env.now
-                    try_fema.interrupt(entity.gave_up_funding_search - money_search_start)
+                    try_fema.interrupt(self.env.now)
                     return
                 else:
                     entity.gave_up_funding_search = self.env.now
@@ -149,7 +149,7 @@ class Insurance_IA_Loan_Sequential(RecoveryPolicy):
             if money_search_outcome == {find_search_patience: 'Gave up'}:
                 if try_loan.is_alive:
                     entity.gave_up_funding_search = self.env.now
-                    try_loan.interrupt(entity.gave_up_funding_search - money_search_start)
+                    try_loan.interrupt(self.env.now)
                     return
                 else:
                     entity.gave_up_funding_search = self.env.now
