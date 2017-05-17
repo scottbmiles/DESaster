@@ -77,12 +77,8 @@ class Owner(Entity):
         self.insurance = insurance  # Hazard-specific insurance coverage: coverage / residence.value
         self.savings = savings  # Amount of entity savings in $
         self.credit = credit # A FICO-like credit score
-        self.property = real_property # 
+        self.property = real_property #
 
-        if self.write_story:
-            # Start stories with non-disaster attributes
-            self.story.append('{0} owns a residence. '.format(self.name))
-            
         # Owner env outputs
         self.inspection_put = None  # Time put request in for house inspection
         self.inspection_get = None  # Time get  house inspection
@@ -92,14 +88,15 @@ class Owner(Entity):
         self.assistance_put = None  # Time put request in for FEMA assistance
         self.assistance_get = None  # Time get FEMA assistance
         self.assistance_request = 0.0  # Amount of money requested from FEMA
-        self.assistance_payout = 0.0  # Amount of assistance provided by FEMA
+        self.fema_payout = 0.0  # Amount of assistance provided by FEMA
+        self.assistance_payout = 0.0  # Amount of generic assistance provided (e.g., Red Cross)
         self.money_to_rebuild = self.savings  # Total funds available to entity to rebuild house
         self.repair_put = None  # Time put request in for house rebuild
         self.repair_get = None  # Time get house rebuild completed
         self.demolition_put = None # Time demolition requested
         self.demolition_get = None  # Time demolition occurs
-        self.loan_put = None  # Time put request for loan
-        self.loan_get = None  # Time get requested loan
+        self.sba_put = None  # Time put request for loan
+        self.sba_get = None  # Time get requested loan
         self.loan_amount = 0.0  # Amount of loan received
         self.permit_put = None  # Time put request for building permit
         self.permit_get = None  # Time get requested building permit
@@ -380,12 +377,11 @@ class RenterHousehold(Household):
         if self.write_story:
             # Set story with non-disaster attributes.
             self.story.append(
-            '{0} rents and lives in a {1} room {2} at {3} worth ${4:,.0f}. '.format(
+            '{0} rents and lives in a {1} room {2} at {3}. '.format(
                                                             self.name,
                                                             self.residence.bedrooms,
                                                             self.residence.occupancy.lower(),
-                                                            self.residence.address,
-                                                            self.residence.value
+                                                            self.residence.address
                                                             )
                                 )
 

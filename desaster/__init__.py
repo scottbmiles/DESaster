@@ -13,7 +13,7 @@ from desaster.technical import TechnicalRecoveryProgram, RepairProgram, Inspecti
 from desaster.technical import EngineeringAssessment, PermitProgram
 from desaster.financial import FinancialRecoveryProgram, IndividualAssistance, OwnersInsurance, LoanSBA
 from desaster.structures import Building, SingleFamilyResidential
-from desaster.policies import RepairVacantBuilding, Insurance_IA_Loan_Sequential
+from desaster.policies import RepairVacantBuilding, Insurance_IA_SBA_Sequential, Insurance_SBA_Sequential
 
 __all__ = ["technical", "financial", "structures", "distributions"
             "entities", "policies", "hazus", "io"]

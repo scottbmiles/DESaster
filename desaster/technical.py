@@ -355,8 +355,8 @@ class RepairProgram(TechnicalRecoveryProgram):
         try:
             # % of damage value related to building materials (vs. labor and profit)
             # **** PERHAPS PROMOTE TO A FUNCTION ARGUMENT ***
-            materials_cost_pct = 1.0 
-            
+            materials_cost_pct = 1.0
+
             materials_cost = structure.damage_value * materials_cost_pct
             # Deal with case that insufficient construction materials are available.
             if materials_cost > self.materials.level:
