@@ -87,12 +87,9 @@ class Insurance_IA_SBA_Sequential(RecoveryPolicy):
             # request and return out of function.
             if money_search_outcome == {find_search_patience: 'Gave up'}:
                 if try_insurance.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_insurance.interrupt(self.env.now)
-                    return
-                else:
-                    entity.gave_up_funding_search = self.env.now
-                    return
+                entity.gave_up_funding_search = self.env.now
+                return
 
         # If entity (still) does not have enough rebuild money then yield a FEMA IA
         # request, the duration of which is limited by entity's money search patience.
@@ -103,7 +100,7 @@ class Insurance_IA_SBA_Sequential(RecoveryPolicy):
             # process completes.
             find_search_patience = self.env.timeout(
                                                     patience_end - self.env.now,
-                                                    value='Gave up'
+                                                    value='gave up'
                                                     )
 
             # Define FEMA aid request process. Pass data about available
@@ -116,13 +113,11 @@ class Insurance_IA_SBA_Sequential(RecoveryPolicy):
 
             # If patience process completes first, interrupt the FEMA aid
             # request and return out of function.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
+            if 'gave up' in str(money_search_outcome).lower():
                 if try_fema.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_fema.interrupt(self.env.now)
-                    return
-                else:
-                    entity.gave_up_funding_search = self.env.now
+                entity.gave_up_funding_search = self.env.now
+                return
 
         # If entity (still) does not have enough rebuild money then yield a loan
         # request, the duration of which is limited by entity's money search patience.
@@ -132,7 +127,7 @@ class Insurance_IA_SBA_Sequential(RecoveryPolicy):
             # equal to the *remaining* patience. Pass the value "Gave up" if the
             # process completes.
             find_search_patience = self.env.timeout(patience_end - self.env.now,
-                                    value='Gave up')
+                                    value='gave up')
 
             # Define loan request process. Pass data about available
             # loan processors.
@@ -144,15 +139,135 @@ class Insurance_IA_SBA_Sequential(RecoveryPolicy):
 
             # If patience process completes first, interrupt the loan
             # request and return out of function.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
+            if 'gave up' in str(money_search_outcome).lower():
                 if try_loan.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_loan.interrupt(self.env.now)
-                    return
-                else:
-                    entity.gave_up_funding_search = self.env.now
+                entity.gave_up_funding_search = self.env.now
+                return
 
         # Record the time and duration when entity's search for money ends without
+        # giving up.
+        search_duration = self.env.now - money_search_start
+
+        # If entity (STILL) does not have enough rebuild money then indicate so and
+        # that options have been exhausted.
+        if entity.money_to_rebuild < entity.property.damage_value:
+            # If write_story is True, then append money search outcome to entity's story.
+            if entity.write_story:
+                entity.story.append(
+                    'It took {0} {1:.0f} days to exhaust financial assistance options but still does not have enough money to cover repairs (${2:,.0f}). '.format(
+                            entity.name.title(),
+                            search_duration,
+                            entity.money_to_rebuild
+                            )
+                    )
+            return
+
+        # If entity completed search and obtained sufficient funding.
+        # If write_story is True, then append money search outcome to entity's story.
+        if entity.write_story:
+            entity.story.append(
+                'It took {0} {1:.0f} days to exhaust financial assistance options and now has ${2:,.0f} for repairs. '.format(
+                        entity.name.title(),
+                        search_duration,
+                        entity.money_to_rebuild
+                        )
+                )
+
+class Insurance_IA_SBA_Parallel(RecoveryPolicy):
+    def __init__(self, env):
+        RecoveryPolicy.__init__(self, env)
+    def policy(self, insurance_program, fema_program, sba_program, entity,
+                        search_patience):
+        """A process (generator) representing entity search for money to rebuild or
+        repair home based on requests for insurance and/or SBA loan.
+
+        env -- Pointer to SimPy env environment.
+        entity -- A single entities object, such as Household().
+        search_patience -- The search duration in which the entity is willing to
+                            wait to find a new home. Does not include the process of
+                            securing money.
+        write_story -- Boolean indicating whether to track a entitys story.
+
+        Returns or Attribute Changes:
+        entity.story -- Process outcomes appended to story.
+        money_search_start -- Record time money search starts
+        entity.gave_up_funding_search -- Record time money search stops
+        entity.money_to_rebuild -- Technically changed (increased) by functions
+                                    called within.
+        """
+
+        # Record when money search starts
+        money_search_start = self.env.now
+
+        # Return out of function if entity has enough money to rebuild and does not
+        # have any insurance coverage.
+        if (entity.money_to_rebuild >= entity.property.damage_value
+            and entity.insurance == 0):
+
+            # If True, append search outcome to story.
+            if entity.write_story:
+                entity.story.append(
+                    '{0} already had enough money to rebuild (${1:,.0f}) and did not seek assistance. '.format(
+                                        entity.name.title(),
+                                        entity.money_to_rebuild
+                                        )
+                                    )
+            return
+
+        # Define a timeout process to represent search patience. Pass the value
+        # "gave up" if the process completes.
+        find_search_patience = self.env.timeout(search_patience, value='gave up')
+        # Define insurance claim request process. Define loan request process.
+        try_insurance = self.env.process(insurance_program.process(entity))
+        try_loan = self.env.process(sba_program.process(entity))
+        try_fema = self.env.process(fema_program.process(entity))
+
+        # If entity has insurance then yield an insurance claim request, the duration
+        # of which is limited by entity's money search patience.
+        if entity.insurance > 0.0:
+            # At any point the entity has enough money to rebuild, stop looking.
+            while entity.money_to_rebuild < entity.property.damage_value:
+                # Yield the patience timeout, the FEMA request, insurance claim request, and the loan request.
+                money_search_outcome = yield find_search_patience | ( try_insurance & try_loan & try_fema )
+
+                # End looping if all recovery processes have completed.
+                if try_insurance.processed and try_loan.processed and try_fema.processed:
+                    break
+
+                # If patience process completes first, interrupt the insurance, FEMA,
+                # and SBA processes.
+                if 'gave up' in str(money_search_outcome).lower():
+                    if try_insurance.is_alive:
+                        try_insurance.interrupt(self.env.now)
+                    if try_fema.is_alive:
+                            try_fema.interrupt(self.env.now)
+                    if try_loan.is_alive:
+                        try_loan.interrupt(self.env.now)
+                    entity.gave_up_funding_search = self.env.now
+                    return
+        else:
+            # At any point the entity has enough money to rebuild, stop looking.
+            while entity.money_to_rebuild < entity.property.damage_value:
+                # Yield the patience timeout and the loan request.
+                # No insurance so just yield FEMA & SBA loan request process.
+                money_search_outcome = yield find_search_patience | (try_loan & try_fema)
+
+                # End looping if both recovery processes have completed
+                if try_loan.processed and try_fema.processed:
+                    break
+
+                # If patience process completes first, interrupt the insurance claim
+                # request and the loan request before ending process.
+                if 'gave up' in str(money_search_outcome).lower():
+                    if try_loan.is_alive:
+                        try_loan.interrupt(self.env.now)
+                    if try_fema.is_alive:
+                        try_fema.interrupt(self.env.now)
+                    entity.gave_up_funding_search = self.env.now
+                    return
+
+        # Record the duration when entity's search for money ends without
         # giving up.
         search_duration = self.env.now - money_search_start
 
@@ -223,17 +338,17 @@ class Insurance_SBA_Sequential(RecoveryPolicy):
                                     )
             return
 
+        # Define a timeout process to represent search patience, with duration
+        # equal to the *remaining* patience. Pass the value "Gave up" if the
+        # process completes.
+        find_search_patience = self.env.timeout(
+                                                    patience_end - self.env.now,
+                                                    value='gave up'
+                                                )
+
         # If entity has insurance then yield an insurance claim request, the duration
         # of which is limited by entity's money search patience.
         if entity.insurance > 0.0:
-
-            # Define a timeout process to represent search patience, with duration
-            # equal to the *remaining* patience. Pass the value "Gave up" if the
-            # process completes.
-            find_search_patience = self.env.timeout(
-                                                        patience_end - self.env.now,
-                                                        value='Gave up'
-                                                    )
 
             # Define insurance claim request process. Pass data about available
             # insurance claim adjusters.
@@ -245,24 +360,15 @@ class Insurance_SBA_Sequential(RecoveryPolicy):
 
             # If patience process completes first, interrupt the insurance claim
             # request and return out of function.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
+            if 'gave up' in str(money_search_outcome).lower():
                 if try_insurance.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_insurance.interrupt(self.env.now)
-                    return
-                else:
-                    entity.gave_up_funding_search = self.env.now
-                    return
+                entity.gave_up_funding_search = self.env.now
+                return
 
         # If entity (still) does not have enough rebuild money then yield a loan
         # request, the duration of which is limited by entity's money search patience.
         if entity.money_to_rebuild < entity.property.damage_value:
-
-            # Define a timeout process to represent search patience, with duration
-            # equal to the *remaining* patience. Pass the value "Gave up" if the
-            # process completes.
-            find_search_patience = self.env.timeout(patience_end - self.env.now,
-                                    value='Gave up')
 
             # Define loan request process. Pass data about available
             # loan processors.
@@ -274,15 +380,13 @@ class Insurance_SBA_Sequential(RecoveryPolicy):
 
             # If patience process completes first, interrupt the loan
             # request and return out of function.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
+            if 'gave up' in str(money_search_outcome).lower():
                 if try_loan.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_loan.interrupt(self.env.now)
-                    return
-                else:
-                    entity.gave_up_funding_search = self.env.now
+                entity.gave_up_funding_search = self.env.now
+                return
 
-        # Record the time and duration when entity's search for money ends without
+        # Record the duration when entity's search for money ends without
         # giving up.
         search_duration = self.env.now - money_search_start
 
@@ -335,9 +439,7 @@ class Insurance_SBA_Parallel(RecoveryPolicy):
         """
 
         # Record when money search starts
-        # Calculate the time that money search patience ends
         money_search_start = self.env.now
-        patience_end = money_search_start + search_patience
 
         # Return out of function if entity has enough money to rebuild and does not
         # have any insurance coverage.
@@ -354,62 +456,49 @@ class Insurance_SBA_Parallel(RecoveryPolicy):
                                     )
             return
 
+        # Define a timeout process to represent search patience. Pass the value
+        # "gave up" if the process completes.
+        find_search_patience = self.env.timeout(search_patience, value='gave up')
+
+        # Define insurance claim request process. Define loan request process.
+        try_insurance = self.env.process(insurance_program.process(entity))
+        try_loan = self.env.process(sba_program.process(entity))
+
         # If entity has insurance then yield an insurance claim request, the duration
         # of which is limited by entity's money search patience.
         if entity.insurance > 0.0:
 
-            # Define a timeout process to represent search patience, with duration
-            # equal to the *remaining* patience. Pass the value "Gave up" if the
-            # process completes.
-            find_search_patience = self.env.timeout(
-                                                        patience_end - self.env.now,
-                                                        value='Gave up'
-                                                    )
+            # At any point the entity has enough money to rebuild, stop looking.
+            while entity.money_to_rebuild < entity.property.damage_value:
 
-            # Define insurance claim request process. Define loan request process.
-            try_insurance = self.env.process(insurance_program.process(entity))
-            try_loan = self.env.process(sba_program.process(entity))
+                # Yield the patience timeout, the insurance claim request, and the loan request.
+                # Pass result for the process(es) that completes first.
+                money_search_outcome = yield find_search_patience | ( try_insurance & try_loan )
 
-            # Yield the patience timeout, the insurance claim request, and the loan request.
-            # Pass result for the process that completes first.
-            money_search_outcome = yield find_search_patience | try_insurance | try_loan
+                # End looping if both recovery processes have completed.
+                if try_insurance.processed and try_loan.processed:
+                    break
 
-            # If patience process completes first, interrupt the insurance claim
-            # request and the loan request before ending process.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
-                if try_insurance.is_alive:
+                # If patience process completes first, interrupt the insurance claim
+                # request and the loan request before ending process.
+                if 'gave up' in str(money_search_outcome).lower():
+                    if try_insurance.is_alive:
+                        try_insurance.interrupt(self.env.now)
+                    if try_loan.is_alive:
+                        try_loan.interrupt(self.env.now)
                     entity.gave_up_funding_search = self.env.now
-                    try_insurance.interrupt(self.env.now)
                     return
-                if try_loan.is_alive:
-                    entity.gave_up_funding_search = self.env.now
-                    try_loan.interrupt(self.env.now)
-                    return
-                entity.gave_up_funding_search = self.env.now
-                return
         else:
-            # Define a timeout process to represent search patience, with duration
-            # equal to the *remaining* patience. Pass the value "Gave up" if the
-            # process completes.
-            find_search_patience = self.env.timeout(
-                                                        patience_end - self.env.now,
-                                                        value='Gave up'
-                                                    )
-
-            # No insurance so just define loan request process.
-            try_loan = self.env.process(sba_program.process(entity))
-
             # Yield the patience timeout and the loan request.
+            # No insurance so just yield loan request process.
             # Pass result for the process that completes first.
             money_search_outcome = yield find_search_patience | try_loan
 
             # If patience process completes first, interrupt the insurance claim
             # request and the loan request before ending process.
-            if money_search_outcome == {find_search_patience: 'Gave up'}:
+            if 'gave up' in str(money_search_outcome).lower():
                 if try_loan.is_alive:
-                    entity.gave_up_funding_search = self.env.now
                     try_loan.interrupt(self.env.now)
-                    return
                 entity.gave_up_funding_search = self.env.now
                 return
 

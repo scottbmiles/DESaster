@@ -197,7 +197,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         Returns or Attribute Changes:
         entity.story -- Append story strings to entity's story
         entity.assessment_put -- Records sim time of assessment request
-        entity.assistance_get -- Records sim time of assessment reciept
+        entity.fema_get -- Records sim time of assessment reciept
         structure.inspected = True, if successfully assessed
         """
         # Record time that assessment request put in.

@@ -84,11 +84,10 @@ class Owner(Entity):
         self.inspection_get = None  # Time get  house inspection
         self.claim_put = None  # Time put request in for insurance settlement
         self.claim_get = None  # Time get insurance claim settled
-        self.claim_payout = 0.0  # Amount of insurance claim payout
-        self.assistance_put = None  # Time put request in for FEMA assistance
-        self.assistance_get = None  # Time get FEMA assistance
-        self.assistance_request = 0.0  # Amount of money requested from FEMA
-        self.fema_payout = 0.0  # Amount of assistance provided by FEMA
+        self.claim_amount = 0.0  # Amount of insurance claim payout
+        self.fema_put = None  # Time put request in for FEMA assistance
+        self.fema_get = None  # Time get FEMA assistance
+        self.fema_amount = 0.0  # Amount of assistance provided by FEMA
         self.assistance_payout = 0.0  # Amount of generic assistance provided (e.g., Red Cross)
         self.money_to_rebuild = self.savings  # Total funds available to entity to rebuild house
         self.repair_put = None  # Time put request in for house rebuild
@@ -97,7 +96,7 @@ class Owner(Entity):
         self.demolition_get = None  # Time demolition occurs
         self.sba_put = None  # Time put request for loan
         self.sba_get = None  # Time get requested loan
-        self.loan_amount = 0.0  # Amount of loan received
+        self.sba_amount = 0.0  # Amount of loan received
         self.permit_put = None  # Time put request for building permit
         self.permit_get = None  # Time get requested building permit
         self.assessment_put = None  # Time put request for engineering assessment
@@ -134,12 +133,12 @@ class Household(Entity):
         self.residence = residence
 
         # Entity outputs
-        self.home_search_start = None  # Time started searching for a new home
-        self.home_search_stop = None  # Time found a new home
+        self.home_put = None  # Time started searching for a new home
+        self.home_get = None  # Time found a new home
         self.gave_up_home_search = None  # Whether entity gave up search for home
-        self.home_put = None # The time when the entity put's in a request for a home.
+        self.occupy_put = None # The time when the entity put's in a request for a home.
                                 # None if request never made.
-        self.home_get = None # The time when the entity receives a home.
+        self.occupy_get = None # The time when the entity receives a home.
                                 # None if never received.
         self.prior_residence = [] # An empty list to record each residence that
                                     # the entity vacates.
@@ -204,8 +203,8 @@ class OwnerHousehold(Owner, Household):
 
         Returns or Attribute Changes:
         self.story -- Process outcomes appended to story.
-        self.home_search_start -- Record time home search starts
-        self.home_search_stop -- Record time home search stops
+        self.home_put -- Record time home search starts
+        self.home_get -- Record time home search stops
         self.residence -- Potentially assigned a new residence object.
         self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
@@ -214,8 +213,8 @@ class OwnerHousehold(Owner, Household):
         # Record when housing search starts
         # Calculate the time that housing search patience ends
         # If write_story, write search start time to entity's story
-        self.home_search_start = self.env.now
-        patience_end = self.home_search_start + search_patience
+        self.home_put = self.env.now
+        patience_end = self.home_put + search_patience
 
         # Define timeout process representing entity's *remaining* search patience.
         # Return 'Gave up' if timeout process completes.
@@ -228,7 +227,7 @@ class OwnerHousehold(Owner, Household):
             self.story.append(
                 '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
                 self.name.title(), self.property.occupancy.lower(),
-                self.home_search_start)
+                self.home_put)
                 )
 
         new_home = search_stock.get(lambda findHome:
@@ -258,7 +257,7 @@ class OwnerHousehold(Owner, Household):
                 self.story.append(
                     'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
                         self.env.now,
-                        self.env.now - self.home_search_start,
+                        self.env.now - self.home_put,
                         self.name.title()
                         )
                     )
@@ -286,14 +285,14 @@ class OwnerHousehold(Owner, Household):
         self.residence = self.property
 
         # Record the time that the housing search ends.
-        self.home_search_stop = self.env.now
+        self.home_get = self.env.now
 
         # If write_story is True, then write results of successful home search to
         # entity's story.
         if self.write_story:
             self.story.append(
                 'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
-                    self.home_search_stop,
+                    self.home_get,
                     self.name.title(), self.property.occupancy.lower(),
                     self.property.address,
                     self.property.value,
@@ -319,12 +318,13 @@ class OwnerHousehold(Owner, Household):
         self.story -- Summary of process outcome as string.
         self.residence -- Assign the owner's property object as residence.
         """
+        self.occupy_put = self.env.now
 
         # Yield timeout equivalent to time required to move back into home.
         yield self.env.timeout(duration_distribution.value())
 
         # Record time got home
-        self.home_get = self.env.now
+        self.occupy_get = self.env.now
 
         #If true, write process outcome to story
         if self.write_story:
@@ -332,7 +332,7 @@ class OwnerHousehold(Owner, Household):
                             "{0} occupied the {1} {2:.0f} days after the event. ".format(
                                                                                             self.name.title(),
                                                                                             self.residence.occupancy.lower(),
-                                                                                            self.home_get)
+                                                                                            self.occupy_get)
                             )
 
         if callbacks is not None:
@@ -400,8 +400,8 @@ class RenterHousehold(Household):
 
         Returns or Attribute Changes:
         self.story -- Process outcomes appended to story.
-        self.home_search_start -- Record time home search starts
-        self.home_search_stop -- Record time home search stops
+        self.home_put -- Record time home search starts
+        self.home_get -- Record time home search stops
         self.residence -- Potentially assigned a new structures.Residence() object.
         self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
@@ -409,8 +409,8 @@ class RenterHousehold(Household):
         # Record when housing search starts
         # Calculate the time that housing search patience ends
         # If write_story, write search start time to entity's story
-        self.home_search_start = self.env.now
-        patience_end = self.home_search_start + search_patience
+        self.home_put = self.env.now
+        patience_end = self.home_put + search_patience
 
         # Define timeout process representing entity's *remaining* search patience.
         # Return 'Gave up' if timeout process completes.
@@ -426,7 +426,7 @@ class RenterHousehold(Household):
                 self.story.append(
                     '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
                     self.name.title(), self.residence.occupancy.lower(),
-                    self.home_search_start)
+                    self.home_put)
                     )
 
             new_home = search_stock.get(lambda findHome:
@@ -444,7 +444,7 @@ class RenterHousehold(Household):
                 self.story.append(
                     '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
                     self.name.title(), self.prior_residence[-1].occupancy.lower(),
-                    self.home_search_start)
+                    self.home_put)
                     )
             new_home = search_stock.get(lambda findHome:
                             (
@@ -473,7 +473,7 @@ class RenterHousehold(Household):
                 self.story.append(
                     'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
                         self.env.now,
-                        self.env.now - self.home_search_start,
+                        self.env.now - self.home_put,
                         self.name.title()
                         )
                     )
@@ -493,14 +493,14 @@ class RenterHousehold(Household):
         self.residence.listed = False
 
         # Record the time that the housing search ends.
-        self.home_search_stop = self.env.now
+        self.home_get = self.env.now
 
         # If write_story is True, then write results of successful home search to
         # entity's story.
         if self.write_story:
             self.story.append(
                 'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f}. '.format(
-                    self.home_search_stop,
+                    self.home_get,
                     self.name.title(), self.residence.occupancy.lower(),
                     self.residence.address,
                     self.residence.cost,
@@ -525,6 +525,7 @@ class RenterHousehold(Household):
         self.story -- Summary of process outcome as string.
         """
 
+        self.occupy_put = self.env.now
         ####
         #### Hopefully put code here for checking if renter can still afford
         #### the rent. Obviously need a function somewhere that estimates rent increases.
@@ -534,7 +535,7 @@ class RenterHousehold(Household):
         yield self.env.timeout(duration_distribution.value())
 
         # Record time got home
-        self.home_get = self.env.now
+        self.occupy_get = self.env.now
 
         #If true, write process outcome to story
         if self.write_story:

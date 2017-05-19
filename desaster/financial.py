@@ -6,6 +6,7 @@
 """
 from simpy import Interrupt
 from simpy import Resource, Container
+from desaster.distributions import DurationDistributionHomeLoanSBA
 
 
 class FinancialRecoveryProgram(object):
@@ -123,110 +124,94 @@ class IndividualAssistance(FinancialRecoveryProgram):
                         completion of this process.
 
         Returns or Attribute Changes:
-        entity.assistance_put -- Records sim time of fema processor request
-        entity.assistance_get -- Records sim time of fema assistance reciept
-        entity.assistance_request -- The amount of assistance requested.
-        entity.fema_payout -- Amount of FEMA aid given to the entity.
+        entity.fema_put -- Records sim time of fema processor request
+        entity.fema_get -- Records sim time of fema assistance reciept
+        entity.fema_amount -- Amount of FEMA aid given to the entity.
         """
         # Exception handling in case interrupted by another process.
         try:
             #Ensure that entity does not have enough money to rebuild already.
             if entity.money_to_rebuild >= entity.property.damage_value:
                 return
+
             # If does not have enough money to rebuild, submit request to FEMA.
-            else:
-                # Record time requests FEMA assistance.
-                entity.assistance_put = self.env.now
-                #If true, write FEMA request time to story.
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} submitted a request to FEMA {1:.0f} days after the event. '.format(
-                            entity.name.title(), entity.assistance_put
-                            )
-                        )
-                # Request a FEMA processor to review aid application.
-                request = self.staff.request()
-                yield request
 
-                # Yield timeout for duration necessary to process FEMA aid request.
-                yield self.env.timeout(self.duration_distribution.value())
+            # Calculate assistance request.
+            # Must subtract any insurance payout from FEMA payout and choose the lesser of
+            # max assistance and deducted total
+            entity.fema_amount = min(self.max_outlay, (entity.property.damage_value
+                                        - entity.claim_amount))
 
-                # Release FEMA processors.
-                self.staff.release(request)
+            # Record time requests FEMA assistance.
+            entity.fema_put = self.env.now
 
-                # Record time received FEMA assistance.
-                entity.assistance_get = self.env.now
+            self.writeRequest(entity)
 
-                # Must subtract any insurance payout from FEMA payout and choose the lesser of
-                #max assistance and deducted total
-                entity.assistance_request = min(self.max_outlay, (entity.property.damage_value
-                                            - entity.claim_payout))
+            # Request a FEMA processor to review aid application.
+            request = self.staff.request()
+            yield request
 
-                # If requesting assistance, determine if FEMA has money left to
-                # provide assistance.
-                if entity.assistance_request <= self.budget.level and entity.assistance_request != 0:
-                    # FEMA has enough money to fully pay requested amount.
-                    entity.fema_payout = entity.assistance_request
-                    entity.money_to_rebuild += entity.fema_payout
+            # Yield timeout for duration necessary to process FEMA aid request.
+            yield self.env.timeout(self.duration_distribution.value())
 
-                    # Subtract payout amount from the overall amount of assistance
-                    # FEMA has available to payout to all requests.
-                    yield self.budget.get(entity.assistance_request)
+            # Release FEMA processors.
+            self.staff.release(request)
 
-                    #If true, write process outcome to story.
-                    if entity.write_story:
-                        entity.story.append(
-                            '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                                entity.name.title(),
-                                entity.fema_payout,
-                                entity.assistance_get
-                                )
-                            )
-                elif self.budget.level > 0:
-                    # FEMA has money left but less than requested.
-                    # Set payout equal to remaining funds.
-                    entity.fema_payout = self.budget.level
-                    entity.money_to_rebuild += entity.fema_payout
+            # Update assistance request in case of funding from parallel insurance process
+            entity.fema_amount = min(self.max_outlay, (entity.property.damage_value
+                                        - entity.claim_amount))
 
-                    # Subtract payout amount from the overall amount of assistance
-                    # FEMA has available to payout to all requests.
-                    yield self.budget.get(self.budget.level)
+            if entity.fema_amount <= 0:
+                self.writeWithdraw(entity, self.env.now)
+                return
 
-                    #If true, write process outcome to story.
-                    if entity.write_story:
-                        entity.story.append(
-                         '{0} requested ${1:,.0f} from FEMA but only received ${2:,.0f}, {3} days after the event.. '
-                         .format(
-                                    entity.name.title(),
-                                    entity.assistance_request,
-                                    entity.fema_payout,
-                                    entity.assistance_get
-                                )
-                            )
-                else:
-                    # FEMA has no money left to make payout.
-                    entity.fema_payout = 0.0
+            # Request payout amount from FEMA budget
+            # Must wait for request to be fulfilled
+            yield self.budget.get(entity.fema_amount)
 
-                    #If true, write process outcome to story.
-                    if entity.write_story:
-                        entity.story.append(
-                        '{0} received no money from FEMA because of inadequate funding. '
-                        .format(entity.name.title())
-                        )
+            entity.money_to_rebuild += entity.fema_amount
+
+            # Record time received FEMA assistance.
+            entity.fema_get = self.env.now
+
+            self.writeReceived(entity)
 
         # Catch any interrupt from another process.
         except Interrupt as i:
             #If true, write process outcome to story.
             if entity.write_story:
-                entity.story.append(
-                        '{0} gave up during the FEMA assistance process {1} days after the event. '.format(
-                            entity.name.title(), i.cause)
-                        )
+                self.writeWithdraw(entity, i.cause)
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
+
+    def writeWithdraw(self, entity, now):
+        #If true, write interrupt outcome to story.
+        if entity.write_story:
+            entity.story.append(
+                    '{0} withdrew the FEMA assistance application {1} days after the event. '.format(
+                    entity.name.title(), now))
+
+    def writeRequest(self, entity):
+        #If true, write FEMA request time to story.
+        if entity.write_story:
+            entity.story.append(
+                '{0} requested ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
+                    entity.name.title(), entity.fema_amount, entity.fema_put
+                    )
+                )
+    def writeReceived(self, entity):
+        #If true, write process outcome to story.
+        if entity.write_story:
+            entity.story.append(
+                '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
+                    entity.name.title(),
+                    entity.fema_amount,
+                    entity.fema_get
+                    )
+                )
 
 class OwnersInsurance(FinancialRecoveryProgram):
     """A class to represent an insurance company's hazard insurance program.
@@ -268,7 +253,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
         Returns or attribute changes:
         entity.claim_put -- Record current env time at the time the entity
                             enters the adjuster queue
-        entity.claim_payout -- Set claim payout equal to damage value amount.
+        entity.claim_amount -- Set claim payout equal to damage value amount.
         entity.claim_get -- Record env time when entity recieves payout
         entity.story -- Append natural language sentences to entities story.
         """
@@ -276,12 +261,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
         try:
             # Ensure entity has insurance.
             if entity.insurance <= 0.0:
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} has no hazard insurance. '.format(
-                            entity.name.title()
-                            )
-                        )
+                self.writeNoInsurance(entity)
                 return
 
             # Has insurance so submits a claim.
@@ -290,11 +270,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 entity.claim_put = self.env.now
 
                 #If true, write claim submission time to story.
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
-                            entity.name.title(), entity.claim_put)
-                        )
+                self.writeRequest(entity)
 
                 # The insurance deductible amount is the home value multiplied by the
                 # coverage ratio multipled by the deductible percentage.
@@ -303,12 +279,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 # Determine payout amount and add to entity's rebuild money.
                 # Only payout amount equal to the damage, not the full coverage.
                 if entity.property.damage_value < deductible_amount:
-                    if entity.write_story:
-                        entity.story.append(
-                            '{0}\'s insurance deductible is greater than the value of damage. '.format(
-                            entity.name.title())
-                            )
-                    entity.claim_get = self.env.now
+                    self.writeDeductible(entity)
                     return
 
                 # If damage > deductible, submit request for insurance adjusters.
@@ -318,37 +289,70 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 # Timeout process to simulate claims processing duration.
                 yield self.env.timeout(self.duration_distribution.value())
 
-                entity.claim_payout = entity.property.damage_value - deductible_amount
+                # Release insurance adjusters so they can process other claims.
+                self.staff.release(request)
 
-                entity.money_to_rebuild += entity.claim_payout
+                entity.claim_amount = entity.property.damage_value - deductible_amount
+
+                # Make request for the claim amount from the insurance budget
+                # If get request, add to entity money to rebuild
+                yield self.budget.get(entity.claim_amount)
+                entity.money_to_rebuild += entity.claim_amount
 
                 # Record when the time when entity gets claim payout
                 entity.claim_get = self.env.now
 
-                # Release insurance adjusters so they can process other claims.
-                self.staff.release(request)
+                self.writeReceived(entity)
 
-                #If true, write process outcome to story.
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
-                            entity.name.title(),
-                            entity.claim_payout,
-                            entity.claim_get
-                            )
-                        )
         # Handle any interrupt thrown by another process.
         except Interrupt as i:
             #If true, write that the process was interrupted to the story.
             if entity.write_story:
-                entity.story.append(
-                        '{0} gave up during the insurance claim process {1} days after the event. '.format(
-                        entity.name.title(), i.cause))
+                self.writeWithdraw(entity, i.cause)
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
+
+    def writeWithdraw(self, entity, now):
+        #If true, write interrupt outcome to story.
+        if entity.write_story:
+            entity.story.append(
+                    '{0} withdrew the insurance claim {1} days after the event. '.format(
+                    entity.name.title(), now))
+
+    def writeNoInsurance(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0} has no hazard insurance. '.format(
+                    entity.name.title()
+                    )
+                )
+    def writeRequest(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0} submitted an insurance claim {1:.0f} days after the event. '.format(
+                    entity.name.title(), entity.claim_put)
+                )
+
+    def writeDeductible(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0}\'s insurance deductible is greater than the value of damage. '.format(
+                entity.name.title())
+                )
+
+    def writeReceived(self, entity):
+        #If true, write process outcome to story.
+        if entity.write_story:
+            entity.story.append(
+                '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
+                    entity.name.title(),
+                    entity.claim_amount,
+                    entity.claim_get
+                    )
+                )
 
 class LoanSBA(FinancialRecoveryProgram):
     """A class to represent a home loan program. The class process enforces a maximum
@@ -399,7 +403,7 @@ class LoanSBA(FinancialRecoveryProgram):
         Returns or Attribute Changes:
         entity.sba_put -- Records sim time of loan request
         entity.sba_get -- Records sim time of loan reciept
-        entity.loan_amount -- The amount of loan requested.
+        entity.sba_amount -- The amount of loan requested.
         entity.story -- Append natural language sentences to entities story.
         """
         # Exception handling in case interrupted by another process.
@@ -415,39 +419,37 @@ class LoanSBA(FinancialRecoveryProgram):
 
                 # Subtract any insurance or FEMA payouts from damage value to
                 # arrive at loan amount.
-                entity.loan_amount = min(self.max_loan, (
+                entity.sba_amount = min(self.max_loan, (
                                         entity.property.damage_value
-                                        - entity.claim_payout
-                                        - entity.fema_payout
+                                        - entity.claim_amount
+                                        - entity.fema_amount
                                     ) )
 
                 if self.env.now > self.deadline:
                     if entity.write_story:
                         entity.story.append(
                             '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was sumitted after the deadline of {3} after the event. '.format(
-                                entity.name.title(), entity.loan_amount, entity.sba_put, self.deadline)
+                                entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline)
                             )
                     return # Application rejected, end process
 
                 if entity.write_story:
                     entity.story.append(
                         '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. '.format(
-                            entity.name.title(), entity.loan_amount, entity.sba_put)
+                            entity.name.title(), entity.sba_amount, entity.sba_put)
                         )
 
                 # Request a loan processor.
                 officer_request = self.officers.request()
                 yield officer_request
 
-
-                # Yield process timeout for duration needed for officer to process application.
-                try: # Assume it is DurationDistributionHomeLoanSBA
+                # # Yield process timeout for duration needed for officer to process application.
+                if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
                     yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
                                                                             min_credit = self.min_credit)
-                                                                            )
-                except: # if not, it's ProbabilityDistribution
+                                                )
+                else: # if not, it's ProbabilityDistribution
                     yield self.env.timeout(self.duration_distribution.value())
-
 
                 if entity.credit < self.min_credit:
                     # If true, write loan request time to story.
@@ -457,11 +459,11 @@ class LoanSBA(FinancialRecoveryProgram):
                             '{0}\'s SBA loan application was denied because {0} had a credit score of {1}. '.format(
                                 entity.name.title(), entity.credit)
                                             )
-
                     return
 
                 # Release loan officer so that they can process other loans.
                 self.officers.release(officer_request)
+
 
                 # If approved (enough credit), request an inspector. Then release it.
                 # %%% This increases duration by amount of time it takes
@@ -471,49 +473,95 @@ class LoanSBA(FinancialRecoveryProgram):
                 yield self.env.timeout(1) # Assumed 1 day inspection duration.
                 self.inspectors.release(inspector_request)
 
-                # If loan amount is greater than $25k, it requires collateral and more paperwork
-                if entity.loan_amount > 25000:
-                    # Receives $25k immediately as initial disbursement
-                    entity.money_to_rebuild += 25000
-
-                    # if entity.write_story:
-                    #     entity.story.append(
-                    #         "{0} received an initial disbursement of $25,000 {1} days after the event. "
-                    #         .format(entity.name.title(), self.env.now))
-                    #
-                    # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED %%%
-
-                    # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
-                    try: # Assume it is DurationDistributionHomeLoanSBA
-                        yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
-                                                                                min_credit = self.min_credit)
-                                                                                )
-                    except: # if not, it's ProbabilityDistribution
-                        yield self.env.timeout(self.duration_distribution.value())
-                    entity.money_to_rebuild += (entity.loan_amount - 25000)
-
-                else:
-                    # Add loan amount to entity's money to rebuild.
-                    entity.money_to_rebuild += entity.loan_amount
-
-                # Record time full loan is disbursed.
-                entity.sba_get = self.env.now
+                if entity.write_story:
+                    entity.story.append(
+                        "SBA inspected {0}\'s home on day {1} after the event. "
+                        .format(entity.name.title(), self.env.now))
 
                 #If true, write process outcome to story.
                 if entity.write_story:
                     entity.story.append(
-                    "{0} received a loan for ${1:,.0f} {2:.0f} days after the event. "
-                    .format(entity.name.title(), entity.loan_amount, entity.sba_get))
+                    "SBA provisionally approved {0} for a ${1:,.0f} loan {2:.0f} days after the event. "
+                    .format(entity.name.title(), entity.sba_amount, self.env.now))
+
+                # Update loan amount (in case other processes in parallel)
+                entity.sba_amount = min(self.max_loan, (
+                                        entity.property.damage_value
+                                        - entity.claim_amount
+                                        - entity.fema_amount
+                                    ) )
+
+                if entity.sba_amount <= 0:
+                    self.writeWithdraw(entity, self.env.now)
+                    return
+
+                # If loan amount is greater than $25k, it requires collateral and more paperwork
+                if entity.sba_amount > 25000:
+                    # Receives $25k immediately as initial disbursement
+                    yield self.budget.get(25000)
+                    entity.money_to_rebuild += 25000
+
+                    if entity.write_story:
+                        entity.story.append(
+                            "{0} received an initial SBA loan disbursement of $25,000 {1} days after the event. "
+                            .format(entity.name.title(), self.env.now))
+                    #
+                    # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED %%%
+                    # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
+                    #
+
+                    if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
+                        yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
+                                                                                min_credit = self.min_credit)
+                                                                                )
+                    else: # if not, it's ProbabilityDistribution
+                        yield self.env.timeout(self.duration_distribution.value())
+
+                    print(entity.fema_amount)
+                    # Upbdate loan amount (in case other processes in parallel)
+                    entity.sba_amount = min(self.max_loan, (
+                                            entity.property.damage_value
+                                            - entity.claim_amount
+                                            - entity.fema_amount
+                                        ) )
+
+                    if entity.sba_amount <= 0:
+                        # Record time full loan is approved.
+                        entity.sba_get = self.env.now
+                        self.writeWithdraw(entity, self.env.now)
+                        return
+
+                    yield self.budget.get(entity.sba_amount - 25000)
+                    entity.money_to_rebuild += (entity.sba_amount - 25000)
+
+                    if entity.write_story:
+                        entity.story.append(
+                            "{0} received a second SBA loan disbursement of {1:,.0f} {2} days after the event. "
+                            .format(entity.name.title(), (entity.sba_amount - 25000), self.env.now))
+
+                else:
+                    # Add loan amount to entity's money to rebuild.
+                    entity.money_to_rebuild += entity.sba_amount
+
+                    if entity.write_story:
+                        entity.story.append(
+                            "{0} received a SBA loan disbursement of ${1:,.0f} {2} days after the event. "
+                            .format(entity.name.title(), entity.sba_amount, self.env.now))
+
+                # Record time full loan is approved.
+                entity.sba_get = self.env.now
 
         # Handle any interrupt from another process.
         except Interrupt as i:
-            #If true, write interrupt outcome to story.
-            if entity.write_story:
-                entity.story.append(
-                        '{0} gave up during the SBA loan application process {1} days after the event. '.format(
-                        entity.name.title(), i.cause))
+            self.writeWithdraw(entity, i.cause)
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
+
+    def writeWithdraw(self, entity, now):
+        if entity.write_story:
+            entity.story.append(
+                    '{0} withdrew the SBA loan application {1} days after the event. '.format(
+                    entity.name.title(), now))
