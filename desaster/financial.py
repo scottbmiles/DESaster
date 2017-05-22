@@ -76,17 +76,20 @@ class FinancialRecoveryProgram(object):
         # Put back amount equal to cost.
         yield self.budget.put(cost)
 
+        self.writeCompleted()
+
+        if callbacks is not None:
+            yield self.env.process(callbacks)
+        else:
+            pass
+            
+    def writeCompleted(self):
         #If true, write process outcome to story
         if entity.write_story and entity != None:
             entity.story.append("{0} process completed for {1} after {2} days, leaving a program budget of ${3:,.0f}. ".format(
                                 self.__class__, entity.name.title(), self.env.now, self.budget.level
                                                                                         )
                                 )
-
-        if callbacks is not None:
-            yield self.env.process(callbacks)
-        else:
-            pass
 
 class IndividualAssistance(FinancialRecoveryProgram):
     """A class for operationalizing FEMA's individual assistance grant program.
@@ -426,18 +429,11 @@ class LoanSBA(FinancialRecoveryProgram):
                                     ) )
 
                 if self.env.now > self.deadline:
-                    if entity.write_story:
-                        entity.story.append(
-                            '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was sumitted after the deadline of {3} after the event. '.format(
-                                entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline)
-                            )
+                    self.writeDeadline(entity)
+                    
                     return # Application rejected, end process
 
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. '.format(
-                            entity.name.title(), entity.sba_amount, entity.sba_put)
-                        )
+                self.writeApplied(entity)
 
                 # Request a loan processor.
                 officer_request = self.officers.request()
@@ -452,18 +448,13 @@ class LoanSBA(FinancialRecoveryProgram):
                     yield self.env.timeout(self.duration_distribution.value())
 
                 if entity.credit < self.min_credit:
-                    # If true, write loan request time to story.
-                    if entity.write_story:
-
-                        entity.story.append(
-                            '{0}\'s SBA loan application was denied because {0} had a credit score of {1}. '.format(
-                                entity.name.title(), entity.credit)
-                                            )
+                    
+                    self.writeDeniedCredit(entity)
+                    
                     return
 
                 # Release loan officer so that they can process other loans.
                 self.officers.release(officer_request)
-
 
                 # If approved (enough credit), request an inspector. Then release it.
                 # %%% This increases duration by amount of time it takes
@@ -473,16 +464,8 @@ class LoanSBA(FinancialRecoveryProgram):
                 yield self.env.timeout(1) # Assumed 1 day inspection duration.
                 self.inspectors.release(inspector_request)
 
-                if entity.write_story:
-                    entity.story.append(
-                        "SBA inspected {0}\'s home on day {1} after the event. "
-                        .format(entity.name.title(), self.env.now))
-
-                #If true, write process outcome to story.
-                if entity.write_story:
-                    entity.story.append(
-                    "SBA provisionally approved {0} for a ${1:,.0f} loan {2:.0f} days after the event. "
-                    .format(entity.name.title(), entity.sba_amount, self.env.now))
+                self.writeInspected(entity)
+                self.writeApproved(entity)
 
                 # Update loan amount (in case other processes in parallel)
                 entity.sba_amount = min(self.max_loan, (
@@ -501,10 +484,8 @@ class LoanSBA(FinancialRecoveryProgram):
                     yield self.budget.get(25000)
                     entity.money_to_rebuild += 25000
 
-                    if entity.write_story:
-                        entity.story.append(
-                            "{0} received an initial SBA loan disbursement of $25,000 {1} days after the event. "
-                            .format(entity.name.title(), self.env.now))
+                    self.writeFirstDisbursement(entity)
+                    
                     #
                     # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED %%%
                     # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
@@ -534,19 +515,13 @@ class LoanSBA(FinancialRecoveryProgram):
                     yield self.budget.get(entity.sba_amount - 25000)
                     entity.money_to_rebuild += (entity.sba_amount - 25000)
 
-                    if entity.write_story:
-                        entity.story.append(
-                            "{0} received a second SBA loan disbursement of {1:,.0f} {2} days after the event. "
-                            .format(entity.name.title(), (entity.sba_amount - 25000), self.env.now))
+                    self.writeSecondDisbursement(entity)
 
                 else:
                     # Add loan amount to entity's money to rebuild.
                     entity.money_to_rebuild += entity.sba_amount
 
-                    if entity.write_story:
-                        entity.story.append(
-                            "{0} received a SBA loan disbursement of ${1:,.0f} {2} days after the event. "
-                            .format(entity.name.title(), entity.sba_amount, self.env.now))
+                    self.writeOnlyDisbursement(entity)
 
                 # Record time full loan is approved.
                 entity.sba_get = self.env.now
@@ -560,6 +535,57 @@ class LoanSBA(FinancialRecoveryProgram):
         else:
             pass
 
+    def writeDeadline(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was sumitted after the deadline of {3} after the event. '.format(
+                    entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline)
+                )
+                
+    def writeApplied(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. '.format(
+                    entity.name.title(), entity.sba_amount, entity.sba_put)
+                )
+    
+    def writeDeniedCredit(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0}\'s SBA loan application was denied because {0} had a credit score of {1}. '.format(
+                    entity.name.title(), entity.credit)
+                                )
+    
+    def writeInspected(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                "SBA inspected {0}\'s home on day {1} after the event. "
+                .format(entity.name.title(), self.env.now))
+    
+    def writeApproved(self, entity):
+        if entity.write_story:
+            entity.story.append(
+            "SBA provisionally approved {0} for a ${1:,.0f} loan {2:.0f} days after the event. "
+            .format(entity.name.title(), entity.sba_amount, self.env.now))
+    
+    def writeFirstDisbursement(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                "{0} received an initial SBA loan disbursement of $25,000 {1} days after the event. "
+                .format(entity.name.title(), self.env.now))
+    
+    def writeSecondDisbursement(self, entity):
+            if entity.write_story:
+                entity.story.append(
+                    "{0} received a second SBA loan disbursement of {1:,.0f} {2} days after the event. "
+                    .format(entity.name.title(), (entity.sba_amount - 25000), self.env.now))
+    
+    def writeOnlyDisbursement(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                "{0} received a SBA loan disbursement of ${1:,.0f} {2} days after the event. "
+                .format(entity.name.title(), entity.sba_amount, self.env.now))
+    
     def writeWithdraw(self, entity, now):
         if entity.write_story:
             entity.story.append(

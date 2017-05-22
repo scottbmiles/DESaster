@@ -268,6 +268,4 @@ def importRenterHouseholds(env, building_stock, entities_df, write_story = False
     warnings.showwarning('importRenterHouseholds depricated. Use importEntities.',
                             DeprecationWarning, filename = sys.stderr,
                             lineno=312)
-
-
     

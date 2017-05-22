@@ -143,12 +143,34 @@ class Household(Entity):
         self.prior_residence = [] # An empty list to record each residence that
                                     # the entity vacates.
 
+        self.writeResides()
+                            
+    def writeResides(self):
         if self.write_story:
             self.story.append('{0} resides at {1}. '.format(
-                                                            self.name,
-                                                            self.residence.address
-                                                            )
+                                                self.name, self.residence.address)
                             )
+    
+    def writeStartSearch(self):    
+        if self.write_story:
+            self.story.append(
+                '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
+                self.name.title(), self.property.occupancy.lower(), self.home_put)
+                )
+                
+    def writeGaveUp(self):
+        if self.write_story:
+            self.story.append(
+                'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
+                            self.env.now, self.env.now - self.home_put, self.name.title())
+                )  
+                
+    def writeOccupy(self):            
+        if self.write_story:
+            self.story.append(
+                            "{0} occupied the {1} {2:.0f} days after the event. ".format(
+                            self.name.title(), self.residence.occupancy.lower(), self.occupy_get)
+                            )      
 
 class OwnerHousehold(Owner, Household):
     """The OwnerHousehold() class has attributes of both entities.Owner() and
@@ -177,16 +199,7 @@ class OwnerHousehold(Owner, Household):
         # Attributes
 
         # Entity outputs
-        if self.write_story:
-            # Set story with non-disaster attributes.
-            self.story.append(
-            '{0} owns and lives in a {1} room {2} at {3} worth ${4:,.0f}. '.format(self.name,
-                                                            self.residence.bedrooms,
-                                                            self.residence.occupancy.lower(),
-                                                            self.residence.address,
-                                                            self.residence.value
-                                                            )
-                                )
+        self.writeInitiateOwnerHousehold()
 
     def replace_home(self, search_patience, search_stock):
         """A process (generator) representing entity search for permanent housing
@@ -221,15 +234,10 @@ class OwnerHousehold(Owner, Household):
         find_search_patience = self.env.timeout(patience_end - self.env.now,
             value='Gave up')
 
+        self.writeStartSearch()
+        
         # Define a FilterStore.get process to find a new home to buy from the vacant
         # for sale stock with similar attributes as current home.
-        if self.write_story:
-            self.story.append(
-                '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
-                self.name.title(), self.property.occupancy.lower(),
-                self.home_put)
-                )
-
         new_home = search_stock.get(lambda findHome:
                         (
                             findHome.damage_state == 'None'
@@ -250,17 +258,9 @@ class OwnerHousehold(Owner, Household):
         # home is found in the housing stock.
         if home_search_outcome == {find_search_patience: 'Gave up'}:
             self.gave_up_home_search = self.env.now
-
-            # If write_story, note in the story that the entity gave up
-            # the search.
-            if self.write_story:
-                self.story.append(
-                    'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
-                        self.env.now,
-                        self.env.now - self.home_put,
-                        self.name.title()
-                        )
-                    )
+            
+            self.writeGaveUp()
+            
             return
 
         # If a new home is found before patience runs out set current property's
@@ -289,16 +289,7 @@ class OwnerHousehold(Owner, Household):
 
         # If write_story is True, then write results of successful home search to
         # entity's story.
-        if self.write_story:
-            self.story.append(
-                'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
-                    self.home_get,
-                    self.name.title(), self.property.occupancy.lower(),
-                    self.property.address,
-                    self.property.value,
-                    self.property.damage_value
-                    )
-                )
+        self.writeHomeBuy()
 
     def occupy(self, duration_distribution, callbacks = None):
         """Define process for occupying a residence. Currently the method only
@@ -327,19 +318,32 @@ class OwnerHousehold(Owner, Household):
         self.occupy_get = self.env.now
 
         #If true, write process outcome to story
-        if self.write_story:
-            self.story.append(
-                            "{0} occupied the {1} {2:.0f} days after the event. ".format(
-                                                                                            self.name.title(),
-                                                                                            self.residence.occupancy.lower(),
-                                                                                            self.occupy_get)
-                            )
+        self.writeOccupy()
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
 
+    def writeInitiateOwnerHousehold(self):    
+        if self.write_story:
+            # Set story with non-disaster attributes.
+            self.story.append(
+            '{0} owns and lives in a {1} room {2} at {3} worth ${4:,.0f}. '.format(self.name,
+            self.residence.bedrooms, self.residence.occupancy.lower(), self.residence.address,
+            self.residence.value)
+                                )
+    
+    
+    
+    def writeHomeBuy(self):    
+        if self.write_story:
+            self.story.append(
+                'On day {0:,.0f}, {1} purchased a {2} at {3} with a value of ${4:,.0f} and ${5:,.0f} of damage. '.format(
+                self.home_get, self.name.title(), self.property.occupancy.lower(), self.property.address,
+                self.property.value, self.property.damage_value)
+                            )
+                
 class RenterHousehold(Household):
     """The RenterHousehold() class has attributes of both entities.Entity() and
     entities.Household() classes. The class does not have associated property, but
@@ -374,16 +378,7 @@ class RenterHousehold(Household):
         # Initial method calls; This needs to go after landlord assignment.
         Household.__init__(self, env, name, residence, write_story)
 
-        if self.write_story:
-            # Set story with non-disaster attributes.
-            self.story.append(
-            '{0} rents and lives in a {1} room {2} at {3}. '.format(
-                                                            self.name,
-                                                            self.residence.bedrooms,
-                                                            self.residence.occupancy.lower(),
-                                                            self.residence.address
-                                                            )
-                                )
+        self.writeInitiateRenterHousehold()
 
     def replace_home(self, search_patience, search_stock):
         """A process (generator) representing RenterHousehold search for rental housing
@@ -422,12 +417,7 @@ class RenterHousehold(Household):
 
         # Need to handle eviction case (.prior_residence) and non-eviction case (.residence)
         if self.residence:
-            if self.write_story:
-                self.story.append(
-                    '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
-                    self.name.title(), self.residence.occupancy.lower(),
-                    self.home_put)
-                    )
+            self.writeStartSearch()
 
             new_home = search_stock.get(lambda findHome:
                             (
@@ -440,12 +430,8 @@ class RenterHousehold(Household):
                             and findHome.listed == True
                            )
         else:
-            if self.write_story:
-                self.story.append(
-                    '{0} started searching for a new {1} {2:,.0f} days after the event. '.format(
-                    self.name.title(), self.prior_residence[-1].occupancy.lower(),
-                    self.home_put)
-                    )
+            self.writeStartSearch()
+            
             new_home = search_stock.get(lambda findHome:
                             (
                                 findHome.damage_state == 'None'
@@ -469,14 +455,9 @@ class RenterHousehold(Household):
             self.gave_up_home_search = self.env.now
             # If write_story, note in the story that the entity gave up
             # the search.
-            if self.write_story:
-                self.story.append(
-                    'On day {0:,.0f}, after a {1:,.0f} day search, {2} gave up looking for a new home in the local area. '.format(
-                        self.env.now,
-                        self.env.now - self.home_put,
-                        self.name.title()
-                        )
-                    )
+            
+            self.writeGaveUp()
+            
             return
 
         # If a new home is found before patience runs change residence's listed
@@ -497,16 +478,9 @@ class RenterHousehold(Household):
 
         # If write_story is True, then write results of successful home search to
         # entity's story.
-        if self.write_story:
-            self.story.append(
-                'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f}. '.format(
-                    self.home_get,
-                    self.name.title(), self.residence.occupancy.lower(),
-                    self.residence.address,
-                    self.residence.cost,
-                    self.residence.damage_value
-                    )
-                )
+        
+        self.writeHomeRent()
+        
     def occupy(self, duration_distribution, callbacks = None):
         """A process for a RenterHousehold to occupy a residence.
         At the moment all this does is represent some duration it takes for the
@@ -537,20 +511,29 @@ class RenterHousehold(Household):
         # Record time got home
         self.occupy_get = self.env.now
 
-        #If true, write process outcome to story
-        if self.write_story:
-            self.story.append(
-                            "{0} occupied the {1} {2:.0f} days after the event. ".format(
-                                                                                    self.name.title(),
-                                                                                    self.residence.occupancy.lower(),
-                                                                                    self.env.now)
-                            )
+        self.writeOccupy()
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
-            pass
-
+            pass    
+        
+    def writeInitiateRenterHousehold(self):    
+        if self.write_story:
+            self.story.append(
+            '{0} rents and lives in a {1} room {2} at {3}. '.format(
+            self.name, self.residence.bedrooms, self.residence.occupancy.lower(),
+            self.residence.address)
+                            )                            
+            
+    def writeHomeRent(self):      
+        if self.write_story:
+            self.story.append(
+                'On day {0:,.0f}, {1} leased a {2} at {3} with a rent of ${4:,.0f}. '.format(
+                self.home_get, self.name.title(), self.residence.occupancy.lower(),
+                self.residence.address, self.residence.cost, self.residence.damage_value)
+                )                        
+                
 class Landlord(Owner):
     """A Landlord() class is a subclass of entiites.Owner() but has an attributes
     that allows it to have a tenant (e.g., entities.RenterHousehold). Otherwise,
@@ -578,15 +561,14 @@ class Landlord(Owner):
         # Landlord env inputs
         self.tenant = tenant
 
-        # Initial method calls
+        self.writeInitiateLandlord()
+        
+    def writeInitiateLandlord(self):
         if self.write_story:
             # Set story with non-disaster attributes.
             self.story.append(
                 '{0} rents out a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(
-                                                        self.name,
-                                                        self.property.bedrooms,
-                                                        self.property.occupancy.lower(),
-                                                        self.property.address,
-                                                        self.property.value
-                                                        )
-                                )
+                self.name, self.property.bedrooms, self.property.occupancy.lower(),
+                self.property.address, self.property.value)
+                                )    
+

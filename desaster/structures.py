@@ -55,9 +55,6 @@ class Building(object):
         self.inspected = False  # Whether the building has been inspected
         self.permit = False  # Whether the building has a permit
         self.assessment = False  # Whether the building has had engineering assessment
-        
-
-
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the

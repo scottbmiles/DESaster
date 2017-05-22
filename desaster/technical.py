@@ -79,12 +79,14 @@ class TechnicalRecoveryProgram(object):
         # Put back amount equal to cost.
         yield self.materials.put(material_cost)
 
-        #If true, write process outcome to story
+        self.writeCompleted()
+        
+    def writeCompleted(self):
         if entity.write_story and entity != None:
             entity.story.append("{0} process completed for {1} after {2} days, leaving ${3:,.0f} of materials. ".format(
                                 self.__class__, entity.name.title(), self.env.now, self.materials.level
                                                                                         )
-                                )
+                                )  
 
 class InspectionProgram(TechnicalRecoveryProgram):
     """ A class for representing staff allocation and process duration associated
@@ -148,14 +150,15 @@ class InspectionProgram(TechnicalRecoveryProgram):
         if entity != None:
             entity.inspection_get = self.env.now
 
-            #If true, write process outcome to story
-            if entity.write_story:
-
-                entity.story.append(
-                                "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}). ".format(
-                                entity.name.title(), structure.occupancy.lower(),
-                                entity.inspection_get, structure.damage_value,
-                                structure.damage_state.lower()))
+        self.writeInspected(entity, structure)
+        
+    def writeInspected(self, entity, structure):
+        if entity.write_story:
+            entity.story.append(
+                            "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}). ".format(
+                            entity.name.title(), structure.occupancy.lower(),
+                            entity.inspection_get, structure.damage_value,
+                            structure.damage_state.lower()))
 
 class EngineeringAssessment(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
@@ -218,18 +221,20 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         # Record time when assessment complete.
         entity.assessment_get = self.env.now
 
-        # If true, write the outcome of the process to story.
-        if entity.write_story:
-            entity.story.append(
-            '{0} received an engineering assessment {1:.0f} days after the event. '
-            .format(entity.name.title(), entity.assessment_get)
-            )
+        self.writeAssessed(entity)
 
         if callbacks is not None:
             yield env.process(callbacks)
         else:
             pass
 
+    def writeAssessed(self, entity):
+        if entity.write_story:
+            entity.story.append(
+            '{0} received an engineering assessment {1:.0f} days after the event. '
+            .format(entity.name.title(), entity.assessment_get)
+            )
+            
 class PermitProgram(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
     building permit processing. Conceptually this intended prior to building
@@ -287,18 +292,20 @@ class PermitProgram(TechnicalRecoveryProgram):
         # Record time that permit is granted.
         entity.permit_get = self.env.now
 
-        #If true, write outcome of process to story.
-        if entity.write_story:
-            entity.story.append(
-            "{0} received permit approval {1:.0f} days after the event. "
-            .format(entity.name.title(), entity.permit_get)
-            )
+        self.writePermitted(entity)
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
 
+    def writePermitted(self, entity):
+        if entity.write_story:
+            entity.story.append(
+            "{0} received permit approval {1:.0f} days after the event. "
+            .format(entity.name.title(), entity.permit_get)
+            )
+            
 class RepairProgram(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
     building repair. The class also represents building/concstruction materials in
@@ -358,32 +365,10 @@ class RepairProgram(TechnicalRecoveryProgram):
             materials_cost_pct = 1.0
 
             materials_cost = structure.damage_value * materials_cost_pct
-            # Deal with case that insufficient construction materials are available.
-            if materials_cost > self.materials.level:
-
-                # If true, write outcome of the process to the story
-                if entity.write_story:
-                    entity.story.append(
-                    'There were insufficient construction materials available in the area for {0} to rebuild. '
-                    .format(entity.name.title())
-                    )
-
-                return
-
-            # Deal with case that entity does not have enough money to rebuild.
-            if entity.money_to_rebuild < structure.damage_value:
-                # If true, write outcome of the process to the story
-                if entity.write_story:
-                    entity.story.append(
-                        '{0} was unable to get enough money to repair the {1}. '.format(
-                        entity.name.title(), entity.property.occupancy.lower())
-                                        )
-                return
 
             # If entity has enough money & there is enough available construction
             # materials in the region, then rebuild.
-            if (entity.money_to_rebuild >= structure.damage_value and
-            materials_cost <= self.materials.level):
+            if entity.money_to_rebuild >= structure.damage_value:
 
                 # Record time put in request for home rebuild.
                 entity.rebuild_put = self.env.now
@@ -416,29 +401,33 @@ class RepairProgram(TechnicalRecoveryProgram):
                 # Record time when entity gets home.
                 entity.repair_get = self.env.now
 
-                # If True, write outcome of successful rebuild to story.
-                if entity.write_story:
-                    entity.story.append(
-                        '{0}\'s {1} was repaired {2:,.0f} days after the event, taking {3:.0f} days to rebuild. '.format(
-                            entity.name.title(), structure.occupancy.lower(),
-                            entity.repair_get,
-                            entity.repair_get - entity.rebuild_put
-                        )
-                    )
+                self.writeRepaired(entity, structure)
 
         # Handle any interrupt thrown by another process
         except Interrupt as i:
-            # If true, write outcome of the process to the story
-            if entity.write_story:
-                entity.story.append(
-                        '{0} gave up {1:.0f} days into the rebuild process. '.format(
-                        entity.name.title(), i.cause))
+            self.writeGaveUp(entity, i.cause)
 
         if callbacks is not None:
             yield env.process(callbacks)
 
         else:
             pass
+            
+    def writeRepaired(self, entity, structure):
+        if entity.write_story:
+            entity.story.append(
+                '{0}\'s {1} was repaired {2:,.0f} days after the event, taking {3:.0f} days to rebuild. '.format(
+                    entity.name.title(), structure.occupancy.lower(),
+                    entity.repair_get,
+                    entity.repair_get - entity.rebuild_put
+                )
+            )       
+    
+    def writeGaveUp(self, entity, now):
+        if entity.write_story:
+            entity.story.append(
+                    '{0} gave up {1:.0f} days into the repair process. '.format(
+                    entity.name.title(), now))
 
 class DemolitionProgram(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
@@ -478,48 +467,41 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         entity.demolition_get -- Record time demolition finished
         structure.damage_state -- Set to 'Complete' if successful.
         """
-        # Use exception handling in case process is interrupted by another process.
-        try:
 
-            # Record time put in request for home rebuild.
-            entity.demolition_put = self.env.now
+        # Record time put in request for home rebuild.
+        entity.demolition_put = self.env.now
 
-            # Put in request for contractors to rebuild home.
-            staff_request = self.staff.request()
-            yield staff_request
+        # Put in request for contractors to rebuild home.
+        staff_request = self.staff.request()
+        yield staff_request
 
-            # Yield timeout equivalent to rebuild time.
-            yield self.env.timeout(self.duration_distribution.value())
+        # Yield timeout equivalent to rebuild time.
+        yield self.env.timeout(self.duration_distribution.value())
 
-            # Release contractors.
-            self.staff.release(staff_request)
+        # Release contractors.
+        self.staff.release(staff_request)
 
-            # After successful rebuild, set damage to Complete.
-            structure.damage_state = 'Complete'
+        # After successful rebuild, set damage to Complete.
+        structure.damage_state = 'Complete'
 
-            # Record time when entity gets home.
-            entity.demolition_get = self.env.now
+        # Record time when entity gets home.
+        entity.demolition_get = self.env.now
 
-            # If True, write outcome of successful rebuild to story.
-            if entity.write_story:
-                entity.story.append(
-                    '{0}\'s {1} was demolished {2:,.0f} days after the event, taking {3:.0f} days to demolish. '.format(
-                        entity.name.title(), structure.occupancy.lower(),
-                        entity.demolition_get,
-                        entity.demolition_get - entity.demolition_put
-                    )
-                )
-
-        # Handle any interrupt thrown by another process
-        except Interrupt as i:
-            # If true, write outcome of the process to the story
-            if entity.write_story:
-                entity.story.append(
-                        '{0} gave up {1:.0f} days into the rebuild process. '.format(
-                        entity.name.title(), i.cause))
+        self.writeDemolished(entity, structure)
 
         if callbacks is not None:
             yield env.process(callbacks)
 
         else:
             pass
+            
+    def writeDemolished(self, entity, structure):
+        # If True, write outcome of successful rebuild to story.
+        if entity.write_story:
+            entity.story.append(
+                '{0}\'s {1} was demolished {2:,.0f} days after the event, taking {3:.0f} days to demolish. '.format(
+                    entity.name.title(), structure.occupancy.lower(),
+                    entity.demolition_get,
+                    entity.demolition_get - entity.demolition_put
+                )
+            )

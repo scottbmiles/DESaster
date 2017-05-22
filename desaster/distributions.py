@@ -64,7 +64,6 @@ class ProbabilityDistribution(object):
             print("Duration probability distribution not specified: ", te)
             return
             
-    
 
 class DurationDistributionHomeLoanSBA(ProbabilityDistribution):
     """
@@ -116,11 +115,3 @@ class DurationDistributionHomeLoanSBA(ProbabilityDistribution):
             print("Duration probability distribution not specified: ", te)
             return
             
-        
-        #     return beta.rvs(a = self.shape_a, b = self.shape_b,
-        #                     loc = self.loc,
-        #                     scale = self.scale)
-        # else:
-        #     return beta.rvs(a = self.shape_a, b = self.shape_b,
-        #                     loc = self.loc + self.loc_credit_delta,
-        #                     scale = self.scale)
