@@ -64,12 +64,20 @@ class TechnicalRecoveryProgram(object):
         # Request staff
         staff_request = self.staff.request()
         yield staff_request
+        
+        # Get the entity's building/structure so that the building stock's 
+        # FilterStore is informed of attribute changes to the building/structure
+        # Also means that only one process at a time can access the building.
+        get_structure = yield structure.stock.get(lambda getStructure:
+                                                    getStructure.__dict__ == structure.__dict__
+                                            )
 
         # Yield timeout equivalent to program's process duration
         yield self.env.timeout(self.duration())
 
         # Release release staff after process duation is complete.
         self.staff.release(staff_request)
+        
 
         material_cost = 1 # Cost of materials needed (e.g., for RepairProgram)
 
@@ -78,6 +86,9 @@ class TechnicalRecoveryProgram(object):
 
         # Put back amount equal to cost.
         yield self.materials.put(material_cost)
+        
+        # Put the property back in the building stock to register attribute change.
+        yield structure.stock.put(get_structure)
 
         self.writeCompleted()
         
@@ -135,7 +146,15 @@ class InspectionProgram(TechnicalRecoveryProgram):
         # Request inspectors
         staff_request = self.staff.request()
         yield staff_request
-
+        
+        # Get the entity's building/structure so that the building stock's 
+        # FilterStore is informed of attribute changes to the building/structure
+        # Also means that only one process at a time can access the building
+        get_structure = yield structure.stock.get(lambda getStructure:
+                                                    getStructure.__dict__ == structure.__dict__
+                                            )
+        
+        
         # Yield timeout equivalent to time from hazard event to end of inspection.
         yield self.env.timeout(self.duration_distribution.value())
 
@@ -144,6 +163,9 @@ class InspectionProgram(TechnicalRecoveryProgram):
 
         # Release inspectors now that inspection is complete.
         self.staff.release(staff_request)
+        
+        # Put the property back in the building stock to register attribute change.
+        yield structure.stock.put(get_structure)
 
         # Only record inspection time and write story if structure associated with
         # an entity.
@@ -209,6 +231,11 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         # Request an engineer.
         staff_request = self.staff.request()
         yield staff_request
+        
+        # Get the entity's building/structure to register attribute changes w/ FilterStore
+        get_structure = yield structure.stock.get(lambda getStructure:
+                                                    getStructure.__dict__ == structure.__dict__
+                                            )
 
         # Yield process timeout for duration necessary to assess entity's structure.
         yield self.env.timeout(self.duration_distribution.value())
@@ -217,6 +244,9 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         self.staff.release(staff_request)
 
         structure.assessment = True
+        
+        # Put the property back in the building stock to register attribute change.
+        yield structure.stock.put(get_structure)
 
         # Record time when assessment complete.
         entity.assessment_get = self.env.now
@@ -280,6 +310,11 @@ class PermitProgram(TechnicalRecoveryProgram):
         # Request permit processor / building official.
         staff_request = self.staff.request()
         yield staff_request
+        
+        # Get the entity's building/structure to register attribute changes w/ FilterStore
+        get_structure = yield structure.stock.get(lambda getStructure:
+                                                    getStructure.__dict__ == structure.__dict__
+                                            )
 
         # Yield process timeout equal to duration required to review permit request.
         yield self.env.timeout(self.duration_distribution.value())
@@ -288,6 +323,9 @@ class PermitProgram(TechnicalRecoveryProgram):
         self.staff.release(staff_request)
 
         structure.permit = True
+        
+        # Put the property back in the building stock to register attribute change.
+        yield structure.stock.put(get_structure)
 
         # Record time that permit is granted.
         entity.permit_get = self.env.now
@@ -366,42 +404,51 @@ class RepairProgram(TechnicalRecoveryProgram):
 
             materials_cost = structure.damage_value * materials_cost_pct
 
-            # If entity has enough money & there is enough available construction
-            # materials in the region, then rebuild.
-            if entity.money_to_rebuild >= structure.damage_value:
+            # Record time put in request for home rebuild.
+            entity.rebuild_put = self.env.now
+            
+            # Withdraw recovery funds equal to the repair value (assumed to be
+            # same as damage value). If no enough available, process waits until 
+            # there is.
+            yield entity.recovery_funds.get(structure.damage_value)
 
-                # Record time put in request for home rebuild.
-                entity.rebuild_put = self.env.now
+            # Put in request for contractors to rebuild home.
+            staff_request = self.staff.request()
+            yield staff_request
+            
+            # Get the entity's building/structure to register attribute changes w/ FilterStore
+            get_structure = yield structure.stock.get(lambda getStructure:
+                                                        getStructure.__dict__ == structure.__dict__
+                                                )
 
-                # Put in request for contractors to rebuild home.
-                staff_request = self.staff.request()
-                yield staff_request
+            # Get the rebuild time for the entity from io.py
+            # which imports the HAZUS rebuild time look up table.
+            # Rebuild time is based on occupancy type and damage state.
+            # Set the program's distribution.loc (e.g., mean) to rebuild time
+            self.duration_distribution.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
 
-                # Get the rebuild time for the entity from io.py
-                # which imports the HAZUS rebuild time look up table.
-                # Rebuild time is based on occupancy type and damage state.
-                # Set the program's distribution.loc (e.g., mean) to rebuild time
-                self.duration_distribution.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
+            # Obtain necessary construction materials from regional inventory.
+            # materials_cost_pct is % of damage value related to building materials
+            # (vs. labor and profit)
+            yield self.materials.get(materials_cost)
 
-                # Obtain necessary construction materials from regional inventory.
-                # materials_cost_pct is % of damage value related to building materials
-                # (vs. labor and profit)
-                yield self.materials.get(materials_cost)
+            # Yield timeout equivalent to rebuild time.
+            yield self.env.timeout(self.duration_distribution.value())
 
-                # Yield timeout equivalent to rebuild time.
-                yield self.env.timeout(self.duration_distribution.value())
+            # Release contractors.
+            self.staff.release(staff_request)
 
-                # Release contractors.
-                self.staff.release(staff_request)
+            # After successful rebuild, set damage to None & $0.
+            structure.damage_state = 'None'
+            structure.damage_value = 0.0
+            
+            # Put the property back in the building stock to register attribute change.
+            yield structure.stock.put(get_structure)
 
-                # After successful rebuild, set damage to None & $0.
-                structure.damage_state = 'None'
-                structure.damage_value = 0.0
+            # Record time when entity gets home.
+            entity.repair_get = self.env.now
 
-                # Record time when entity gets home.
-                entity.repair_get = self.env.now
-
-                self.writeRepaired(entity, structure)
+            self.writeRepaired(entity, structure)
 
         # Handle any interrupt thrown by another process
         except Interrupt as i:
@@ -474,6 +521,11 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         # Put in request for contractors to rebuild home.
         staff_request = self.staff.request()
         yield staff_request
+        
+        # Get the entity's building/structure to register attribute changes w/ FilterStore
+        get_structure = yield structure.stock.get(lambda getStructure:
+                                                    getStructure.__dict__ == structure.__dict__
+                                            )
 
         # Yield timeout equivalent to rebuild time.
         yield self.env.timeout(self.duration_distribution.value())
@@ -483,6 +535,9 @@ class DemolitionProgram(TechnicalRecoveryProgram):
 
         # After successful rebuild, set damage to Complete.
         structure.damage_state = 'Complete'
+        
+        # Put the property back in the building stock to register attribute change.
+        yield structure.stock.put(get_structure)
 
         # Record time when entity gets home.
         entity.demolition_get = self.env.now

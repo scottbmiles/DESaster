@@ -76,20 +76,34 @@ class FinancialRecoveryProgram(object):
         # Put back amount equal to cost.
         yield self.budget.put(cost)
 
-        self.writeCompleted()
+        self.writeCompleted(entity)
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
             
-    def writeCompleted(self):
-        #If true, write process outcome to story
-        if entity.write_story and entity != None:
+    def writeCompleted(self, entity):
+        if entity.write_story:
             entity.story.append("{0} process completed for {1} after {2} days, leaving a program budget of ${3:,.0f}. ".format(
                                 self.__class__, entity.name.title(), self.env.now, self.budget.level
                                                                                         )
                                 )
+    
+    def writeGaveUp(self, entity, recovery_program):
+        if entity.write_story:
+            entity.story.append("{0} gave up waiting for recovery funds from {1} {2} days after the event. ".format(
+                                entity.name.title(), recovery_program, self.env.now
+                                                                                        )
+                                )
+                                
+    def writeWithdraw(self, entity, recovery_program):
+        #If true, write interrupt outcome to story.
+        if entity.write_story:
+            entity.story.append(
+                    '{0} withdrew their application to {1} {2} days after the event because enough recovery funds were found from other sources. '.format(
+                    entity.name.title(), recovery_program, self.env.now))
+                    
 
 class IndividualAssistance(FinancialRecoveryProgram):
     """A class for operationalizing FEMA's individual assistance grant program.
@@ -134,7 +148,7 @@ class IndividualAssistance(FinancialRecoveryProgram):
         # Exception handling in case interrupted by another process.
         try:
             #Ensure that entity does not have enough money to rebuild already.
-            if entity.money_to_rebuild >= entity.property.damage_value:
+            if entity.recovery_funds.level >= entity.property.damage_value:
                 return
 
             # If does not have enough money to rebuild, submit request to FEMA.
@@ -165,14 +179,14 @@ class IndividualAssistance(FinancialRecoveryProgram):
                                         - entity.claim_amount))
 
             if entity.fema_amount <= 0:
-                self.writeWithdraw(entity, self.env.now)
+                self.writeWithdraw(entity, 'FEMA')
                 return
 
             # Request payout amount from FEMA budget
             # Must wait for request to be fulfilled
             yield self.budget.get(entity.fema_amount)
 
-            entity.money_to_rebuild += entity.fema_amount
+            yield entity.recovery_funds.put(entity.fema_amount)
 
             # Record time received FEMA assistance.
             entity.fema_get = self.env.now
@@ -183,19 +197,12 @@ class IndividualAssistance(FinancialRecoveryProgram):
         except Interrupt as i:
             #If true, write process outcome to story.
             if entity.write_story:
-                self.writeWithdraw(entity, i.cause)
+                self.writeGaveUp(entity, 'FEMA')
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
-
-    def writeWithdraw(self, entity, now):
-        #If true, write interrupt outcome to story.
-        if entity.write_story:
-            entity.story.append(
-                    '{0} withdrew the FEMA assistance application {1} days after the event. '.format(
-                    entity.name.title(), now))
 
     def writeRequest(self, entity):
         #If true, write FEMA request time to story.
@@ -300,7 +307,8 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 # Make request for the claim amount from the insurance budget
                 # If get request, add to entity money to rebuild
                 yield self.budget.get(entity.claim_amount)
-                entity.money_to_rebuild += entity.claim_amount
+
+                yield entity.recovery_funds.put(entity.claim_amount)
 
                 # Record when the time when entity gets claim payout
                 entity.claim_get = self.env.now
@@ -311,19 +319,12 @@ class OwnersInsurance(FinancialRecoveryProgram):
         except Interrupt as i:
             #If true, write that the process was interrupted to the story.
             if entity.write_story:
-                self.writeWithdraw(entity, i.cause)
+                self.writeGaveUp(entity, 'their insurance company')
 
         if callbacks is not None:
             yield self.env.process(callbacks)
         else:
             pass
-
-    def writeWithdraw(self, entity, now):
-        #If true, write interrupt outcome to story.
-        if entity.write_story:
-            entity.story.append(
-                    '{0} withdrew the insurance claim {1} days after the event. '.format(
-                    entity.name.title(), now))
 
     def writeNoInsurance(self, entity):
         if entity.write_story:
@@ -412,7 +413,7 @@ class LoanSBA(FinancialRecoveryProgram):
         # Exception handling in case interrupted by another process.
         try:
             # Ensure entity does not have enough money to rebuild.
-            if entity.money_to_rebuild >= entity.property.damage_value:
+            if entity.recovery_funds.level >= entity.property.damage_value:
                 return # Don't qualify for or need SBA loan, end process
 
             else:
@@ -475,14 +476,16 @@ class LoanSBA(FinancialRecoveryProgram):
                                     ) )
 
                 if entity.sba_amount <= 0:
-                    self.writeWithdraw(entity, self.env.now)
+                    self.writeWithdraw(entity, 'SBA')
                     return
 
                 # If loan amount is greater than $25k, it requires collateral and more paperwork
                 if entity.sba_amount > 25000:
                     # Receives $25k immediately as initial disbursement
                     yield self.budget.get(25000)
-                    entity.money_to_rebuild += 25000
+                    
+                    yield entity.recovery_funds.put(25000)
+                    
 
                     self.writeFirstDisbursement(entity)
                     
@@ -498,7 +501,6 @@ class LoanSBA(FinancialRecoveryProgram):
                     else: # if not, it's ProbabilityDistribution
                         yield self.env.timeout(self.duration_distribution.value())
 
-                    print(entity.fema_amount)
                     # Upbdate loan amount (in case other processes in parallel)
                     entity.sba_amount = min(self.max_loan, (
                                             entity.property.damage_value
@@ -506,20 +508,20 @@ class LoanSBA(FinancialRecoveryProgram):
                                             - entity.fema_amount
                                         ) )
 
+                    print(entity.sba_amount <= 0)
                     if entity.sba_amount <= 0:
-                        # Record time full loan is approved.
-                        entity.sba_get = self.env.now
-                        self.writeWithdraw(entity, self.env.now)
+                        self.writeWithdraw(entity, 'SBA')
                         return
 
                     yield self.budget.get(entity.sba_amount - 25000)
-                    entity.money_to_rebuild += (entity.sba_amount - 25000)
+                    
+                    yield entity.recovery_funds.put(entity.sba_amount - 25000)
 
                     self.writeSecondDisbursement(entity)
 
                 else:
                     # Add loan amount to entity's money to rebuild.
-                    entity.money_to_rebuild += entity.sba_amount
+                    yield entity.recovery_funds.put(entity.sba_amount)
 
                     self.writeOnlyDisbursement(entity)
 
@@ -528,7 +530,7 @@ class LoanSBA(FinancialRecoveryProgram):
 
         # Handle any interrupt from another process.
         except Interrupt as i:
-            self.writeWithdraw(entity, i.cause)
+            self.writeGaveUp(entity, 'SBA')
 
         if callbacks is not None:
             yield self.env.process(callbacks)
@@ -585,9 +587,3 @@ class LoanSBA(FinancialRecoveryProgram):
             entity.story.append(
                 "{0} received a SBA loan disbursement of ${1:,.0f} {2} days after the event. "
                 .format(entity.name.title(), entity.sba_amount, self.env.now))
-    
-    def writeWithdraw(self, entity, now):
-        if entity.write_story:
-            entity.story.append(
-                    '{0} withdrew the SBA loan application {1} days after the event. '.format(
-                    entity.name.title(), now))

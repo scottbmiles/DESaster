@@ -97,6 +97,9 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                             damage_state = entities_df.iloc[i]['Damage State'],
                                             building_stock = building_stock
                                                     )
+                                                    
+                
+            
             else:
                 raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
                 return
@@ -111,6 +114,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                             )
 
             entity.property.owner = entity
+            building_stock.put(entity.property)
             entities.append(entity)    
         return entities
     
@@ -134,6 +138,9 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                                     damage_state = entities_df.iloc[i]['Damage State'],
                                                     building_stock = building_stock
                                                     )
+                
+                
+                
             else:
                 raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
                 return
@@ -147,7 +154,8 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                     write_story = write_story
                                     )
 
-            entity.property.owner = entity                                
+            entity.property.owner = entity  
+            building_stock.put(entity.property)                              
             entities.append(entity)
         return entities
     elif entity_type.lower() == 'renterhousehold' or entity_type.lower() == 'renter household':
@@ -214,6 +222,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                             damage_state = entities_df.iloc[i]['Damage State'],
                                             building_stock = building_stock
                                                         )
+                
             else:
                 raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
                 return
@@ -228,6 +237,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                         )
             
             entity.property.owner = entity
+            building_stock.put(entity.property)
             entities.append(entity)                                            
         return entities
     else:
