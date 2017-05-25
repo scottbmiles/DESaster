@@ -114,7 +114,7 @@ class IndividualAssistance(FinancialRecoveryProgram):
 
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
-                max_outlay=float('inf')):
+                max_outlay=float('inf'), declaration_duration=0, deadline=540):
         """Initiate FEMA individual assistance recovery program attributes.
 
         Keyword Arguments:
@@ -130,7 +130,10 @@ class IndividualAssistance(FinancialRecoveryProgram):
         """
         FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
 
+        # Set attributes
         self.max_outlay = max_outlay
+        self.deadline = deadline
+        self.declaration_duration = declaration_duration
 
     def process(self, entity, callbacks = None):
         """Define process for entity to submit request for FEMA individual assistance.
@@ -152,6 +155,9 @@ class IndividualAssistance(FinancialRecoveryProgram):
                 return
 
             # If does not have enough money to rebuild, submit request to FEMA.
+            
+            # Must wait for a disaster declaration 
+            yield self.env.timeout(self.declaration_duration)
 
             # Calculate assistance request.
             # Must subtract any insurance payout from FEMA payout and choose the lesser of
@@ -162,6 +168,11 @@ class IndividualAssistance(FinancialRecoveryProgram):
             # Record time requests FEMA assistance.
             entity.fema_put = self.env.now
 
+            # Check to see if missed application deadline
+            if self.env.now > self.deadline:
+                self.writeDeadline(entity)    
+                return # Application rejected, end process
+            
             self.writeRequest(entity)
 
             # Request a FEMA processor to review aid application.
@@ -204,14 +215,20 @@ class IndividualAssistance(FinancialRecoveryProgram):
         else:
             pass
 
+    def writeDeadline(self, entity):
+        if entity.write_story:
+            entity.story.append(
+                '{0} requested ${1:,.0f} from FEMA {2} days after the event. Their application was rejected because it was submitted after the {3}-day deadline after the disaster declaration that was made on day {4}'.format(
+                    entity.name.title(), entity.fema_amount, entity.fema_put, self.deadline, self.declaration_duration)
+                )
+    
     def writeRequest(self, entity):
         #If true, write FEMA request time to story.
         if entity.write_story:
             entity.story.append(
-                '{0} requested ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                    entity.name.title(), entity.fema_amount, entity.fema_put
-                    )
-                )
+                '{0} requested ${1:,.0f} from FEMA {2:.0f} days after the event and {3:.0f} days after the disaster declaration. '.format(
+                    entity.name.title(), entity.fema_amount, entity.fema_put, (entity.fema_put - self.declaration_duration))
+                                )
     def writeReceived(self, entity):
         #If true, write process outcome to story.
         if entity.write_story:
@@ -366,7 +383,7 @@ class LoanSBA(FinancialRecoveryProgram):
     """
     def __init__(self, env, duration_distribution, inspectors=float('inf'),
                 officers=float('inf'), budget=float('inf'), max_loan=float('inf'),
-                min_credit=0, min_debt_income_ratio=0, deadline = 60):
+                min_credit=0, min_debt_income_ratio=0, declaration_duration=0, deadline = 60):
 
         """Initiate owner's home loan recovery program attributes.
 
@@ -395,6 +412,7 @@ class LoanSBA(FinancialRecoveryProgram):
         self.min_debt_income_ratio = min_debt_income_ratio
         self.max_loan = max_loan
         self.deadline = deadline
+        self.declaration_duration = declaration_duration
 
     def process(self, entity, callbacks = None):
         """Define process for entity to submit request for loan (e.g., from SBA).
@@ -418,6 +436,11 @@ class LoanSBA(FinancialRecoveryProgram):
 
             else:
                 # Does not have enough money to rebuild.
+                 
+                # Take a timeout with duration equal to length of time until a 
+                # presidential or SBA disaster is declared, making loans available.
+                yield self.env.timeout(self.declaration_duration)
+                
                 # Record time application submitted.
                 entity.sba_put = self.env.now
 
@@ -428,10 +451,10 @@ class LoanSBA(FinancialRecoveryProgram):
                                         - entity.claim_amount
                                         - entity.fema_amount
                                     ) )
-
+                
+                # Check to see if missed application deadline
                 if self.env.now > self.deadline:
-                    self.writeDeadline(entity)
-                    
+                    self.writeDeadline(entity)    
                     return # Application rejected, end process
 
                 self.writeApplied(entity)
@@ -540,15 +563,15 @@ class LoanSBA(FinancialRecoveryProgram):
     def writeDeadline(self, entity):
         if entity.write_story:
             entity.story.append(
-                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was sumitted after the deadline of {3} after the event. '.format(
-                    entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline)
+                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was submitted after the {3}-day deadline after the disaster declaration made on day {4}. '.format(
+                    entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline, self.declaration_duration)
                 )
                 
     def writeApplied(self, entity):
         if entity.write_story:
             entity.story.append(
-                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. '.format(
-                    entity.name.title(), entity.sba_amount, entity.sba_put)
+                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event and {3} days after a disaster was declared'.format(
+                    entity.name.title(), entity.sba_amount, entity.sba_put, (entity.sba_put - self.declaration_duration))
                 )
     
     def writeDeniedCredit(self, entity):
