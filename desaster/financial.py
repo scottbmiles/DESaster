@@ -6,6 +6,7 @@
 """
 from simpy import Interrupt
 from simpy import Resource, Container
+import numpy as np
 from desaster.distributions import DurationDistributionHomeLoanSBA
 
 
@@ -105,7 +106,7 @@ class FinancialRecoveryProgram(object):
                     entity.name.title(), recovery_program, self.env.now))
                     
 
-class IndividualAssistance(FinancialRecoveryProgram):
+class HousingAssistanceFEMA(FinancialRecoveryProgram):
     """A class for operationalizing FEMA's individual assistance grant program.
     The class process enforces a maximum budget for the program (after which
     no further grants can be made, as well as a maximum outlay that any
@@ -150,24 +151,24 @@ class IndividualAssistance(FinancialRecoveryProgram):
         """
         # Exception handling in case interrupted by another process.
         try:
-            #Ensure that entity does not have enough money to rebuild already.
-            if entity.recovery_funds.level >= entity.property.damage_value:
-                return
-
-            # If does not have enough money to rebuild, submit request to FEMA.
             
-            # Must wait for a disaster declaration 
-            yield self.env.timeout(self.declaration_duration)
-
             # Calculate assistance request.
             # Must subtract any insurance payout from FEMA payout and choose the lesser of
             # max assistance and deducted total
             entity.fema_amount = min(self.max_outlay, (entity.property.damage_value
                                         - entity.claim_amount))
 
+            #Ensure that entity does not have enough money already.
+            if entity.fema_amount <= 0.0:
+                return
+            
+            # Check to see declaration has occurred; if not, wait
+            if self.env.now < self.declaration_duration:
+                yield self.env.timeout(self.declaration_duration - self.env.now)
+            
             # Record time requests FEMA assistance.
             entity.fema_put = self.env.now
-
+            
             # Check to see if missed application deadline
             if self.env.now > self.deadline:
                 self.writeDeadline(entity)    
@@ -178,10 +179,10 @@ class IndividualAssistance(FinancialRecoveryProgram):
             # Request a FEMA processor to review aid application.
             request = self.staff.request()
             yield request
-
+            
             # Yield timeout for duration necessary to process FEMA aid request.
             yield self.env.timeout(self.duration_distribution.value())
-
+            
             # Release FEMA processors.
             self.staff.release(request)
 
@@ -196,12 +197,12 @@ class IndividualAssistance(FinancialRecoveryProgram):
             # Request payout amount from FEMA budget
             # Must wait for request to be fulfilled
             yield self.budget.get(entity.fema_amount)
-
+            
             yield entity.recovery_funds.put(entity.fema_amount)
 
             # Record time received FEMA assistance.
             entity.fema_get = self.env.now
-
+            
             self.writeReceived(entity)
 
         # Catch any interrupt from another process.
@@ -219,24 +220,23 @@ class IndividualAssistance(FinancialRecoveryProgram):
         if entity.write_story:
             entity.story.append(
                 '{0} requested ${1:,.0f} from FEMA {2} days after the event. Their application was rejected because it was submitted after the {3}-day deadline after the disaster declaration that was made on day {4}'.format(
-                    entity.name.title(), entity.fema_amount, entity.fema_put, self.deadline, self.declaration_duration)
+                    entity.name.title(), entity.fema_amount, entity.fema_put, 
+                    self.deadline, self.declaration_duration)
                 )
     
     def writeRequest(self, entity):
         #If true, write FEMA request time to story.
         if entity.write_story:
             entity.story.append(
-                '{0} requested ${1:,.0f} from FEMA {2:.0f} days after the event and {3:.0f} days after the disaster declaration. '.format(
-                    entity.name.title(), entity.fema_amount, entity.fema_put, (entity.fema_put - self.declaration_duration))
+                '{0} requested ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
+                    entity.name.title(), entity.fema_amount, entity.fema_put)
                                 )
     def writeReceived(self, entity):
         #If true, write process outcome to story.
         if entity.write_story:
             entity.story.append(
                 '{0} received ${1:,.0f} from FEMA {2:.0f} days after the event. '.format(
-                    entity.name.title(),
-                    entity.fema_amount,
-                    entity.fema_get
+                    entity.name.title(), entity.fema_amount, entity.fema_get
                     )
                 )
 
@@ -346,10 +346,9 @@ class OwnersInsurance(FinancialRecoveryProgram):
     def writeNoInsurance(self, entity):
         if entity.write_story:
             entity.story.append(
-                '{0} has no hazard insurance. '.format(
-                    entity.name.title()
-                    )
-                )
+                '{0} has no hazard insurance. '.format(entity.name.title())
+                                )
+                                
     def writeRequest(self, entity):
         if entity.write_story:
             entity.story.append(
@@ -365,25 +364,22 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 )
 
     def writeReceived(self, entity):
-        #If true, write process outcome to story.
         if entity.write_story:
             entity.story.append(
                 '{0} received a ${1:,.0f} insurance payout {2:.0f} days after the event. '.format(
-                    entity.name.title(),
-                    entity.claim_amount,
-                    entity.claim_get
+                    entity.name.title(), entity.claim_amount, entity.claim_get
                     )
                 )
 
-class LoanSBA(FinancialRecoveryProgram):
-    """A class to represent a home loan program. The class process enforces a maximum
-    loan amount. *** For the most part this class is a placeholder. Loan eligibility
-    and loan amount criteria need to be added. ***
+class RealPropertyLoanSBA(FinancialRecoveryProgram):
+    """A class to represent an SBA real property loan program. The class process enforces a maximum
+    loan amount. 
 
     """
     def __init__(self, env, duration_distribution, inspectors=float('inf'),
-                officers=float('inf'), budget=float('inf'), max_loan=float('inf'),
-                min_credit=0, min_debt_income_ratio=0, declaration_duration=0, deadline = 60):
+                officers=float('inf'), budget = float('inf'), max_loan = float('inf'),
+                min_credit = 0, debt_income_ratio = 0.2, loan_term = 30.0,
+                interest_rate = 0.04, declaration_duration = 0, deadline = 60):
 
         """Initiate owner's home loan recovery program attributes.
 
@@ -409,8 +405,10 @@ class LoanSBA(FinancialRecoveryProgram):
 
         # New attributes
         self.min_credit = min_credit
-        self.min_debt_income_ratio = min_debt_income_ratio
+        self.debt_income_ratio = debt_income_ratio
+        self.loan_term = loan_term # years
         self.max_loan = max_loan
+        self.interest_rate = interest_rate # annual rate
         self.deadline = deadline
         self.declaration_duration = declaration_duration
 
@@ -430,126 +428,105 @@ class LoanSBA(FinancialRecoveryProgram):
         """
         # Exception handling in case interrupted by another process.
         try:
-            # Ensure entity does not have enough money to rebuild.
-            if entity.recovery_funds.level >= entity.property.damage_value:
+            # Check to see declaration has occurred; if not, wait
+            if self.env.now < self.declaration_duration:
+                yield self.env.timeout(self.declaration_duration - self.env.now)
+            
+            # Record time application submitted.
+            entity.sba_put = self.env.now
+
+            # Call function to set entity.sba_amount
+            entity.sba_amount = self.setLoanAmount(entity)
+            
+            # Ensure entity does not have enough funds.
+            if entity.sba_amount <= 0:
                 return # Don't qualify for or need SBA loan, end process
+            
+            # Check to see if missed application deadline
+            if self.env.now > self.deadline:
+                self.writeDeadline(entity)    
+                return # Application rejected, end process
 
-            else:
-                # Does not have enough money to rebuild.
-                 
-                # Take a timeout with duration equal to length of time until a 
-                # presidential or SBA disaster is declared, making loans available.
-                yield self.env.timeout(self.declaration_duration)
+            self.writeApplied(entity)
+
+            # Request a loan processor.
+            officer_request = self.officers.request()
+            yield officer_request
+
+            # # Yield process timeout for duration needed for officer to process application.
+            if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
+                yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
+                                                                        min_credit = self.min_credit)
+                                            )
+            else: # if not, it's ProbabilityDistribution
+                yield self.env.timeout(self.duration_distribution.value())
+
+            if entity.credit < self.min_credit:
+                self.writeDeniedCredit(entity)
+                return
+
+            # Release loan officer so that they can process other loans.
+            self.officers.release(officer_request)
+
+            # If approved (enough credit), request an inspector. Then release it.
+            # %%% This increases duration by amount of time it takes
+            # to get an inspector. Duration of 1 day assumed, currently. %%%%
+            inspector_request = self.inspectors.request()
+            yield inspector_request
+            yield self.env.timeout(1) # Assumed 1 day inspection duration.
+            self.inspectors.release(inspector_request)
+
+            # Update loan amount (in case other processes in parallel)
+            entity.sba_amount = self.setLoanAmount(entity)
+            
+            self.writeInspected(entity)
+
+            if entity.sba_amount <= 0:
+                self.writeWithdraw(entity, 'SBA')
+                return
+
+            # If loan amount is greater than $25k, it requires collateral and more paperwork
+            if entity.sba_amount > 25000:
                 
-                # Record time application submitted.
-                entity.sba_put = self.env.now
-
-                # Subtract any insurance or FEMA payouts from damage value to
-                # arrive at loan amount.
-                entity.sba_amount = min(self.max_loan, (
-                                        entity.property.damage_value
-                                        - entity.claim_amount
-                                        - entity.fema_amount
-                                    ) )
+                # Receives $25k immediately as initial disbursement
+                yield self.budget.get(25000)
+                yield entity.recovery_funds.put(25000)
                 
-                # Check to see if missed application deadline
-                if self.env.now > self.deadline:
-                    self.writeDeadline(entity)    
-                    return # Application rejected, end process
+                self.writeFirstDisbursement(entity)
+                
+                #
+                # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED %%%
+                # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
+                #
 
-                self.writeApplied(entity)
-
-                # Request a loan processor.
-                officer_request = self.officers.request()
-                yield officer_request
-
-                # # Yield process timeout for duration needed for officer to process application.
                 if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
                     yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
                                                                             min_credit = self.min_credit)
-                                                )
+                                                                            )
                 else: # if not, it's ProbabilityDistribution
                     yield self.env.timeout(self.duration_distribution.value())
 
-                if entity.credit < self.min_credit:
-                    
-                    self.writeDeniedCredit(entity)
-                    
-                    return
-
-                # Release loan officer so that they can process other loans.
-                self.officers.release(officer_request)
-
-                # If approved (enough credit), request an inspector. Then release it.
-                # %%% This increases duration by amount of time it takes
-                # to get an inspector. Duration of 1 day assumed, currently. %%%%
-                inspector_request = self.inspectors.request()
-                yield inspector_request
-                yield self.env.timeout(1) # Assumed 1 day inspection duration.
-                self.inspectors.release(inspector_request)
-
-                self.writeInspected(entity)
-                self.writeApproved(entity)
-
                 # Update loan amount (in case other processes in parallel)
-                entity.sba_amount = min(self.max_loan, (
-                                        entity.property.damage_value
-                                        - entity.claim_amount
-                                        - entity.fema_amount
-                                    ) )
+                entity.sba_amount = self.setLoanAmount(entity)
 
                 if entity.sba_amount <= 0:
                     self.writeWithdraw(entity, 'SBA')
                     return
 
-                # If loan amount is greater than $25k, it requires collateral and more paperwork
-                if entity.sba_amount > 25000:
-                    # Receives $25k immediately as initial disbursement
-                    yield self.budget.get(25000)
-                    
-                    yield entity.recovery_funds.put(25000)
-                    
+                yield self.budget.get(entity.sba_amount - 25000)
+                yield entity.recovery_funds.put(entity.sba_amount - 25000)
 
-                    self.writeFirstDisbursement(entity)
-                    
-                    #
-                    # %%%% EVENTUALLY MAKE WAIT FOR A BUILDING PERMIT TO BE ISSUED %%%
-                    # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
-                    #
+                self.writeSecondDisbursement(entity)
 
-                    if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
-                        yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
-                                                                                min_credit = self.min_credit)
-                                                                                )
-                    else: # if not, it's ProbabilityDistribution
-                        yield self.env.timeout(self.duration_distribution.value())
+            else:
+                
+                # Add loan amount to entity's money to rebuild.
+                yield entity.recovery_funds.put(entity.sba_amount)
 
-                    # Upbdate loan amount (in case other processes in parallel)
-                    entity.sba_amount = min(self.max_loan, (
-                                            entity.property.damage_value
-                                            - entity.claim_amount
-                                            - entity.fema_amount
-                                        ) )
+                self.writeOnlyDisbursement(entity)
 
-                    print(entity.sba_amount <= 0)
-                    if entity.sba_amount <= 0:
-                        self.writeWithdraw(entity, 'SBA')
-                        return
-
-                    yield self.budget.get(entity.sba_amount - 25000)
-                    
-                    yield entity.recovery_funds.put(entity.sba_amount - 25000)
-
-                    self.writeSecondDisbursement(entity)
-
-                else:
-                    # Add loan amount to entity's money to rebuild.
-                    yield entity.recovery_funds.put(entity.sba_amount)
-
-                    self.writeOnlyDisbursement(entity)
-
-                # Record time full loan is approved.
-                entity.sba_get = self.env.now
+            # Record time full loan is approved.
+            entity.sba_get = self.env.now
 
         # Handle any interrupt from another process.
         except Interrupt as i:
@@ -560,6 +537,15 @@ class LoanSBA(FinancialRecoveryProgram):
         else:
             pass
 
+    def setLoanAmount(self, entity):
+        required_loan = max(0, entity.property.damage_value - entity.claim_amount - entity.fema_amount)
+        
+        monthly_rate = self.interest_rate / 12
+        qualified_monthly_payment = (entity.income / 12) * self.debt_income_ratio
+        qualified_loan = -1.0 * np.pv(monthly_rate, self.loan_term * 12, qualified_monthly_payment)
+        
+        return min(required_loan, qualified_loan, self.max_loan)
+    
     def writeDeadline(self, entity):
         if entity.write_story:
             entity.story.append(
@@ -569,9 +555,13 @@ class LoanSBA(FinancialRecoveryProgram):
                 
     def writeApplied(self, entity):
         if entity.write_story:
+            
+            required_loan = max(0, entity.property.damage_value - entity.claim_amount - entity.fema_amount)
+            applied_loan = min(required_loan, self.max_loan)
+            
             entity.story.append(
-                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event and {3} days after a disaster was declared'.format(
-                    entity.name.title(), entity.sba_amount, entity.sba_put, (entity.sba_put - self.declaration_duration))
+                '{0} applied for a ${1:,.0f} SBA loan {2} days after the event.'.format(
+                    entity.name.title(), applied_loan, entity.sba_put)
                 )
     
     def writeDeniedCredit(self, entity):
@@ -587,12 +577,6 @@ class LoanSBA(FinancialRecoveryProgram):
                 "SBA inspected {0}\'s home on day {1} after the event. "
                 .format(entity.name.title(), self.env.now))
     
-    def writeApproved(self, entity):
-        if entity.write_story:
-            entity.story.append(
-            "SBA provisionally approved {0} for a ${1:,.0f} loan {2:.0f} days after the event. "
-            .format(entity.name.title(), entity.sba_amount, self.env.now))
-    
     def writeFirstDisbursement(self, entity):
         if entity.write_story:
             entity.story.append(
@@ -602,11 +586,11 @@ class LoanSBA(FinancialRecoveryProgram):
     def writeSecondDisbursement(self, entity):
             if entity.write_story:
                 entity.story.append(
-                    "{0} received a second SBA loan disbursement of {1:,.0f} {2} days after the event. "
+                    "{0} received a second SBA loan disbursement of ${1:,.0f} {2} days after the event. "
                     .format(entity.name.title(), (entity.sba_amount - 25000), self.env.now))
     
     def writeOnlyDisbursement(self, entity):
-        if entity.write_story:
+        if entity.write_story:    
             entity.story.append(
-                "{0} received a SBA loan disbursement of ${1:,.0f} {2} days after the event. "
+                "{0} received a SBA loan of ${1:,.0f} {2} days after the event. "
                 .format(entity.name.title(), entity.sba_amount, self.env.now))

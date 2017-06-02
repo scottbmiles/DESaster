@@ -10,7 +10,7 @@ SingleFamilyResidential(Building)
 @author: Scott Miles (milessb@uw.edu)
 """
 
-from desaster.hazus import setDamageValueHAZUS
+from desaster.hazus import setStructuralDamageValueHAZUS
 import pandas as pd
 import warnings, sys, distutils.util
 
@@ -34,7 +34,7 @@ class Building(object):
         """
         # Attributes
         self.owner = owner  # Owner of building as Household() entity
-        self.cost = cost  # Monthly rent/mortgage of building
+        self.monthly_cost = cost  # Monthly rent/mortgage of building
         self.value = value  # Value of the building in $
         self.damage_state = damage_state  # HAZUS damage state
         self.damage_state_start = damage_state  # Archive starting damage state
@@ -48,18 +48,22 @@ class Building(object):
         self.latitude = latitude
         self.longitude = longitude
         self.stock = building_stock # The building stock FilterStor the building belongs to
-        self.damage_value = setDamageValueHAZUS(value, occupancy, damage_state) # Use HAZUS lookup tables to assign damage value.
-        self.damage_value_start = self.damage_value # Archive original damage value
+
         
         # Outputs and intermediate variables
         self.inspected = False  # Whether the building has been inspected
         self.permit = False  # Whether the building has a permit
         self.assessment = False  # Whether the building has had engineering assessment
+        
+        # Use HAZUS lookup tables to assign damage value.
+        self.damage_value = setStructuralDamageValueHAZUS(self)
+        # self.damage_value = setStructuralDamageValueHAZUS(value, occupancy, damage_state)
+        self.damage_value_start = self.damage_value # Archive original damage value
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the
     attributes and methods associated with a single family residence. Currently
-    just adds attribues of bedrooms and bathroom and verifies a HAZUS-compatible
+    just adds attribuees of bedrooms and bathroom and verifies a HAZUS-compatible
     residential building type is specified.
     """
     def __init__(self, owner = None, occupancy = None, address = None, longitude = None,

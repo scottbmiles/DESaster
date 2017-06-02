@@ -140,6 +140,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         entity.inspection_get -- Time structure was inspected
         structure.inspected = True, if successfully inspected
         """
+        
         # Put in request for an inspector (shared resource)
         entity.inspection_put = self.env.now
 
@@ -153,7 +154,6 @@ class InspectionProgram(TechnicalRecoveryProgram):
         get_structure = yield structure.stock.get(lambda getStructure:
                                                     getStructure.__dict__ == structure.__dict__
                                             )
-        
         
         # Yield timeout equivalent to time from hazard event to end of inspection.
         yield self.env.timeout(self.duration_distribution.value())
