@@ -23,7 +23,7 @@ class FinancialRecoveryPolicy(object):
     def writeHadEnough(self, entity):
         if entity.write_story:
             entity.story.append(
-                '{0} already had enough money to rebuild (${1:,.0f}) and did not seek assistance. '.format(
+                '{0} already had enough money to repair (${1:,.0f}) and did not seek assistance. '.format(
                                     entity.name.title(), entity.recovery_funds.level)
                                 )
         
@@ -46,7 +46,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
         FinancialRecoveryPolicy.__init__(self, env)
     def policy(self, insurance_program, fema_program, sba_program, entity,
                         search_patience):
-        """A process (generator) representing entity search for money to rebuild or
+        """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or FEMA aid and/or loan.
 
         env -- Pointer to SimPy env environment.
@@ -66,7 +66,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
         # Calculate the time that money search patience ends
         # patience_end = money_search_start + search_patience
 
-        # Return out of function if entity has enough money to rebuild and does not
+        # Return out of function if entity has enough money to repair and does not
         # have any insurance coverage.
         if (entity.recovery_funds.level >= entity.property.damage_value
             and entity.insurance == 0.0):
@@ -105,7 +105,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
                 
             patience_remain = patience_end - self.env.now
 
-        # If entity (still) does not have enough rebuild money then yield a FEMA IA
+        # If entity (still) does not have enough repair money then yield a FEMA IA
         # request, the duration of which is limited by entity's money search patience.
         if entity.recovery_funds.level < entity.property.damage_value:
             # Define a timeout process to represent search patience, with duration
@@ -142,7 +142,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
 
             patience_remain = patience_end - self.env.now
             
-        # If entity (still) does not have enough rebuild money then yield a loan
+        # If entity (still) does not have enough repair money then yield a loan
         # request, the duration of which is limited by entity's money search patience.
         if entity.recovery_funds.level < entity.property.damage_value:
             # Define a timeout process to represent search patience, with duration
@@ -170,7 +170,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
         # giving up.
         search_duration = self.env.now - money_search_start
 
-        # If entity (STILL) does not have enough rebuild money then indicate so and
+        # If entity (STILL) does not have enough repair money then indicate so and
         # that options have been exhausted.
         if entity.recovery_funds.level < entity.property.damage_value:
             # If write_story is True, then append money search outcome to entity's story.
@@ -185,7 +185,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
         FinancialRecoveryPolicy.__init__(self, env)
     def policy(self, insurance_program, fema_program, sba_program, entity,
                         search_patience):
-        """A process (generator) representing entity search for money to rebuild or
+        """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or SBA loan.
 
         env -- Pointer to SimPy env environment.
@@ -203,7 +203,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
                                     called within.
         """
 
-        # Return out of function if entity has enough money to rebuild and does not
+        # Return out of function if entity has enough money to repair and does not
         # have any insurance coverage.
         if (entity.recovery_funds.level >= entity.property.damage_value
             and entity.insurance == 0):
@@ -226,7 +226,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
             # Record when money search starts, if don't have insurance
             money_search_start = self.env.now
             
-            # At any point the entity has enough money to rebuild, stop looking.
+            # At any point the entity has enough money to repair, stop looking.
             while entity.recovery_funds.level < entity.property.damage_value:
                 
                 # Yield the patience timeout, the FEMA request, insurance claim request, and the loan request.
@@ -259,7 +259,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
             # "gave up" if the process completes.
             find_search_patience = self.env.timeout(patience_remain, value='gave up')
             
-            # At any point the entity has enough money to rebuild, stop looking.
+            # At any point the entity has enough money to repair, stop looking.
             while entity.recovery_funds.level < entity.property.damage_value:
                 # Yield the patience timeout and the loan request.
                 # No insurance so just yield FEMA & SBA loan request process.
@@ -283,7 +283,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
         # giving up.
         search_duration = self.env.now - money_search_start
 
-        # If entity (STILL) does not have enough rebuild money then indicate so and
+        # If entity (STILL) does not have enough repair money then indicate so and
         # that options have been exhausted.
         if entity.recovery_funds.level < entity.property.damage_value:
             self.writeCompletedWithoutEnough(entity, search_duration)
@@ -297,7 +297,7 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
         FinancialRecoveryPolicy.__init__(self, env)
     def policy(self, insurance_program, sba_program, entity,
                         search_patience):
-        """A process (generator) representing entity search for money to rebuild or
+        """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or SBA loan.
 
         env -- Pointer to SimPy env environment.
@@ -313,7 +313,7 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
         entity.recovery_funds.level -- Technically changed (increased) by functions
                                     called within.
         """
-        # Return out of function if entity has enough money to rebuild and does not
+        # Return out of function if entity has enough money to repair and does not
         # have any insurance coverage.
         if (entity.recovery_funds.level >= entity.property.damage_value
             and entity.insurance == 0.0):
@@ -356,7 +356,7 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
 
             patience_remain = patience_end - self.env.now
             
-        # If entity (still) does not have enough rebuild money then yield a loan
+        # If entity (still) does not have enough repair money then yield a loan
         # request, the duration of which is limited by entity's money search patience.
         if entity.recovery_funds.level < entity.property.damage_value:
 
@@ -396,7 +396,7 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
         # giving up.
         search_duration = self.env.now - money_search_start
 
-        # If entity (STILL) does not have enough rebuild money then indicate so and
+        # If entity (STILL) does not have enough repair money then indicate so and
         # that options have been exhausted.
         if entity.recovery_funds.level < entity.property.damage_value:
             self.writeCompletedWithoutEnough(entity, search_duration)
@@ -410,7 +410,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
         FinancialRecoveryPolicy.__init__(self, env)
     def policy(self, insurance_program, sba_program, entity,
                         search_patience):
-        """A process (generator) representing entity search for money to rebuild or
+        """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or SBA loan.
 
         env -- Pointer to SimPy env environment.
@@ -428,7 +428,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
                                     called within.
         """
 
-        # Return out of function if entity has enough money to rebuild and does not
+        # Return out of function if entity has enough money to repair and does not
         # have any insurance coverage.
         if (entity.recovery_funds.level >= entity.property.damage_value
             and entity.insurance == 0.0):
@@ -451,7 +451,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
             # Record when money search starts, if don't have insurance
             money_search_start = self.env.now
             
-            # At any point the entity has enough money to rebuild, stop looking.
+            # At any point the entity has enough money to repair, stop looking.
             while entity.recovery_funds.level < entity.property.damage_value:
 
                 # Yield the patience timeout, the insurance claim request, and the loan request.
@@ -478,7 +478,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
             # If no insurance, money search starts after disaster declaration
             # Need to check current simulation time again when disaster declaration
             # occurs to determine how much patience remains
-            money_search_start = max(fema_program.declaration_duration, self.env.now)
+            money_search_start = max(sba_program.declaration_duration, self.env.now)
             patience_end = money_search_start + search_patience
             patience_remain = patience_end - self.env.now
             
@@ -507,7 +507,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
         # giving up.
         search_duration = self.env.now - money_search_start
 
-        # If entity (STILL) does not have enough rebuild money then indicate so and
+        # If entity (STILL) does not have enough repair money then indicate so and
         # that options have been exhausted.
         if entity.recovery_funds.level < entity.property.damage_value:
 
@@ -520,14 +520,14 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
 
 class RepairVacantBuilding(object):
     """ A class to represent a large-scale/bulk policy for expedited repairing
-    of a building stock. Conceptually this is intended to rebuild vacant building
-    stocks that do not have entities associated with them to rebuild them. This bulk
-    rebuilding potentially provides additional homes for entities to purchase or rent.
+    of a building stock. Conceptually this is intended to repair vacant building
+    stocks that do not have entities associated with them to repair them. This bulk
+    repairing potentially provides additional homes for entities to purchase or rent.
 
 
     Methods:
     __init__(self, env, duration_prob_dist, staff=float('inf'))
-    process(self, building_stock, rebuild_fraction, rebuild_start)
+    process(self, building_stock, repair_fraction, repair_start)
     """
 
     def __init__(self, env):
@@ -542,7 +542,7 @@ class RepairVacantBuilding(object):
         ## %%%% Eventually might implement a TechnicalRecoveryPolicy class. %%%
 
     def policy(self, inspection_program, assessment_program, permit_program,
-                rebuild_program, entity, building_stock, repair_probability = 1.0, wait_time = 0.0):
+                repair_program, entity, building_stock, repair_probability = 1.0, wait_time = 0.0):
         """Process to repair a part or an entire building stock (FilterStore) based
         on available contractors and specified proportion/probability.
 
@@ -551,7 +551,7 @@ class RepairVacantBuilding(object):
            structures.BuiltCapital(), structures.Building(), or structures.Residence()
            objects that represent vacant structures for purchase.
         repair_probability -- A value to set approximate percentage of number of structures
-           in the stock to rebuild.
+           in the stock to repair.
         wait_time -- Duration that simulates time to get recovery assistance.
 
         Attribute Changes:
@@ -572,5 +572,5 @@ class RepairVacantBuilding(object):
             yield self.env.timeout(wait_time)
             yield self.env.process(assessment_program.process(entity.property, entity))
             yield self.env.process(permit_program.process(entity.property, entity))
-            yield self.env.process(rebuild_program.process(entity.property, entity))
+            yield self.env.process(repair_program.process(entity.property, entity))
             yield building_stock.put(get_building)

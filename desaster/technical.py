@@ -379,7 +379,7 @@ class RepairProgram(TechnicalRecoveryProgram):
         self.materials = Container(self.env, init=materials)
 
     def process(self, structure, entity, callbacks = None):
-        """A process to rebuild a building structure based on available contractors
+        """A process to repair a building structure based on available contractors
         and building materials.
 
         Keyword Arguments:
@@ -404,15 +404,15 @@ class RepairProgram(TechnicalRecoveryProgram):
 
             materials_cost = structure.damage_value * materials_cost_pct
 
-            # Record time put in request for home rebuild.
-            entity.rebuild_put = self.env.now
+            # Record time put in request for home repair.
+            entity.repair_put = self.env.now
             
             # Withdraw recovery funds equal to the repair value (assumed to be
             # same as damage value). If no enough available, process waits until 
             # there is.
             yield entity.recovery_funds.get(structure.damage_value)
 
-            # Put in request for contractors to rebuild home.
+            # Put in request for contractors to repair home.
             staff_request = self.staff.request()
             yield staff_request
             
@@ -421,10 +421,10 @@ class RepairProgram(TechnicalRecoveryProgram):
                                                         getStructure.__dict__ == structure.__dict__
                                                 )
 
-            # Get the rebuild time for the entity from io.py
-            # which imports the HAZUS rebuild time look up table.
+            # Get the repair time for the entity from io.py
+            # which imports the HAZUS repair time look up table.
             # Rebuild time is based on occupancy type and damage state.
-            # Set the program's distribution.loc (e.g., mean) to rebuild time
+            # Set the program's distribution.loc (e.g., mean) to repair time
             self.duration_distribution.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
 
             # Obtain necessary construction materials from regional inventory.
@@ -432,13 +432,13 @@ class RepairProgram(TechnicalRecoveryProgram):
             # (vs. labor and profit)
             yield self.materials.get(materials_cost)
 
-            # Yield timeout equivalent to rebuild time.
+            # Yield timeout equivalent to repair time.
             yield self.env.timeout(self.duration_distribution.value())
 
             # Release contractors.
             self.staff.release(staff_request)
 
-            # After successful rebuild, set damage to None & $0.
+            # After successful repair, set damage to None & $0.
             structure.damage_state = 'None'
             structure.damage_value = 0.0
             
@@ -463,10 +463,9 @@ class RepairProgram(TechnicalRecoveryProgram):
     def writeRepaired(self, entity, structure):
         if entity.write_story:
             entity.story.append(
-                '{0}\'s {1} was repaired {2:,.0f} days after the event, taking {3:.0f} days to rebuild. '.format(
+                '{0}\'s {1} was repaired {2:,.0f} days after the event. '.format(
                     entity.name.title(), structure.occupancy.lower(),
-                    entity.repair_get,
-                    entity.repair_get - entity.rebuild_put
+                    entity.repair_get
                 )
             )       
     
@@ -515,10 +514,10 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         structure.damage_state -- Set to 'Complete' if successful.
         """
 
-        # Record time put in request for home rebuild.
+        # Record time put in request for home repair.
         entity.demolition_put = self.env.now
 
-        # Put in request for contractors to rebuild home.
+        # Put in request for contractors to repair home.
         staff_request = self.staff.request()
         yield staff_request
         
@@ -527,13 +526,13 @@ class DemolitionProgram(TechnicalRecoveryProgram):
                                                     getStructure.__dict__ == structure.__dict__
                                             )
 
-        # Yield timeout equivalent to rebuild time.
+        # Yield timeout equivalent to repair time.
         yield self.env.timeout(self.duration_distribution.value())
 
         # Release contractors.
         self.staff.release(staff_request)
 
-        # After successful rebuild, set damage to Complete.
+        # After successful repair, set damage to Complete.
         structure.damage_state = 'Complete'
         
         # Put the property back in the building stock to register attribute change.
@@ -551,12 +550,11 @@ class DemolitionProgram(TechnicalRecoveryProgram):
             pass
             
     def writeDemolished(self, entity, structure):
-        # If True, write outcome of successful rebuild to story.
+        # If True, write outcome of successful repair to story.
         if entity.write_story:
             entity.story.append(
-                '{0}\'s {1} was demolished {2:,.0f} days after the event, taking {3:.0f} days to demolish. '.format(
+                '{0}\'s {1} was demolished {2:,.0f} days after the event. '.format(
                     entity.name.title(), structure.occupancy.lower(),
-                    entity.demolition_get,
-                    entity.demolition_get - entity.demolition_put
+                    entity.demolition_get
                 )
             )

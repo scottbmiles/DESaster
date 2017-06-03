@@ -303,7 +303,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 # coverage ratio multipled by the deductible percentage.
                 deductible_amount = entity.property.value * entity.insurance * self.deductible
 
-                # Determine payout amount and add to entity's rebuild money.
+                # Determine payout amount and add to entity's repair money.
                 # Only payout amount equal to the damage, not the full coverage.
                 if entity.property.damage_value < deductible_amount:
                     self.writeDeductible(entity)
@@ -322,7 +322,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 entity.claim_amount = entity.property.damage_value - deductible_amount
 
                 # Make request for the claim amount from the insurance budget
-                # If get request, add to entity money to rebuild
+                # If get request, add to entity money to repair
                 yield self.budget.get(entity.claim_amount)
 
                 yield entity.recovery_funds.put(entity.claim_amount)
@@ -520,7 +520,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
 
             else:
                 
-                # Add loan amount to entity's money to rebuild.
+                # Add loan amount to entity's money to repair.
                 yield entity.recovery_funds.put(entity.sba_amount)
 
                 self.writeOnlyDisbursement(entity)
@@ -540,9 +540,13 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
     def setLoanAmount(self, entity):
         required_loan = max(0, entity.property.damage_value - entity.claim_amount - entity.fema_amount)
         
-        monthly_rate = self.interest_rate / 12
-        qualified_monthly_payment = (entity.income / 12) * self.debt_income_ratio
-        qualified_loan = -1.0 * np.pv(monthly_rate, self.loan_term * 12, qualified_monthly_payment)
+        # Just in case entity doesn't have income attribute (e.g., landlord)
+        try:
+            monthly_rate = self.interest_rate / 12
+            qualified_monthly_payment = (entity.income / 12) * self.debt_income_ratio
+            qualified_loan = -1.0 * np.pv(monthly_rate, self.loan_term * 12, qualified_monthly_payment)
+        except AttributeError:
+            qualified_loan = required_loan * 0.44 # Result of regression analysis of past SBA loans
         
         return min(required_loan, qualified_loan, self.max_loan)
     

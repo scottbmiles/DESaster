@@ -102,8 +102,8 @@ class Owner(Entity):
         self.inspection_get = None  # Time get  house inspection
 
         self.assistance_payout = 0.0  # Amount of generic assistance provided (e.g., Red Cross)
-        self.repair_put = None  # Time put request in for house rebuild
-        self.repair_get = None  # Time get house rebuild completed
+        self.repair_put = None  # Time put request in for house repair
+        self.repair_get = None  # Time get house repair completed
         self.demolition_put = None # Time demolition requested
         self.demolition_get = None  # Time demolition occurs
 
@@ -480,7 +480,7 @@ class RenterHousehold(Household):
                         and findHome.monthly_cost <= (self.income / 12.0) * housing_ratio
                         and findHome.listed == True
                                     )
-
+        
         # Yield both the patience timeout and the housing stock FilterStore get.
         # Wait until one or the other process is completed.
         # Assign the process that is completed first to the variable.
@@ -502,6 +502,9 @@ class RenterHousehold(Household):
 
         # Withdraw 10% down payment; wait for more funds if don't have it yet
         move_in_cost = move_in_ratio * home_search_outcome[new_home].monthly_cost
+        
+        print(home_search_outcome[new_home].address, move_in_cost, self.recovery_funds.level)
+        
         get_move_in_cost = self.recovery_funds.get(move_in_cost)
         
         # Yield both the remaining patience timeout and down payment get.

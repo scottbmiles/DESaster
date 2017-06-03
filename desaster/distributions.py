@@ -60,8 +60,8 @@ class ProbabilityDistribution(object):
             else:
                 raise ValueError("Probability distibution type not specified or supported.")
                 return
-        except TypeError as te:
-            print("Duration probability distribution not specified: ", te)
+        except TypeError:
+            print("Probability distribution argument(s) missing.")
             return
             
 
