@@ -3,11 +3,12 @@
 Module of classes for implementing DESaster technical recovery programs.
 
 Classes:
+TechnicalRecoveryProgram
 InspectionProgram
 PermitProgram
 EngineeringAssessment
 RepairProgram
-RepairStockProgram
+DemolitionProgram
 
 @author: Scott Miles (milessb@uw.edu), Derek Huling
 """
@@ -28,13 +29,14 @@ class TechnicalRecoveryProgram(object):
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, entity = None)
+    writeCompleted(self):
     """
     def __init__(self, env, duration_distribution, staff=float('inf')):
         """Initiate a TechnicalRecoveryProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration_distribution -- distributions.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
 
         Attribute Changes:
@@ -51,7 +53,7 @@ class TechnicalRecoveryProgram(object):
         """The process for TechnicalRecoveryProgram for requesting staff and issuing
         SimPy timeouts to represent duration of associated technical process.
 
-        entity -- Some entities.py object that initiates and benefits from the recovery program.
+        entity -- A structures.py object (e.g., structures.Building) that is the focus of the recovery program.
         """
         ###
         ### The contents of this function are an example of what can be done
@@ -109,6 +111,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
+    writeInspected(self, entity, structure):
     """
     def __init__(self, env, duration_distribution, staff=float('inf')):
         """Initiate an InspectionProgram object.
@@ -119,7 +122,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
-        Subclass of technical.TechnicalRecoveryProgram()
+        technical.TechnicalRecoveryProgram()
         """
         TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
 
@@ -194,6 +197,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
+    writeAssessed(self, entity):
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), ):
         """Initiate EngineeringAssessment object.
@@ -204,7 +208,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
-        Subclass of technical.TechnicalRecoveryProgram()
+        technical.TechnicalRecoveryProgram()
         """
         TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
 
@@ -221,9 +225,9 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
 
         Returns or Attribute Changes:
         entity.story -- Append story strings to entity's story
-        entity.assessment_put -- Records sim time of assessment request
-        entity.fema_get -- Records sim time of assessment reciept
-        structure.inspected = True, if successfully assessed
+        structure.assessment = True, if successfully assessed
+        entity.assessment_put -- Record when assessment request submitted
+        entity.assessment_put -- Record when assessment request fulfilled
         """
         # Record time that assessment request put in.
         entity.assessment_put = self.env.now
@@ -273,6 +277,7 @@ class PermitProgram(TechnicalRecoveryProgram):
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
+    writePermitted(self, entity):
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), ):
         """Initiate PermitProgram object.
@@ -283,7 +288,7 @@ class PermitProgram(TechnicalRecoveryProgram):
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
-        Subclass of technical.TechnicalRecoveryProgram()
+        technical.TechnicalRecoveryProgram()
         """
         TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
 
@@ -350,16 +355,15 @@ class RepairProgram(TechnicalRecoveryProgram):
     a simplified way--a single simpy.Container representing the inventory dollar
     value of undifferented materials
 
-    *** Currently no conceptual or algorithmic difference is made
-    between repairs and reconstruction. Potentially eventually this should be done,
-    likely as a separate program together with another program for demolition.
-    Currently building materials are undifferentiad. Potentially eventually can
+    *** Currently building materials are undifferentiad. Potentially eventually can
     represent different material types with separate simpy Containers (e.g.,
     wood, metal, aggregate, etc.)***
 
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
+    writeRepaired(self, entity, structure):
+    writeGaveUp(self, entity, now):
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), materials=float('inf')):
         """Initiate RepairProgram object.
@@ -370,7 +374,7 @@ class RepairProgram(TechnicalRecoveryProgram):
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
-        Subclass of technical.TechnicalRecoveryProgram()
+        technical.TechnicalRecoveryProgram()
         """
         TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
 
@@ -479,10 +483,10 @@ class DemolitionProgram(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
     building demolition.
 
-
     Methods:
     __init__(self, env, duration_distribution, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
+    writeDemolished(self, entity, structure):
     """
     def __init__(self, env, duration_distribution, staff=float('inf')):
         """Initiate RepairProgram object.
@@ -513,7 +517,6 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         entity.demolition_get -- Record time demolition finished
         structure.damage_state -- Set to 'Complete' if successful.
         """
-
         # Record time put in request for home repair.
         entity.demolition_put = self.env.now
 

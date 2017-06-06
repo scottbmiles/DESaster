@@ -30,7 +30,20 @@ class Building(object):
         """
 
         Keyword Arguments:
-        building -- A dataframe row with required building attributes.
+        owner -- entities.Owner or subclass that represents building owner.
+        occupancy -- The buildings occupancy. DESaster currently supports SFR and mobile home.
+        address -- Building's address
+        longitude -- Building's longitude
+        latitude -- Building's latitude
+        value -- Building's value in $
+        cost -- Building's monthly cost in $ (e.g., mortgage or rent)
+        area -- Building's area in sf
+        listed -- Whether building is for rent or sale.
+        damage_state -- Building's damage state (e.g., HAZUS damage states)
+        building_stock -- The the building's associated building stock FilterStore
+        
+        Modified Attributes:
+        self.damage_value -- Calculated using setStructuralDamageValueHAZUS()
         """
         # Attributes
         self.owner = owner  # Owner of building as Household() entity
@@ -48,7 +61,6 @@ class Building(object):
         self.latitude = latitude
         self.longitude = longitude
         self.stock = building_stock # The building stock FilterStor the building belongs to
-
         
         # Outputs and intermediate variables
         self.inspected = False  # Whether the building has been inspected
@@ -57,7 +69,6 @@ class Building(object):
         
         # Use HAZUS lookup tables to assign damage value.
         self.damage_value = setStructuralDamageValueHAZUS(self)
-        # self.damage_value = setStructuralDamageValueHAZUS(value, occupancy, damage_state)
         self.damage_value_start = self.damage_value # Archive original damage value
 
 class SingleFamilyResidential(Building):
@@ -70,11 +81,27 @@ class SingleFamilyResidential(Building):
                     latitude = None, value = None, cost = None, area = None,
                     bedrooms = None, bathrooms = None, listed = False, damage_state = None,
                     building_stock = None):
-        """Run initial methods for defining building attributes.
-
+        """
         Keyword Arguments:
-        env -- Pointer to SimPy env environment.
-        building -- A dataframe row with required building attributes.
+        owner -- entities.Owner or subclass that represents building owner.
+        occupancy -- The buildings occupancy. DESaster currently supports SFR and mobile home.
+        address -- Building's address
+        longitude -- Building's longitude
+        latitude -- Building's latitude
+        value -- Building's value in $
+        cost -- Building's monthly cost in $ (e.g., mortgage or rent)
+        bedrooms -- Building's number of bedrooms
+        bathrooms -- Building's number of bathrooms
+        area -- Building's area in sf
+        listed -- Whether building is for rent or sale.
+        damage_state -- Building's damage state (e.g., HAZUS damage states)
+        building_stock -- The the building's associated building stock FilterStore
+        
+        Modified Attributes:
+        self.damage_value -- Calculated using setStructuralDamageValueHAZUS()
+        
+        Inheritance:
+        structures.Building
         """
 
         Building.__init__(self, owner, occupancy, address, longitude,

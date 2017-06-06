@@ -2,10 +2,10 @@
 """
 desaster package initiation file.
 
-@author: Scott Miles (milessb@uw.edu), Derek Huling
+@author: Scott Miles (milessb@uw.edu)
 """
 from desaster import entities, structures, hazus, financial, technical, policies, io, distributions
-from desaster.io import importEntities, importSingleFamilyResidenceStock
+from desaster.io import importEntities, importSingleFamilyResidenceStock, output_summary
 from desaster.distributions import ProbabilityDistribution
 from desaster.hazus import setStructuralDamageValueHAZUS, setContentsDamageValueHAZUS
 from desaster.entities import Entity, Owner, Household, OwnerHousehold, RenterHousehold, Landlord

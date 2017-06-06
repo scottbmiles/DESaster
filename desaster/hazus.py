@@ -3,17 +3,15 @@
 Module for parameterizing DESaster variables based on HAZUS associated lookup
 tables.
 
+Currently input data must use format laid out in 
+"../inputs/hazus_parameters.xlsx". Any changes to lookup values should
+maintain the format. However, currently there is no better alternative for
+quick damage valuation based on building occupancy type. When there is, 
+can be revised to take different files for different lookup tables etc.
+
 @author: Scott Miles
 """
 import pandas as pd
-
-#### HAZUS LOOKUP TABLE INPUT/OUTPUT #########################################
-# Currently input data must use format laid out in 
-# "../inputs/hazus_parameters.xlsx". Any changes to lookup values should
-# maintain the format. However, currently there is no better alternative for
-# quick damage valuation based on building occupancy type. When there is, 
-# can be revised to take different files for different lookup tables etc.
-# ############################################################################
 
 # Excel workbook with lookup tables from HAZUS-MH earthquake model technical
 # manual. (http://www.fema.gov/media-library/assets/documents/24609)
@@ -87,8 +85,3 @@ def setContentsDamageValueHAZUS(building):
         return 0.25*(building.area*30)
     if building.damage_state.lower() == 'complete':
         return 0.5*(building.area*30)
-
-        
-    
-
-##### END HAZUS LOOKUP TABLE INPUT/OUTPUT ############################

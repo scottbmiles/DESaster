@@ -4,8 +4,13 @@ Module of classes that implement compound policies for custom arrangements of
 DESaster recovery programs.
 
 Classes:
-RecoveryPolicy
+FinancialRecoveryPolicy
 Insurance_IA_Loan_Sequential
+Insurance_IA_SBA_Sequential
+Insurance_IA_SBA_Parallel
+Insurance_SBA_Sequential
+Insurance_SBA_Parallel
+RepairVacantBuilding
 
 @author: Scott Miles (milessb@uw.edu)
 """
@@ -15,7 +20,23 @@ from desaster.entities import Owner
 
 
 class FinancialRecoveryPolicy(object):
+    """Base class for creating financial recovery policies. Serves to make
+    pretty UML diagrams using pyreverse. And contains some story writing methods.
+    
+    Methods:
+    __init__(self, env):
+    policy(self):
+    writeHadEnough(self, entity):
+    writeCompletedWithoutEnough(self, entity, search_duration):
+    writeCompletedWithEnough(self, entity, search_duration):
+    
+    """
     def __init__(self, env):
+        """ Initiate FinancialRecoveryPolicy object.
+        
+        Keyword Arguments:
+        self.env -- The associated simpy.Environment
+        """
         self.env = env
     def policy(self):
         pass
@@ -42,14 +63,33 @@ class FinancialRecoveryPolicy(object):
                 )
 
 class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
+    """ A class that organizes funding requests to insurance, FEMA, and SBA in 
+    sequential order. Also implements patience for waiting for funding.
+    
+    Methods:
+    __init__
+    policy
+
+    Inheritance:
+    FinancialRecoveryPolicy
+    """
     def __init__(self, env):
+        """ Initiate Insurance_IA_SBA_Sequential object.
+        
+        Keyword Arguments:
+        self.env -- The associated simpy.Environment
+        """
         FinancialRecoveryPolicy.__init__(self, env)
+    
     def policy(self, insurance_program, fema_program, sba_program, entity,
                         search_patience):
-        """A process (generator) representing entity search for money to repair or
-        repair home based on requests for insurance and/or FEMA aid and/or loan.
-
-        env -- Pointer to SimPy env environment.
+        """A process (generator) representing entity search for money to repair
+        home based on requests for insurance and/or FEMA aid and/or loan.
+        
+        Keyword Arguments:
+        insurance_program -- A OwnersInsurance object.
+        fema_program -- A HousingAssistanceFEMA object.
+        sba_program -- A RealPropertyLoanSBA object.
         entity -- A single entities object, such as Household().
         search_patience -- The search duration in which the entity is willing to
                             wait to find a new home. Does not include the process of
@@ -60,8 +100,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
         entity.story -- Process outcomes appended to story.
         money_search_start -- Record time money search starts
         entity.gave_up_funding_search -- Record time money search stops
-        entity.recovery_funds.level -- Technically changed (increased) by functions
-                                    called within.
+        entity.recovery_funds.level -- Increase recovery funds amount in $
         """
         # Calculate the time that money search patience ends
         # patience_end = money_search_start + search_patience
@@ -181,14 +220,32 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
         self.writeCompletedWithEnough(entity, search_duration)
                 
 class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
+    """ A class that organizes funding requests to insurance, FEMA, and SBA in 
+    parallel. Also implements patience for waiting for funding.
+
+    Methods:
+    __init__
+    policy
+
+    Inheritance:
+    FinancialRecoveryPolicy
+    """
     def __init__(self, env):
+        """ Initiate Insurance_IA_SBA_Sequential object.
+        
+        Keyword Arguments:
+        self.env -- The associated simpy.Environment
+        """
         FinancialRecoveryPolicy.__init__(self, env)
     def policy(self, insurance_program, fema_program, sba_program, entity,
                         search_patience):
         """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or SBA loan.
 
-        env -- Pointer to SimPy env environment.
+        Keyword Arguments:
+        insurance_program -- A OwnersInsurance object.
+        fema_program -- A HousingAssistanceFEMA object.
+        sba_program -- A RealPropertyLoanSBA object.
         entity -- A single entities object, such as Household().
         search_patience -- The search duration in which the entity is willing to
                             wait to find a new home. Does not include the process of
@@ -199,8 +256,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
         entity.story -- Process outcomes appended to story.
         money_search_start -- Record time money search starts
         entity.gave_up_funding_search -- Record time money search stops
-        entity.recovery_funds.level -- Technically changed (increased) by functions
-                                    called within.
+        entity.recovery_funds.level -- Increase recovery funds amount in $
         """
 
         # Return out of function if entity has enough money to repair and does not
@@ -293,8 +349,23 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
         self.writeCompletedWithEnough(entity, search_duration)
 
 class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
+    """ A class that organizes funding requests to insurance and SBA in 
+    sequential order. Also implements patience for waiting for funding.
+
+    Methods:
+    __init__
+    policy
+
+    Inheritance:
+    FinancialRecoveryPolicy
+    """
     def __init__(self, env):
         FinancialRecoveryPolicy.__init__(self, env)
+        """ Initiate Insurance_IA_SBA_Sequential object.
+        
+        Keyword Arguments:
+        self.env -- The associated simpy.Environment
+        """
     def policy(self, insurance_program, sba_program, entity,
                         search_patience):
         """A process (generator) representing entity search for money to repair or
@@ -306,12 +377,21 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
                             wait to find a new home. Does not include the process of
         write_story -- Boolean indicating whether to track a entitys story.
 
+        Keyword Arguments:
+        insurance_program -- A OwnersInsurance object.
+        fema_program -- A HousingAssistanceFEMA object.
+        sba_program -- A RealPropertyLoanSBA object.
+        entity -- A single entities object, such as Household().
+        search_patience -- The search duration in which the entity is willing to
+                            wait to find a new home. Does not include the process of
+                            securing money.
+        write_story -- Boolean indicating whether to track a entitys story.
+
         Returns or Attribute Changes:
         entity.story -- Process outcomes appended to story.
         money_search_start -- Record time money search starts
         entity.gave_up_funding_search -- Record time money search stops
-        entity.recovery_funds.level -- Technically changed (increased) by functions
-                                    called within.
+        entity.recovery_funds.level -- Increase recovery funds amount in $
         """
         # Return out of function if entity has enough money to repair and does not
         # have any insurance coverage.
@@ -406,14 +486,32 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
         self.writeCompletedWithEnough(entity, search_duration)
 
 class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
+    """ A class that organizes funding requests to insurance and SBA in 
+    parallel. Also implements patience for waiting for funding.
+
+    Methods:
+    __init__
+    policy
+
+    Inheritance:
+    FinancialRecoveryPolicy
+    """
     def __init__(self, env):
         FinancialRecoveryPolicy.__init__(self, env)
+        """ Initiate Insurance_IA_SBA_Sequential object.
+        
+        Keyword Arguments:
+        self.env -- The associated simpy.Environment
+        """
     def policy(self, insurance_program, sba_program, entity,
                         search_patience):
         """A process (generator) representing entity search for money to repair or
         repair home based on requests for insurance and/or SBA loan.
 
-        env -- Pointer to SimPy env environment.
+        Keyword Arguments:
+        insurance_program -- A OwnersInsurance object.
+        fema_program -- A HousingAssistanceFEMA object.
+        sba_program -- A RealPropertyLoanSBA object.
         entity -- A single entities object, such as Household().
         search_patience -- The search duration in which the entity is willing to
                             wait to find a new home. Does not include the process of
@@ -424,8 +522,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
         entity.story -- Process outcomes appended to story.
         money_search_start -- Record time money search starts
         entity.gave_up_funding_search -- Record time money search stops
-        entity.recovery_funds.level -- Technically changed (increased) by functions
-                                    called within.
+        entity.recovery_funds.level -- Increase recovery funds amount in $
         """
 
         # Return out of function if entity has enough money to repair and does not
@@ -536,36 +633,46 @@ class RepairVacantBuilding(object):
         Keyword Arguments:
         env -- simpy.Envionment() object
 
-        Inheritance:
-        Subclass of policies.RecoveryPolicy()
+        %%%% Eventually might implement a TechnicalRecoveryPolicy class. %%%
+        
         """
-        ## %%%% Eventually might implement a TechnicalRecoveryPolicy class. %%%
-
     def policy(self, inspection_program, assessment_program, permit_program,
-                repair_program, entity, building_stock, repair_probability = 1.0, wait_time = 0.0):
-        """Process to repair a part or an entire building stock (FilterStore) based
-        on available contractors and specified proportion/probability.
+                repair_program, entity, building_stock, repair_probability = 1.0, 
+                wait_time = 0.0):
+        """Process to do expedited repairs on a vacant/listed buildings based
+        on available contractors, specified proportion/probability, and wait time.
 
         Keyword Arguments:
+        inspection_program -- A technical.InspectionProgram object
+        assessment_program -- A technical.EngineeringAssessment object
+        permit_program -- A technical.PermitProgram object.
+        repair_program -- A technical.RepairProgram object.
+        entity -- A entities.Owner or subclass that serves as t
         building_stock -- A SimPy FilterStore that contains one or more
-           structures.BuiltCapital(), structures.Building(), or structures.Residence()
+           structures.Building() (or subclasses) objects
            objects that represent vacant structures for purchase.
-        repair_probability -- A value to set approximate percentage of number of structures
-           in the stock to repair.
+        repair_probability -- A value to set probability of successful repair.
         wait_time -- Duration that simulates time to get recovery assistance.
 
         Attribute Changes:
-        get_building.damage_state -- Changed to 'None' for selected structures.
-        get_building.damage_value = Changed to $0.0 for selected structures.
+        inspection_put 
+        inspection_get
+        permit_put
+        permit_get
+        assessment_put
+        assessment_get
+        repair_put
+        repair_get
+        damage_value
+        damage_state
         """
-
-        if entity.property.damage_state != 'None':
-
+        
+        if entity.property.damage_state != 'None' and entity.property.listed:
             if random.uniform(0, 1.0) > repair_probability:
                 return
 
             get_building = yield building_stock.get(lambda getBuilding:
-                                                        getBuilding.__dict__ == entity.property.__dict__
+                                                    getBuilding.__dict__ == entity.property.__dict__
                                                 )
 
             yield self.env.process(inspection_program.process(entity.property, entity))

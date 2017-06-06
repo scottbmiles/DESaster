@@ -18,6 +18,15 @@ class FinancialRecoveryProgram(object):
     either directly or indirectly. The process for FinancialRecoveryProgram is
     useless and should only be used as an example of how to implement a process in a
     subclass of  FinancialRecoveryProgram.
+    
+    Methods:
+    __init__
+    process(self, entity = None, callbacks = None):
+    writeCompleted(self, entity):
+    writeGaveUp(self, entity, recovery_program):
+    writeWithdraw(self, entity, recovery_program):
+    
+    
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf')):
         """Initiate financial recovery program attributes.
@@ -52,7 +61,7 @@ class FinancialRecoveryProgram(object):
         entity.story -- Entity's story list.
         """
         ###
-        ### The contents of this function are an example of what can be done
+        ### The contents of this method are an example of what can be done
         ### in a subclass of this class. It demonstrates the use of SimPy
         ### Resources and Containiners. The results of the function itself are
         ### useless. It is meant to help create your own function after creating
@@ -107,11 +116,15 @@ class FinancialRecoveryProgram(object):
                     
 
 class HousingAssistanceFEMA(FinancialRecoveryProgram):
-    """A class for operationalizing FEMA's individual assistance grant program.
-    The class process enforces a maximum budget for the program (after which
-    no further grants can be made, as well as a maximum outlay that any
-    applicant is allowed to receive.
-
+    """A class for operationalizing FEMA's individual assistance grant program 
+    (for real property damage aspects only).
+    
+    Methods:
+    __init__
+    process(self, entity, callbacks = None):
+    writeDeadline(self, entity):
+    writeRequest(self, entity):
+    writeReceived(self, entity):
 
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
@@ -125,7 +138,12 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
         max_outlay -- The maximum amount ($) of assistance that any one entity can receive
-
+        declaration_duration -- A value indicating how many days after the event
+                                a federal disaster was declared.
+        deadline -- A value indicating how many days after the
+                                federal disaster declaration was made the applications
+                                must be submitted.
+        
         Inheritance:
         Subclass of financial.FinancialRecoveryProgram()
         """
@@ -245,10 +263,20 @@ class OwnersInsurance(FinancialRecoveryProgram):
     The class process enforces a deductible to determine how much, if any, the
     insurance claim payout will be.
 
+    Methods:
+    __init__
+    process(self, entity, callbacks = None):
+    writeNoInsurance(self, entity):
+    writeRequest(self, entity):
+    writeDeductible(self, entity):
+    writeReceived(self, entity):
+    
+    Inheritance:
+    financial.FinancialRecoveryProgram
     """
     def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
                 deductible=0.0):
-        """Initiate owners insurance recovery program attributes.
+        """Initiate owners insurance recovery program.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
@@ -261,8 +289,6 @@ class OwnersInsurance(FinancialRecoveryProgram):
         deductible -- Float[0,1]. Ratio of building value that must be paid by entity
                         as a deductible before receiving a claim payout.
 
-        Inheritance:
-        Subclass of financial.FinancialRecoveryProgram()
         """
         FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
 
@@ -372,30 +398,47 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 )
 
 class RealPropertyLoanSBA(FinancialRecoveryProgram):
-    """A class to represent an SBA real property loan program. The class process enforces a maximum
-    loan amount. 
+    """A class to represent an SBA real property loan program.
 
+    Methods:
+    __init__
+    process(self, entity, callbacks = None):
+    setLoanAmount(self, entity):
+    writeDeadline(self, entity):
+    writeApplied(self, entity):
+    writeDeniedCredit(self, entity):
+    writeInspected(self, entity):
+    writeFirstDisbursement(self, entity):
+    writeSecondDisbursement(self, entity):
+    writeOnlyDisbursement(self, entity):
+    
+    Inheritance:
+    financial.FinancialRecoveryProgram
     """
     def __init__(self, env, duration_distribution, inspectors=float('inf'),
                 officers=float('inf'), budget = float('inf'), max_loan = float('inf'),
                 min_credit = 0, debt_income_ratio = 0.2, loan_term = 30.0,
                 interest_rate = 0.04, declaration_duration = 0, deadline = 60):
 
-        """Initiate owner's home loan recovery program attributes.
+        """Initiate SBA real property loan recovery program.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration_distribution -- io.ProbabilityDistribution() object
-        inspectors -- Integer, indicating number of staff assigned to the programs
-        officers --
+        inspectors -- Integer, indicating number of building inspectors assigned to the programs
+        officers -- Number of program staff that reviews and approves loan applications
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
         max_loan -- The maximum amount ($) of loan that any one entity can receive
-        min_debt_income_ratio -- %%%% NOT IMPLEMENTED BUT COULD USE FOR LOW CREDIT SCORE ENTITIES
-        min_credit --
+        debt_income_ratio -- Monthly SBA loan payment / entity income ; used to estimate
+                                loan amount.
+        min_credit -- A FICO-like credit score used as threshold for approving loan.
+        declaration_duration -- A value indicating how many days after the event
+                                a federal disaster was declared.
+        deadline -- A value indicating how many days after the
+                                federal disaster declaration was made the applications
+                                must be submitted.
 
-        Inheritance:
-        Subclass of financial.FinancialRecoveryProgram()
         """
         FinancialRecoveryProgram.__init__(self, env, duration_distribution, budget)
 
@@ -413,7 +456,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
         self.declaration_duration = declaration_duration
 
     def process(self, entity, callbacks = None):
-        """Define process for entity to submit request for loan (e.g., from SBA).
+        """Define process for entity to submit request for SBA loan.
 
         entity -- An entity object from the entities.py module, for example
                     entities.Household().

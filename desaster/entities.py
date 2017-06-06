@@ -11,7 +11,7 @@ OwnerHousehold(Owner, Household)
 RenterHousehold(Entity, Household)
 Landlord(Owner)
 
-@author: Scott Miles (milessb@uw.edu), Derek Huling
+@author: Scott Miles (milessb@uw.edu)
 """
 from desaster.structures import SingleFamilyResidential, Building
 from desaster.hazus import setContentsDamageValueHAZUS
@@ -20,20 +20,26 @@ from simpy import Container
 
 class Entity(object):
     """A base class for representing entities, such as households, businesses,
-    agencies, NGOs, etc. At the moment moment the only attribute in common for
-    all entities are having a name and the potential to record the story of their
-    recovery events.
+    agencies, NGOs, etc.
 
     Methods:
     __init__(self, env, name, write_story = False)
+    story_to_text()
+    
     """
     def __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, write_story = False):
-        """
+        """Initiate an Entity object
 
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
         name -- A string indicating the entities name.
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
         write_story -- Boolean indicating whether to track an entity's story.
+        
+        Modified Attributes
+        self.recovery_funds -- initiated with value of self.savings
         """
         self.env = env
 
@@ -61,18 +67,15 @@ class Entity(object):
         except:
             self.recovery_funds = Container(env, init=1)  # init must be > 0
 
-        
-
     def story_to_text(self):
         """Join list of story strings into a single story string."""
         return ''.join(self.story)
 
 class Owner(Entity):
     """An class that inherits from the Entity() class to represent any entity
-    that owns property. Such entities require having attributes of insurance and
-    savings (to facilate repairing or replacing the property). An owner does not
-    necessarily have a residence (e.g., landlord). For the most part this is class
-    is to define subclasses with Owner() attributes.
+    that owns property.  An owner does not necessarily have a residence (e.g., 
+    landlord). For the most part this is class is to define subclasses with Owner() 
+    attributes.
 
     Methods:
     __init__(self, env, name, attributes_df, building_stock, write_story = False)
@@ -84,18 +87,22 @@ class Owner(Entity):
 
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
-        attributes_df -- Dataframe row w/ entity input attributes.
-        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-                        The owner's property is added to the occupied building stock.
-        write_story -- Boolean indicating whether to track the entity's story.
+        name -- A string indicating the entities name.
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
+        real_property -- A building object, such as structures.SingleFamilyResidential()
 
+        write_story -- Boolean indicating whether to track an entity's story.
+        
+        
         Inheritance:
         Subclass of entities.Entity()
         """
         Entity.__init__(self, env, name, savings, insurance, credit, write_story)
 
         # Attributes
-        self.property = real_property #
+        self.property = real_property # A building object from desaster.structures
 
         # Owner env outputs
         self.inspection_put = None  # Time put request in for house inspection
@@ -114,30 +121,41 @@ class Owner(Entity):
         self.gave_up_funding_search = None  # Time entity gave up on some funding
                                             # process; obviously can't keep track
                                             # of multiple give ups
-        self.prior_properties = []
+        self.prior_properties = [] # A list to keep track of entity's previous properties
 
 
 
 class Household(Entity):
     """Define a Household() class to represent a group of persons that reside
-    together as a single dwelling unit. A Household() object can not own property,
+    together in a single dwelling unit. A Household() object can not own property,
     but does have a residence. For the most part this is class is to define
-    subclasses with Household() attributes.
+    subclasses with Household() attributes. Also includes methods for writing 
+    household stories.
 
     Methods:
     __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, write_story = False)
+    writeResides(self):
+    writeResides(self):
+    writeResides(self):
+    writeOccupy(self):  
+
     """
-    def __init__(self, env, name = None, income = float('inf'), savings = float('inf'), insurance = 1.0, credit = 850,
-                    residence = None, write_story = False):
+    def __init__(self, env, name = None, income = float('inf'), savings = float('inf'), 
+                    insurance = 1.0, credit = 850, residence = None, write_story = False):
         """Initiate a entities.Household() object.
 
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
-        name -- A string indicating the entity's name.
-        attributes_df -- Dataframe row w/ entity input attributes.
+        name -- A string indicating the entities name.
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
         residence -- A building object, such as structures.SingleFamilyResidential()
                     that serves as the entity's temporary or permanent residence.
         write_story -- Boolean indicating whether to track a entitys story.
+        
+        Returns or Attribute Changes:
+        self.story -- If write_story == True, append entity story strings
         """
         Entity.__init__(self, env, name, savings, insurance, credit, write_story)
 
@@ -190,28 +208,41 @@ class OwnerHousehold(Owner, Household):
     entities.Household() classes. It can own property and has a residence, which
     do not have to be the same. The OwnerHousehold() class includes methods to
     look for a new home to purchase (property), as well as to occupy a residence
-    (not necessarily it's property).
+    (not necessarily it's property). Also includes methods to write stories.
 
     Methods:
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_distribution, callbacks = None)
+    changeListing(self, listed):
+    writeInitiateOwnerHousehold(self): 
+    writeHomeBuy(self): 
     """
-    def __init__(self, env, name = None, income = float('inf'), savings = float('inf'), insurance = 1.0, credit = 850, real_property = None, write_story = False):
+    def __init__(self, env, name = None, income = float('inf'), savings = float('inf'), 
+                insurance = 1.0, credit = 850, real_property = None, write_story = False):
         """Define entity inputs and outputs attributes.
         Initiate entity's story list string.
 
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
-        attributes_df -- Dataframe row w/ entity input attributes.
-        building_stock -- a SimPy FilterStore that acts as an occupied housing stock
-        write_story -- Boolean indicating whether to track a entitys story.
+        name -- A string indicating the entities name.
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
+        real_property -- A building object, such as structures.SingleFamilyResidential()
+        residence -- A building object, such as structures.SingleFamilyResidential()
+                    that serves as the entity's temporary or permanent residence.
+        write_story -- Boolean indicating whether to track an entity's story.
+        
+        Returns or Attribute Changes:
+        self.story -- If write_story == True, append entity story strings
+        
+        Inheritance:
+        entities.Household()
+        entities.Owner()
         """
         Owner.__init__(self, env, name, savings, insurance, credit, real_property, write_story)
         Household.__init__(self, env, name, income, savings, insurance, credit, self.property, write_story)
 
-        # Attributes
-
-        # Entity outputs
         self.writeInitiateOwnerHousehold()
 
     def replace_home(self, search_stock, duration_distribution, down_payment_pct = 0.10, housing_ratio = 0.3,
@@ -222,20 +253,31 @@ class OwnerHousehold(Owner, Household):
         a new home.
 
         Keyword Arguments:
-        search_patience -- The search duration in which the entity is willing to wait
-                            to find a new home. Does not include the process of
-                            securing money.
+        
         search_stock -- A SimPy FilterStore that contains one or more
                         residential building objects (e.g., structures.SingleFamilyResidential)
                         that represent homes owner is searching to purchase.
-                        
-        price_pct -- # Ratio of existing home value to maximum desirable new home value
+        duration_distribution -- A distributions.ProbabilityDistribution object, KDE_Distribution object
+                                    or other type from desaster.distributions
+        down_payment_pct -- Percentage of home value required for a down payment
+        housing_ratio -- Maximum percentage of monthly income for acceptable monthly costs
+        price_pct -- Ratio of existing home value to maximum desirable new home value
+        area_pct -- Ratio of existing home area to maximum desirable new home area
+        rooms_tol -- Number of fewer or additional bedroms compared to existing home 
+                    area that is acceptable for new home
+        search_patience -- The search duration in which the entity is willing to wait
+                            to find a new home. Does not include the process of
+                            securing money.
 
         Returns or Attribute Changes:
         self.story -- Process outcomes appended to story.
         self.home_put -- Record time home search starts
         self.home_get -- Record time home search stops
         self.residence -- Potentially assigned a new residence object.
+        self.property -- Potentially assigned a new property object.
+        self.property.list -- Potentially set prior property to True and new one to False
+        self.prior_residences -- Potentially append a prior residence object.
+        self.prior_properties -- Potentially assigned a prior property object.
         self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
         self.story -- If write_story == True, append entity story strings
@@ -342,13 +384,12 @@ class OwnerHousehold(Owner, Household):
         yield self.residence.stock.put(get_home)
     
     def occupy(self, duration_distribution, callbacks = None):
-        """Define process for occupying a residence. Currently the method only
-        allows for the case of occupying a property (assigning property as its
-        residence). Potentially, eventually need logic that allows for occupying residences
-        that are not it's property.
+        """Define process for occupying a residence--e.g., amount of time it takes
+        to move into a new residence. Currently the method doesn't do much but
+        make story writing simpler.
 
         Keyword Arguments:
-        duration_distribution -- A io.DurationProbabilityDistribution object that defines
+        duration_distribution -- A distributions.ProbabilityDistribution object that defines
                                 the duration related to how long it takes the entity
                                 to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
@@ -357,7 +398,8 @@ class OwnerHousehold(Owner, Household):
 
         Returns or Attribute Changes:
         self.story -- Summary of process outcome as string.
-        self.residence -- Assign the owner's property object as residence.
+        self.occupy_put -- Recording beginning of occupany duration.
+        self.occupy_get -- Record time of occupancy
         """
         self.occupy_put = self.env.now
 
@@ -395,32 +437,40 @@ class OwnerHousehold(Owner, Household):
 class RenterHousehold(Household):
     """The RenterHousehold() class has attributes of both entities.Entity() and
     entities.Household() classes. The class does not have associated property, but
-    does have an associated landlord (entities.Landlord() object). So RenterHousehold()
-    objects can have both residences and landlords assigned and unassigned to
-    represent, e.g., evictions.
+    does have an associated landlord (entities.Landlord() object) that owns their 
+    residence. So RenterHousehold() objects can have both residences and landlords 
+    assigned and unassigned to represent, e.g., evictions.
 
     Methods:
     replace_home(self, search_patience, building_stock)
     occupy(self, duration_distribution, callbacks = None)
+    changeListing(self, listed):
+    writeInitiateRenterHousehold(self): 
+    writeHomeRent(self):  
     """
     def __init__(self, env, name = None, income = float('inf'), savings = float('inf'), insurance = 1.0, credit = 850, 
                     residence = None, landlord = None, write_story = False):
-        """
+        """Define entity inputs and outputs attributes.
+        Initiate entity's story list string.
+
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
         name -- A string indicating the entities name.
-        attributes_df -- Dataframe row w/ entity input attributes.
-        building_stock -- a SimPy FilterStore that acts as an occupied rental stock
-        write_story -- Boolean indicating whether to track a entitys story.
-
-        Changed Attributes:
-        self.landlord -- Assigns a entities.Landlord() object based on attributes_df
-        self.story -- If write_story == True, append story strings.
-
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
+        residence -- A building object, such as structures.SingleFamilyResidential()
+                    that serves as the entity's temporary or permanent residence.
+        landlord -- An Owner object that represent's the renter's landlord.
+        write_story -- Boolean indicating whether to track an entity's story.
+        
+        Returns or Attribute Changes:
+        self.story -- If write_story == True, append entity story strings
+        self.landlord -- Record renter's landlord
+        
         Inheritance:
         Subclass of entities.Household()
         """
-
         # Attributes
         self.landlord = landlord
 
@@ -433,25 +483,40 @@ class RenterHousehold(Household):
                 area_pct = 0.9, rooms_tol = 0, notice_time = 20.0,
                 search_patience = float('inf')):
 
-        """A process (generator) representing RenterHousehold search for rental housing
-        based on housing preferences, available rental stock, and patience for finding
+        """A process (generator) representing entity search for permanent housing
+        based on housing preferences, available housing stock, and patience finding
         a new home.
 
         Keyword Arguments:
+    
+        search_stock -- A SimPy FilterStore that contains one or more
+                        residential building objects (e.g., structures.SingleFamilyResidential)
+                        that represent homes owner is searching to purchase.
+        duration_distribution -- A distributions.ProbabilityDistribution object, KDE_Distribution object
+                                    or other type from desaster.distributions
+        down_payment_pct -- Percentage of home value required for a down payment
+        housing_ratio -- Maximum percentage of monthly income for acceptable monthly costs
+        move_in_ratio -- A float value that represents move in cost of a new residence
+                        as a ratio of the residence's monthly cost (rent).
+        area_pct -- Ratio of existing home area to maximum desirable new home area
+        rooms_tol -- Number of fewer or additional bedroms compared to existing home 
+                    area that is acceptable for new home
+        notice_time -- A duration that represents the amount of time between identifying
+                        a desirable listing and the availability of the new residence.
         search_patience -- The search duration in which the entity is willing to wait
                             to find a new home. Does not include the process of
                             securing money.
-        building_stock -- A SimPy FilterStore that contains one or more
-                        residential building objects (e.g., structures.SingleFamilyResidential
-                        that represent vacant homes for rent.
 
         Returns or Attribute Changes:
         self.story -- Process outcomes appended to story.
         self.home_put -- Record time home search starts
         self.home_get -- Record time home search stops
-        self.residence -- Potentially assigned a new structures.Residence() object.
+        self.residence -- Potentially assigned a new residence object.
+        self.property.listed -- Potentially set prior property to True and new one to False
+        self.prior_residences -- Potentially append a prior residence object.
         self.gave_up_home_search -- Set with env.now to indicate if and when
                                     search patience runs out.
+        self.story -- If write_story == True, append entity story strings
         """
         # Record when housing search starts
         # Calculate the time that housing search patience ends
@@ -502,8 +567,6 @@ class RenterHousehold(Household):
 
         # Withdraw 10% down payment; wait for more funds if don't have it yet
         move_in_cost = move_in_ratio * home_search_outcome[new_home].monthly_cost
-        
-        print(home_search_outcome[new_home].address, move_in_cost, self.recovery_funds.level)
         
         get_move_in_cost = self.recovery_funds.get(move_in_cost)
         
@@ -557,15 +620,17 @@ class RenterHousehold(Household):
         related to, e.g., rent increases.
 
         Keyword Arguments:
-        duration_distribution -- A io.DurationProbabilityDistribution object that defines
-                                the duration related to how long it takes the entity
-                                to occupy a dwelling.
+        duration_distribution -- A distribution.ProbabilityDistribution object or 
+                                similar that defines the duration related to how 
+                                long it takes the entity to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
                         completion of this process.
 
 
         Returns or Attribute Changes:
         self.story -- Summary of process outcome as string.
+        self.occupy_put -- Recording beginning of occupany duration.
+        self.occupy_get -- Record time of occupancy
         """
 
         self.occupy_put = self.env.now
@@ -606,8 +671,12 @@ class RenterHousehold(Household):
 class Landlord(Owner):
     """A Landlord() class is a subclass of entiites.Owner() but has an attributes
     that allows it to have a tenant (e.g., entities.RenterHousehold). Otherwise,
-    currently the same as entities.Owner().
-
+    similar to entities.Owner().
+    
+    Methods:
+    evict_tenant(self):
+    writeInitiateLandlord(self):
+    writeEvicted(self):
     """
     def __init__(self, env, name = None, savings = 0, insurance = 0, credit = 0, real_property = None, 
                 tenant = None, write_story = False):
@@ -617,12 +686,17 @@ class Landlord(Owner):
         Keyword Arguments:
         env -- Pointer to SimPy env environment.
         name -- A string indicating the entities name.
-        tenant -- An entity object as the landlord's tenant (e.g., entities.RenterHousehold)
-        attributes_df -- Dataframe row w/ entity input attributes.
-        building_stock -- a SimPy FilterStore that acts as an occupied building stock.
-                        The owner's property is added to the occupied building stock.
-        write_story -- Boolean indicating whether to track a entitys story.
-
+        savings -- Amount of entity savings in $ 
+        insurance -- Hazard-specific insurance coverage: coverage / residence.value
+        credit -- A FICO-like credit score
+        real_property -- A building object, such as structures.SingleFamilyResidential()
+        tenant -- A RenterHousehold object that serves landlord's tenant
+        write_story -- Boolean indicating whether to track an entity's story.
+        
+        Modified Attributes:
+        self.tenant -- Set landlord's tenant
+        self.story -- Initiate landlord's story 
+        
         Inheritance:
         Subclass of entities.Owner()
         """
@@ -633,6 +707,12 @@ class Landlord(Owner):
 
         self.writeInitiateLandlord()
         
+    def evict_tenant(self):
+        self.tenant.prior_residences.append(self.tenant.residence)
+        self.tenant.residence = None
+        
+        self.writeEvicted()
+        
     def writeInitiateLandlord(self):
         if self.write_story:
             # Set story with non-disaster attributes.
@@ -640,5 +720,13 @@ class Landlord(Owner):
                 '{0} rents out a {1} bedroom {2} at {3} worth ${4:,.0f}. '.format(
                 self.name, self.property.bedrooms, self.property.occupancy.lower(),
                 self.property.address, self.property.value)
-                                )    
+                                )  
+    def writeEvicted(self):
+        if self.tenant.write_story == True:
+            self.tenant.story.append(
+            '{0} was evicted because the {1} had {2} damage. '.format(
+                                            self.tenant.name, self.property.occupancy.lower(),
+                                            self.property.damage_state.lower()
+                                                                                    )
+                                        )  
 
