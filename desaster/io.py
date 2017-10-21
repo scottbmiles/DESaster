@@ -343,6 +343,8 @@ def households_to_df(entities):
             i.occupancy = i.prior_residences[0].occupancy
             i.owner = i.prior_residences[0].owner
             i.damage_value_start = i.prior_residences[0].damage_value_start
+            i.recovery_limit_state_start = i.prior_residences[0].recovery_limit_state_start
+            i.recovery_limit_state = i.prior_residences[0].recovery_limit_state
             i.assessment = i.prior_residences[0].assessment
             
         except IndexError:
@@ -363,6 +365,8 @@ def households_to_df(entities):
             i.occupancy = i.residence.occupancy
             i.owner = i.residence.owner
             i.damage_value_start = i.residence.damage_value_start
+            i.recovery_limit_state_start = i.residence.recovery_limit_state_start
+            i.recovery_limit_state = i.residence.recovery_limit_state
             i.assessment = i.residence.assessment
         
         i.residence = np.nan

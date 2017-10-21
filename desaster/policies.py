@@ -155,7 +155,7 @@ class Insurance_IA_SBA_Sequential(FinancialRecoveryPolicy):
                 find_search_patience = self.env.timeout(patience_remain, value='gave up')
             else:
                 #If no insurance, money search starts after disaster declaration
-                money_search_start = max(fema_program.declaration_duration, self.env.now)
+                money_search_start = max(fema_program.declaration, self.env.now)
                 patience_end = money_search_start + search_patience
                 patience_remain = patience_end - self.env.now
                 
@@ -307,7 +307,7 @@ class Insurance_IA_SBA_Parallel(FinancialRecoveryPolicy):
             # If no insurance, money search starts after disaster declaration
             # Need to check current simulation time again when disaster declaration
             # occurs to determine how much patience remains
-            money_search_start = max(fema_program.declaration_duration, self.env.now)
+            money_search_start = max(fema_program.declaration, self.env.now)
             patience_end = money_search_start + search_patience
             patience_remain = patience_end - self.env.now
             
@@ -450,7 +450,7 @@ class Insurance_SBA_Sequential(FinancialRecoveryPolicy):
                 # If no insurance, money search starts after disaster declaration
                 # Need to check current simulation time again when disaster declaration
                 # occurs to determine how much patience remains
-                money_search_start = max(sba_program.declaration_duration, self.env.now)
+                money_search_start = max(sba_program.declaration, self.env.now)
                 patience_end = money_search_start + search_patience
                 patience_remain = patience_end - self.env.now
                 
@@ -575,7 +575,7 @@ class Insurance_SBA_Parallel(FinancialRecoveryPolicy):
             # If no insurance, money search starts after disaster declaration
             # Need to check current simulation time again when disaster declaration
             # occurs to determine how much patience remains
-            money_search_start = max(sba_program.declaration_duration, self.env.now)
+            money_search_start = max(sba_program.declaration, self.env.now)
             patience_end = money_search_start + search_patience
             patience_remain = patience_end - self.env.now
             

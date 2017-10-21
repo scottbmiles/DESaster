@@ -27,27 +27,27 @@ class TechnicalRecoveryProgram(object):
     subclass of TechnicalRecoveryProgram.
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, entity = None)
     writeCompleted(self):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf')):
         """Initiate a TechnicalRecoveryProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- distributions.ProbabilityDistribution() object
+        duration -- distributions.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
 
         Attribute Changes:
         self.staff -- A simpy.Resource() object with a capacity == staff arg
-        self.duration_distribution -- A function that is used to calculate random durations
+        self.duration -- A function that is used to calculate random durations
                             for the program process
         """
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
-        self.duration_distribution = duration_distribution
-        # self.duration = duration_distribution.duration()
+        self.duration = duration
+        # self.duration = duration.duration()
 
     def process(self, structure):
         """The process for TechnicalRecoveryProgram for requesting staff and issuing
@@ -109,22 +109,22 @@ class InspectionProgram(TechnicalRecoveryProgram):
     based on inputted damage_state and HAZUS lookup tables.
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
     writeInspected(self, entity, structure):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf')):
         """Initiate an InspectionProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Process to allocate staff and simulate duration associated
@@ -159,7 +159,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
                                             )
         
         # Yield timeout equivalent to time from hazard event to end of inspection.
-        yield self.env.timeout(self.duration_distribution.value())
+        yield self.env.timeout(self.duration.rvs())
 
         # Set attribute of structure to indicate its been inspected.
         structure.inspected = True
@@ -180,10 +180,20 @@ class InspectionProgram(TechnicalRecoveryProgram):
     def writeInspected(self, entity, structure):
         if entity.write_story:
             entity.story.append(
-                            "{0}'s {1} was inspected {2:.0f} days after the event and suffered ${3:,.0f} of damage ({4}). ".format(
+                            "{0}'s {1} was inspected {2:.0f} days after the event. ".format(
                             entity.name.title(), structure.occupancy.lower(),
-                            entity.inspection_get, structure.damage_value,
-                            structure.damage_state.lower()))
+                            entity.inspection_get)
+                            )
+                            
+            entity.story.append(
+                            "It was found to have a damage level of {0} and was {1}. ".format(
+                            structure.damage_state.lower(), 
+                            structure.recovery_limit_state.lower())
+                            )
+            
+            entity.story.append(
+                            "The value of the damage was ${0:,.0f}. ".format(
+                            structure.damage_value))
 
 class EngineeringAssessment(TechnicalRecoveryProgram):
     """A class to represent staff allocation and process duration associated with
@@ -195,22 +205,22 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
     based on inputted damage_state and HAZUS lookup tables.
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
     writeAssessed(self, entity):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), ):
+    def __init__(self, env, duration, staff=float('inf'), ):
         """Initiate EngineeringAssessment object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request an engineering assessment of their
@@ -242,7 +252,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
                                             )
 
         # Yield process timeout for duration necessary to assess entity's structure.
-        yield self.env.timeout(self.duration_distribution.value())
+        yield self.env.timeout(self.duration.rvs())
 
         # Release engineer so it can assess other structures.
         self.staff.release(staff_request)
@@ -275,22 +285,22 @@ class PermitProgram(TechnicalRecoveryProgram):
     repairs or construction.
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
     writePermitted(self, entity):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), ):
+    def __init__(self, env, duration, staff=float('inf'), ):
         """Initiate PermitProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request a building permit for their
@@ -322,7 +332,7 @@ class PermitProgram(TechnicalRecoveryProgram):
                                             )
 
         # Yield process timeout equal to duration required to review permit request.
-        yield self.env.timeout(self.duration_distribution.value())
+        yield self.env.timeout(self.duration.rvs())
 
         # Release permit process to allow them to review other requests.
         self.staff.release(staff_request)
@@ -360,23 +370,23 @@ class RepairProgram(TechnicalRecoveryProgram):
     wood, metal, aggregate, etc.)***
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
     writeRepaired(self, entity, structure):
     writeGaveUp(self, entity, now):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), materials=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), materials=float('inf')):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
         # Simpy Container to represent bulding materials as inventory dollar value
         # of undifferented materials.
@@ -429,7 +439,7 @@ class RepairProgram(TechnicalRecoveryProgram):
             # which imports the HAZUS repair time look up table.
             # Rebuild time is based on occupancy type and damage state.
             # Set the program's distribution.loc (e.g., mean) to repair time
-            self.duration_distribution.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
+            self.duration.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
 
             # Obtain necessary construction materials from regional inventory.
             # materials_cost_pct is % of damage value related to building materials
@@ -437,7 +447,7 @@ class RepairProgram(TechnicalRecoveryProgram):
             yield self.materials.get(materials_cost)
 
             # Yield timeout equivalent to repair time.
-            yield self.env.timeout(self.duration_distribution.value())
+            yield self.env.timeout(self.duration.rvs())
 
             # Release contractors.
             self.staff.release(staff_request)
@@ -484,22 +494,22 @@ class DemolitionProgram(TechnicalRecoveryProgram):
     building demolition.
 
     Methods:
-    __init__(self, env, duration_distribution, staff=float('inf'))
+    __init__(self, env, duration, staff=float('inf'))
     process(self, structure, entity, callbacks = None)
     writeDemolished(self, entity, structure):
     """
-    def __init__(self, env, duration_distribution, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf')):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
 
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration_distribution, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """A process to demolition a building structure based on available contractors.
@@ -530,7 +540,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
                                             )
 
         # Yield timeout equivalent to repair time.
-        yield self.env.timeout(self.duration_distribution.value())
+        yield self.env.timeout(self.duration.rvs())
 
         # Release contractors.
         self.staff.release(staff_request)

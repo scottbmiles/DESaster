@@ -212,7 +212,7 @@ class OwnerHousehold(Owner, Household):
 
     Methods:
     replace_home(self, search_patience, building_stock)
-    occupy(self, duration_distribution, callbacks = None)
+    occupy(self, duration, callbacks = None)
     changeListing(self, listed):
     writeInitiateOwnerHousehold(self): 
     writeHomeBuy(self): 
@@ -245,7 +245,7 @@ class OwnerHousehold(Owner, Household):
 
         self.writeInitiateOwnerHousehold()
 
-    def replace_home(self, search_stock, duration_distribution, down_payment_pct = 0.10, housing_ratio = 0.3,
+    def replace_home(self, search_stock, duration, down_payment_pct = 0.10, housing_ratio = 0.3,
                         price_pct = 1.1, area_pct = 0.9, rooms_tol = 0,
                         search_patience = float('inf')):
         """A process (generator) representing entity search for permanent housing
@@ -257,7 +257,7 @@ class OwnerHousehold(Owner, Household):
         search_stock -- A SimPy FilterStore that contains one or more
                         residential building objects (e.g., structures.SingleFamilyResidential)
                         that represent homes owner is searching to purchase.
-        duration_distribution -- A distributions.ProbabilityDistribution object, KDE_Distribution object
+        duration -- A distributions.ProbabilityDistribution object, KDE_Distribution object
                                     or other type from desaster.distributions
         down_payment_pct -- Percentage of home value required for a down payment
         housing_ratio -- Maximum percentage of monthly income for acceptable monthly costs
@@ -361,7 +361,7 @@ class OwnerHousehold(Owner, Household):
         self.changeListing(listed = False)
         
         # Take a timeout equal to specified time to close home purchase
-        yield self.env.timeout(duration_distribution.value())
+        yield self.env.timeout(duration.rvs())
         
         # Set the newly found home as the entity's property.
         self.property = home_search_outcome[new_home]
@@ -383,13 +383,13 @@ class OwnerHousehold(Owner, Household):
         self.residence.listed = listed
         yield self.residence.stock.put(get_home)
     
-    def occupy(self, duration_distribution, callbacks = None):
+    def occupy(self, duration, callbacks = None):
         """Define process for occupying a residence--e.g., amount of time it takes
         to move into a new residence. Currently the method doesn't do much but
         make story writing simpler.
 
         Keyword Arguments:
-        duration_distribution -- A distributions.ProbabilityDistribution object that defines
+        duration -- A distributions.ProbabilityDistribution object that defines
                                 the duration related to how long it takes the entity
                                 to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
@@ -404,7 +404,7 @@ class OwnerHousehold(Owner, Household):
         self.occupy_put = self.env.now
 
         # Yield timeout equivalent to time required to move back into home.
-        yield self.env.timeout(duration_distribution.value())
+        yield self.env.timeout(duration.rvs())
 
         # Record time got home
         self.occupy_get = self.env.now
@@ -443,7 +443,7 @@ class RenterHousehold(Household):
 
     Methods:
     replace_home(self, search_patience, building_stock)
-    occupy(self, duration_distribution, callbacks = None)
+    occupy(self, duration, callbacks = None)
     changeListing(self, listed):
     writeInitiateRenterHousehold(self): 
     writeHomeRent(self):  
@@ -479,7 +479,7 @@ class RenterHousehold(Household):
 
         self.writeInitiateRenterHousehold()
 
-    def replace_home(self, search_stock, duration_distribution, move_in_ratio = 2.5, housing_ratio = 0.3,
+    def replace_home(self, search_stock, duration, move_in_ratio = 2.5, housing_ratio = 0.3,
                 area_pct = 0.9, rooms_tol = 0, notice_time = 20.0,
                 search_patience = float('inf')):
 
@@ -492,7 +492,7 @@ class RenterHousehold(Household):
         search_stock -- A SimPy FilterStore that contains one or more
                         residential building objects (e.g., structures.SingleFamilyResidential)
                         that represent homes owner is searching to purchase.
-        duration_distribution -- A distributions.ProbabilityDistribution object, KDE_Distribution object
+        duration -- A distributions.ProbabilityDistribution object, KDE_Distribution object
                                     or other type from desaster.distributions
         down_payment_pct -- Percentage of home value required for a down payment
         housing_ratio -- Maximum percentage of monthly income for acceptable monthly costs
@@ -594,7 +594,7 @@ class RenterHousehold(Household):
         self.changeListing(listed = False)
         
         # Take a timeout equal to specified to notice time before can move in
-        yield self.env.timeout(duration_distribution.value())
+        yield self.env.timeout(duration.rvs())
         
         # Set newly found home as residence
         self.residence = home_search_outcome[new_home]
@@ -613,14 +613,14 @@ class RenterHousehold(Household):
         self.residence.listed = listed
         yield self.residence.stock.put(get_home)
         
-    def occupy(self, duration_distribution, callbacks = None):
+    def occupy(self, duration, callbacks = None):
         """A process for a RenterHousehold to occupy a residence.
         At the moment all this does is represent some duration it takes for the
         entity to move into a new residence. Potentially eventually can add logic
         related to, e.g., rent increases.
 
         Keyword Arguments:
-        duration_distribution -- A distribution.ProbabilityDistribution object or 
+        duration -- A distribution.ProbabilityDistribution object or 
                                 similar that defines the duration related to how 
                                 long it takes the entity to occupy a dwelling.
         callbacks -- a generator function containing processes to start after the
@@ -640,7 +640,7 @@ class RenterHousehold(Household):
         ####
 
         # Yield timeout equivalent to time required to move back into home.
-        yield self.env.timeout(duration_distribution.value())
+        yield self.env.timeout(duration.rvs())
 
         # Record time got home
         self.occupy_get = self.env.now

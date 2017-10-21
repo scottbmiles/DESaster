@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script>L_PREFER_CANVAS = false; L_NO_TOUCH = false; L_DISABLE_3D = false;</script>
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster-src.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://rawgit.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css" />
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <style> #map_7331396624034e23a34c4b62c3dfccda {
+                position : relative;
+                width : 100.0%;
+                height: 100.0%;
+                left: 0.0%;
+                top: 0.0%;
+                }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css" />
+</head>
+<body>    
+    
+            <div class="folium-map" id="map_7331396624034e23a34c4b62c3dfccda" ></div>
+        
+</body>
+<script>    
+    
+
+            
+                var southWest = L.latLng(-90, -180);
+                var northEast = L.latLng(90, 180);
+                var bounds = L.latLngBounds(southWest, northEast);
+            
+
+            var map_7331396624034e23a34c4b62c3dfccda = L.map(
+                                  'map_7331396624034e23a34c4b62c3dfccda',
+                                  {center: [43.223628,-90.294633],
+                                  zoom: 18,
+                                  maxBounds: bounds,
+                                  layers: [],
+                                  worldCopyJump: false,
+                                  crs: L.CRS.EPSG3857
+                                 });
+            
+        
+    
+            var tile_layer_2e3ce91d820447d2ba0d52d7788c4c03 = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+
+        
+    
+            var tile_layer_2c8e3b6bac6a4aa3b74cc3e7593fc621 = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+
+        
+    
+            var tile_layer_063708d63a794ed9b98c18a733e2d9c3 = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+
+        
+    
+            var feature_group_4060d51dc9ed4bdfbcba974f209295d4 = L.featureGroup(
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+
+            var marker_229e7d621454472096498b04ad7dc731 = L.marker(
+                [43.224344,-90.296127],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_4060d51dc9ed4bdfbcba974f209295d4);
+            
+    
+
+                var icon_e296c4a48e7f45b08b6c608fb28c0ff7 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'darkred',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_229e7d621454472096498b04ad7dc731.setIcon(icon_e296c4a48e7f45b08b6c608fb28c0ff7);
+            
+    
+            var popup_0d0099e0caa64941a1aee924234f5512 = L.popup({maxWidth: '300'});
+
+            
+                var html_91d943e5a33c436b8bdaa73770208302 = $('<div id="html_91d943e5a33c436b8bdaa73770208302" style="width: 100.0%; height: 100.0%;">Alfred resides at 62 That St. Alfred owns and lives in a 1 room mobile home at 62 That St worth $306,900. Alfred&#39;s mobile home was inspected 10 days after the event and suffered $306,900 of damage (complete). Alfred has no hazard insurance. Alfred applied for a $200,000 SBA loan 30 days after the event.Alfred requested $30,000 from FEMA 30 days after the event. Alfred received $30,000 from FEMA 30 days after the event. SBA inspected Alfred&#39;s home on day 41 after the event. Alfred received an initial SBA loan disbursement of $25,000 41 days after the event. Alfred received a second SBA loan disbursement of $175,000 51 days after the event. It took Alfred 21 days to exhaust financial assistance options but still does not have enough money to cover repairs ($230,100). Alfred started searching for a new mobile home 51 days after the event. On day 61, Alfred purchased a mobile home at 100 New Ave with a value of $300,000. Alfred occupied the mobile home 71 days after the event. </div>')[0];
+                popup_0d0099e0caa64941a1aee924234f5512.setContent(html_91d943e5a33c436b8bdaa73770208302);
+            
+
+            marker_229e7d621454472096498b04ad7dc731.bindPopup(popup_0d0099e0caa64941a1aee924234f5512);
+
+            
+        
+    
+            var feature_group_da33a8ae394d42b2a4bb99c35ce3b9b4 = L.featureGroup(
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+            var feature_group_7bf239e18fbe4404b0cd5920f0e2cada = L.featureGroup(
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+            var feature_group_47a2e11616f4445489b5b3ca7db89ebf = L.featureGroup(
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+            var feature_group_61a632d41a864237a604ef7e317323d4 = L.featureGroup(
+                ).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+            var layer_control_67f2811908b04332ab5fbeb2b843a52e = {
+                base_layers : { "stamenterrain" : tile_layer_2c8e3b6bac6a4aa3b74cc3e7593fc621,"openstreetmap" : tile_layer_063708d63a794ed9b98c18a733e2d9c3, },
+                overlays : { "Complete Damage" : feature_group_4060d51dc9ed4bdfbcba974f209295d4,"Extensive Damage" : feature_group_da33a8ae394d42b2a4bb99c35ce3b9b4,"Moderate Damage" : feature_group_7bf239e18fbe4404b0cd5920f0e2cada,"Slight Damage" : feature_group_47a2e11616f4445489b5b3ca7db89ebf,"No Damage" : feature_group_61a632d41a864237a604ef7e317323d4, }
+                };
+            L.control.layers(
+                layer_control_67f2811908b04332ab5fbeb2b843a52e.base_layers,
+                layer_control_67f2811908b04332ab5fbeb2b843a52e.overlays,
+                {position: 'topright',
+                 collapsed: true,
+                 autoZIndex: true
+                }).addTo(map_7331396624034e23a34c4b62c3dfccda);
+        
+    
+            L.control.fullscreen({
+                position: 'topleft',
+                title: 'Full Screen',
+                titleCancel: 'Exit Full Screen',
+                forceSeparateButton: false,
+                }).addTo(map_7331396624034e23a34c4b62c3dfccda);
+            map_7331396624034e23a34c4b62c3dfccda.on('enterFullscreen', function(){
+                console.log('entered fullscreen');
+            });
+
+        
+</script>

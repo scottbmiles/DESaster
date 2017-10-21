@@ -10,7 +10,7 @@ SingleFamilyResidential(Building)
 @author: Scott Miles (milessb@uw.edu)
 """
 
-from desaster.hazus import setStructuralDamageValueHAZUS
+from desaster.hazus import setStructuralDamageValueHAZUS, setRecoveryLimitState
 import pandas as pd
 import warnings, sys, distutils.util
 
@@ -68,8 +68,12 @@ class Building(object):
         self.assessment = False  # Whether the building has had engineering assessment
         
         # Use HAZUS lookup tables to assign damage value.
-        self.damage_value = setStructuralDamageValueHAZUS(self)
+        setStructuralDamageValueHAZUS(self)
         self.damage_value_start = self.damage_value # Archive original damage value
+        
+        # Set Burton et al. recovery-based limit state
+        setRecoveryLimitState(self)
+        self.recovery_limit_state_start = self.recovery_limit_state # Archive original damage value
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the
