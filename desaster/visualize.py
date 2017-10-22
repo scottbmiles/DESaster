@@ -2,7 +2,8 @@ from bokeh.plotting import figure
 from bokeh.layouts import column, widgetbox, row, gridplot, layout
 from bokeh.models import CustomJS, Slider, ColumnDataSource, ranges
 from bokeh.io import output_file, show
-from bokeh.models import (GMapPlot, GMapOptions, Circle, DataRange1d, PanTool, WheelZoomTool)
+from bokeh.models import (GMapPlot, GMapOptions, Circle, DataRange1d, 
+                            PanTool, WheelZoomTool, HoverTool, SaveTool, ResetTool)
 import numpy as np
 import pandas as pd
 
@@ -87,7 +88,6 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     # Interactive Barplot
     # Standalone HTML file using CustomJS
 
-
     #wrangle the data into a data source for the ColumnDataSource to work properly with Javascript
     per_day = status_count_df.transpose().values.tolist()
     data = dict({str(i): v for i, v in enumerate(per_day)})
@@ -100,11 +100,12 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     output_file(outfile)
     
     #plot setup
-    barplot = figure(plot_width=800, plot_height=600, tools='pan',
+    barplot = figure(plot_width=800, plot_height=600, tools='pan, wheel_zoom, reset, save',
                   x_axis_label='Status', x_range=source.data['x'],
                   y_range=ranges.Range1d(start=0, end=len(data['y'])), 
                   title="Number of Homes by Status at Current Day")
-
+    barplot.min_border_top = 150
+    barplot.min_border_bottom = 50
     barplot.vbar(source=source, x='x', top='y', color='colors', width=0.6)
     
     lat = 43.223628
@@ -112,20 +113,39 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     #Map Setup
     map_options = GMapOptions(lat = lat, lng = lon, scale_control = True, map_type = "roadmap", zoom = 16)
     mapplot = GMapPlot(x_range=DataRange1d(), y_range=DataRange1d(), map_options=map_options)
-    # mapplot.title.text = "Seaview"
-    mapplot.add_tools(PanTool(), WheelZoomTool())
+    mapplot.title.text = "Marker size proportional to original damage state"
+    
+    # Set up tool tip with household stories
+    hover = HoverTool()
+    hover.tooltips = [("", "@story")]
+    
+    mapplot.add_tools(PanTool(), WheelZoomTool(), ResetTool(), hover, SaveTool())
 
     #set Google Maps API key
     mapplot.api_key = "AIzaSyBIwu-YI4jgBfzconosHqtQoeZ40oH-bhU"
 
     #data wrangling for JS interaction
-    home_status_colors_formap = pd.concat([home_status_colors.copy(), df['latitude'], df['longitude']], axis=1)
-    home_status_colors_formap['y'] = np.nan #dummy column
-    home_status_colors_formap.columns = home_status_colors_formap.columns.astype(str)
+    home_status_formap = pd.concat([home_status_colors.copy(), df['latitude'], df['longitude']], axis=1)
+    home_status_formap['y'] = np.nan #dummy column
+    home_status_formap['story'] = df['story']
+    home_status_formap.columns = home_status_formap.columns.astype(str)
 
-    mapsource = ColumnDataSource(home_status_colors_formap)
-
-    circle = Circle(x ="longitude", y = "latitude", size = 12, fill_color = "y", fill_alpha = 0.8, line_color = 'black')
+    # Reclassify damage states at start of simulation for each household to set
+    # marker/circle size for mapping
+    damage_size = dict({'None': 10, 
+                        'Slight': 15,
+                        'Moderate': 20,
+                        'Extensive': 25,
+                        'Complete': 30})
+    
+    home_status_formap['circle_size'] = df['damage_state_start'].replace(
+                                            list(damage_size.keys()),
+                                            list(damage_size.values()))
+    
+    mapsource = ColumnDataSource(home_status_formap)
+    
+    circle = Circle(x ="longitude", y = "latitude", size = 'circle_size', fill_color = "y", 
+                    fill_alpha = 0.8, line_color = 'black')
     mapplot.add_glyph(mapsource, circle)
 
     #TO DO: get a vertical line to signify the current time to work with JS
@@ -143,10 +163,11 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     """)
     
     #Line Graph setup
-    line_plot = figure(title='Overall House Status vs Time')
+    line_plot = figure(title='Overall House Status vs Time', tools='pan, wheel_zoom, reset, save')
     line_data = status_count_df.values.tolist()
 
-    line_plot.multi_line(xs=[np.linspace(0,sim_time-1, num=sim_time)]*8, ys=line_data, line_color=colors_only)
+    line_plot.multi_line(xs=[np.linspace(0,sim_time-1, num=sim_time)]*8, ys=line_data, 
+                        line_color=colors_only, line_width = 2.5)
 
     #slider
     time_slider = Slider(start=1, end=sim_time-1, value=1, step=1, callback=callback, title='DAY')

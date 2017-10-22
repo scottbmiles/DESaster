@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script>L_PREFER_CANVAS = false; L_NO_TOUCH = false; L_DISABLE_3D = false;</script>
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster-src.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://rawgit.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css" />
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <style> #map_678947a09a014a6999d24e1a45ab4677 {
+                position : relative;
+                width : 100.0%;
+                height: 100.0%;
+                left: 0.0%;
+                top: 0.0%;
+                }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css" />
+</head>
+<body>    
+    
+            <div class="folium-map" id="map_678947a09a014a6999d24e1a45ab4677" ></div>
+        
+</body>
+<script>    
+    
+
+            
+                var southWest = L.latLng(-90, -180);
+                var northEast = L.latLng(90, 180);
+                var bounds = L.latLngBounds(southWest, northEast);
+            
+
+            var map_678947a09a014a6999d24e1a45ab4677 = L.map(
+                                  'map_678947a09a014a6999d24e1a45ab4677',
+                                  {center: [43.223628,-90.294633],
+                                  zoom: 18,
+                                  maxBounds: bounds,
+                                  layers: [],
+                                  worldCopyJump: false,
+                                  crs: L.CRS.EPSG3857
+                                 });
+            
+        
+    
+            var tile_layer_4aaa12677d32475b9688a285155beb13 = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+
+        
+    
+            var tile_layer_957c4344bd6b413ca6a6693de24b5f20 = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+
+        
+    
+            var tile_layer_e11bfe1b4fdb498fbccf5f5961098d1f = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+
+        
+    
+            var feature_group_426cff4ca2fc4a62b5fd630a3c9ea4f5 = L.featureGroup(
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+
+            var marker_32d6b97a95b34eedb16ab739b35d96e1 = L.marker(
+                [43.224344,-90.296127],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_426cff4ca2fc4a62b5fd630a3c9ea4f5);
+            
+    
+
+                var icon_08d1b15f41b545ee977d3ddb9c07b809 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'darkred',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_32d6b97a95b34eedb16ab739b35d96e1.setIcon(icon_08d1b15f41b545ee977d3ddb9c07b809);
+            
+    
+            var popup_65ac6b2770af4089801f5f1be7135384 = L.popup({maxWidth: '300'});
+
+            
+                var html_28310a90a64f44c09c7b981f9bb18114 = $('<div id="html_28310a90a64f44c09c7b981f9bb18114" style="width: 100.0%; height: 100.0%;">Alfred resides at 62 That St. Alfred owns and lives in a 1 room mobile home at 62 That St worth $306,900. Alfred&#39;s mobile home was inspected 10 days after the event. It was found to have a damage level of complete and was collapse. The value of the damage was $306,900. Alfred has no hazard insurance. Alfred applied for a $200,000 SBA loan 30.0 days after the event.Alfred requested $30,000 from FEMA 30 days after the event. Alfred received $30,000 from FEMA 40 days after the event. SBA inspected Alfred&#39;s home on day 41.0 after the event. Alfred received an initial SBA loan disbursement of $25,000 41.0 days after the event. Alfred received a second SBA loan disbursement of $175,000 51.0 days after the event. It took Alfred 21 days to exhaust financial assistance options but still does not have enough money to cover repairs ($230,100). Alfred started searching for a new mobile home 51 days after the event. On day 61, Alfred purchased a mobile home at 100 New Ave with a value of $300,000. Alfred occupied the mobile home 71 days after the event. </div>')[0];
+                popup_65ac6b2770af4089801f5f1be7135384.setContent(html_28310a90a64f44c09c7b981f9bb18114);
+            
+
+            marker_32d6b97a95b34eedb16ab739b35d96e1.bindPopup(popup_65ac6b2770af4089801f5f1be7135384);
+
+            
+        
+    
+            var feature_group_867fc64fc09348b88ef55ec3ba362400 = L.featureGroup(
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+
+            var marker_372f9d3043e045bebda942a525f0b481 = L.marker(
+                [43.223984,-90.296706],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_867fc64fc09348b88ef55ec3ba362400);
+            
+    
+
+                var icon_f993f036e6534e66986f496fa2ca9ae1 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'red',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_372f9d3043e045bebda942a525f0b481.setIcon(icon_f993f036e6534e66986f496fa2ca9ae1);
+            
+    
+            var popup_db49ada8209540f9accfe88af3150f43 = L.popup({maxWidth: '300'});
+
+            
+                var html_badd2812a3e24f36b929e582e8feca18 = $('<div id="html_badd2812a3e24f36b929e582e8feca18" style="width: 100.0%; height: 100.0%;">Selena resides at 1001 Other Ave. Selena owns and lives in a 2 room single family dwelling at 1001 Other Ave worth $209,250. Selena&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of extensive and was unsafe. The value of the damage was $93,535. Selena has no hazard insurance. Selena applied for a $63,535 SBA loan 30.0 days after the event.Selena requested $30,000 from FEMA 30 days after the event. Selena received $30,000 from FEMA 40 days after the event. SBA inspected Selena&#39;s home on day 41.0 after the event. Selena received an initial SBA loan disbursement of $25,000 41.0 days after the event. Selena received a second SBA loan disbursement of $38,535 51.0 days after the event. It took Selena 21 days to exhaust financial assistance options and now has $93,635 for repairs. Selena received an engineering assessment 61 days after the event. Selena received permit approval 71 days after the event. Selena&#39;s single family dwelling was demolished 81 days after the event. Selena&#39;s single family dwelling was repaired 91 days after the event. Selena occupied the single family dwelling 101 days after the event. </div>')[0];
+                popup_db49ada8209540f9accfe88af3150f43.setContent(html_badd2812a3e24f36b929e582e8feca18);
+            
+
+            marker_372f9d3043e045bebda942a525f0b481.bindPopup(popup_db49ada8209540f9accfe88af3150f43);
+
+            
+        
+    
+            var feature_group_4e1f0bf6dd8f48e29f16b32d64af5c9e = L.featureGroup(
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+
+            var marker_17366300f054473ca966dccc12327662 = L.marker(
+                [43.224219,-90.295697],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_4e1f0bf6dd8f48e29f16b32d64af5c9e);
+            
+    
+
+                var icon_3a51a913e9544b0ca725b9c91ea61829 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'orange',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_17366300f054473ca966dccc12327662.setIcon(icon_3a51a913e9544b0ca725b9c91ea61829);
+            
+    
+            var popup_059ad3563e1e48faba2bdb20e78d8bc5 = L.popup({maxWidth: '300'});
+
+            
+                var html_2c528a7ca1ea4001ba57aae614d1f79c = $('<div id="html_2c528a7ca1ea4001ba57aae614d1f79c" style="width: 100.0%; height: 100.0%;">Bruce resides at 720 This Rd. Bruce owns and lives in a 4 room single family dwelling at 720 This Rd worth $837,000. Bruce&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of moderate and was disfunctional. The value of the damage was $83,700. Bruce submitted an insurance claim 10 days after the event. Bruce submitted an insurance claim 10 days after the event. Bruce received a $83,700 insurance payout 20 days after the event. Bruce received a $83,700 insurance payout 20 days after the event. Bruce requested $30,000 from FEMA 30 days after the event. Bruce withdrew their application to FEMA 40.0 days after the event because enough recovery funds were found from other sources. It took Bruce 30 days to exhaust financial assistance options and now has $167,500 for repairs. Bruce received an engineering assessment 50 days after the event. Bruce received permit approval 60 days after the event. Bruce&#39;s single family dwelling was repaired 70 days after the event. Bruce occupied the single family dwelling 80 days after the event. </div>')[0];
+                popup_059ad3563e1e48faba2bdb20e78d8bc5.setContent(html_2c528a7ca1ea4001ba57aae614d1f79c);
+            
+
+            marker_17366300f054473ca966dccc12327662.bindPopup(popup_059ad3563e1e48faba2bdb20e78d8bc5);
+
+            
+        
+    
+            var feature_group_7e3f80c84198486d84ea6d8e91af4df3 = L.featureGroup(
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+
+            var marker_b618b8df351945e1a739142a2599affc = L.marker(
+                [43.22375,-90.296642],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_7e3f80c84198486d84ea6d8e91af4df3);
+            
+    
+
+                var icon_00cd628bda80436683842c8c1735db0b = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'lightgreen',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_b618b8df351945e1a739142a2599affc.setIcon(icon_00cd628bda80436683842c8c1735db0b);
+            
+    
+            var popup_3d45b200ed6545c1bbda5576dc460fe8 = L.popup({maxWidth: '300'});
+
+            
+                var html_edb91e908e854daa80860b82321f575a = $('<div id="html_edb91e908e854daa80860b82321f575a" style="width: 100.0%; height: 100.0%;">Fish resides at 26000 Out There Lane. Fish owns and lives in a 3 room single family dwelling at 26000 Out There Lane worth $558,000. Fish&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of slight and was disfunctional. The value of the damage was $11,160. Fish has no hazard insurance. Fish requested $11,160 from FEMA 30 days after the event. Fish received $11,160 from FEMA 40 days after the event. It took Fish 10 days to exhaust financial assistance options and now has $11,260 for repairs. Fish received an engineering assessment 50 days after the event. Fish received permit approval 60 days after the event. Fish&#39;s single family dwelling was repaired 70 days after the event. Fish occupied the single family dwelling 80 days after the event. </div>')[0];
+                popup_3d45b200ed6545c1bbda5576dc460fe8.setContent(html_edb91e908e854daa80860b82321f575a);
+            
+
+            marker_b618b8df351945e1a739142a2599affc.bindPopup(popup_3d45b200ed6545c1bbda5576dc460fe8);
+
+            
+        
+    
+            var feature_group_55aac0e382f643f79dc2ddd59bc0b1be = L.featureGroup(
+                ).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+
+            var marker_5ada8d2bec734d199a4e5e991f395966 = L.marker(
+                [43.224375,-90.295054],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_55aac0e382f643f79dc2ddd59bc0b1be);
+            
+    
+
+                var icon_a4b0c44be20b4e52bf4a42a56b90e81f = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_5ada8d2bec734d199a4e5e991f395966.setIcon(icon_a4b0c44be20b4e52bf4a42a56b90e81f);
+            
+    
+            var popup_e4d3c0adb1044858ac7d9fc8832a71ce = L.popup({maxWidth: '300'});
+
+            
+                var html_3e86688e1a374ab08e57eac15cd17b1c = $('<div id="html_3e86688e1a374ab08e57eac15cd17b1c" style="width: 100.0%; height: 100.0%;">Jerome resides at 100 New Ave. Jerome owns and lives in a 1 room mobile home at 100 New Ave worth $300,000. Jerome&#39;s mobile home was inspected 10 days after the event. It was found to have a damage level of none and was functional. The value of the damage was $0. Jerome occupied the mobile home 20 days after the event. </div>')[0];
+                popup_e4d3c0adb1044858ac7d9fc8832a71ce.setContent(html_3e86688e1a374ab08e57eac15cd17b1c);
+            
+
+            marker_5ada8d2bec734d199a4e5e991f395966.bindPopup(popup_e4d3c0adb1044858ac7d9fc8832a71ce);
+
+            
+        
+    
+
+            var marker_b729c29070134c3fa090cc93af3b0c47 = L.marker(
+                [43.224391,-90.294539],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_55aac0e382f643f79dc2ddd59bc0b1be);
+            
+    
+
+                var icon_42c99ba90504468f9f7923ca51619295 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_b729c29070134c3fa090cc93af3b0c47.setIcon(icon_42c99ba90504468f9f7923ca51619295);
+            
+    
+            var popup_11e4bcefb40f465190a53f92ade14820 = L.popup({maxWidth: '300'});
+
+            
+                var html_7ddc0376f9664c7b8b726e0bfa304f75 = $('<div id="html_7ddc0376f9664c7b8b726e0bfa304f75" style="width: 100.0%; height: 100.0%;">Barbara resides at 101 New Ave. Barbara owns and lives in a 4 room single family dwelling at 101 New Ave worth $800,000. Barbara&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of none and was functional. The value of the damage was $0. Barbara occupied the single family dwelling 20 days after the event. </div>')[0];
+                popup_11e4bcefb40f465190a53f92ade14820.setContent(html_7ddc0376f9664c7b8b726e0bfa304f75);
+            
+
+            marker_b729c29070134c3fa090cc93af3b0c47.bindPopup(popup_11e4bcefb40f465190a53f92ade14820);
+
+            
+        
+    
+
+            var marker_72ad05a8a9c144a69a164ad351d0f6e4 = L.marker(
+                [43.223953,-90.295225],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_55aac0e382f643f79dc2ddd59bc0b1be);
+            
+    
+
+                var icon_503ee45dc5814d3688ca58abdca13c98 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_72ad05a8a9c144a69a164ad351d0f6e4.setIcon(icon_503ee45dc5814d3688ca58abdca13c98);
+            
+    
+            var popup_fdc998a17f134930bc8c8736f7872d49 = L.popup({maxWidth: '300'});
+
+            
+                var html_8d8b88eba68b44438c00139137ca46b3 = $('<div id="html_8d8b88eba68b44438c00139137ca46b3" style="width: 100.0%; height: 100.0%;">Lucius resides at 102 New Ave. Lucius owns and lives in a 2 room single family dwelling at 102 New Ave worth $300,000. Lucius&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of none and was functional. The value of the damage was $0. Lucius occupied the single family dwelling 20 days after the event. </div>')[0];
+                popup_fdc998a17f134930bc8c8736f7872d49.setContent(html_8d8b88eba68b44438c00139137ca46b3);
+            
+
+            marker_72ad05a8a9c144a69a164ad351d0f6e4.bindPopup(popup_fdc998a17f134930bc8c8736f7872d49);
+
+            
+        
+    
+
+            var marker_3691df94c7664acc849f5cb58f3239fb = L.marker(
+                [43.223718,-90.295225],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_55aac0e382f643f79dc2ddd59bc0b1be);
+            
+    
+
+                var icon_fe1c84bc240c4213a587b28c5d87e6e9 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_3691df94c7664acc849f5cb58f3239fb.setIcon(icon_fe1c84bc240c4213a587b28c5d87e6e9);
+            
+    
+            var popup_0cab3569847b4fe7acfe9c6c3d2a065f = L.popup({maxWidth: '300'});
+
+            
+                var html_91cb54d5d3a54830982e72b8e4647585 = $('<div id="html_91cb54d5d3a54830982e72b8e4647585" style="width: 100.0%; height: 100.0%;">Dick resides at 103 New Ave. Dick owns and lives in a 3 room single family dwelling at 103 New Ave worth $500,000. Dick&#39;s single family dwelling was inspected 10 days after the event. It was found to have a damage level of none and was functional. The value of the damage was $0. Dick occupied the single family dwelling 20 days after the event. </div>')[0];
+                popup_0cab3569847b4fe7acfe9c6c3d2a065f.setContent(html_91cb54d5d3a54830982e72b8e4647585);
+            
+
+            marker_3691df94c7664acc849f5cb58f3239fb.bindPopup(popup_0cab3569847b4fe7acfe9c6c3d2a065f);
+
+            
+        
+    
+            var layer_control_bd495409e49f44c9a331f91a5244377e = {
+                base_layers : { "stamenterrain" : tile_layer_957c4344bd6b413ca6a6693de24b5f20,"openstreetmap" : tile_layer_e11bfe1b4fdb498fbccf5f5961098d1f, },
+                overlays : { "Complete Damage" : feature_group_426cff4ca2fc4a62b5fd630a3c9ea4f5,"Extensive Damage" : feature_group_867fc64fc09348b88ef55ec3ba362400,"Moderate Damage" : feature_group_4e1f0bf6dd8f48e29f16b32d64af5c9e,"Slight Damage" : feature_group_7e3f80c84198486d84ea6d8e91af4df3,"No Damage" : feature_group_55aac0e382f643f79dc2ddd59bc0b1be, }
+                };
+            L.control.layers(
+                layer_control_bd495409e49f44c9a331f91a5244377e.base_layers,
+                layer_control_bd495409e49f44c9a331f91a5244377e.overlays,
+                {position: 'topright',
+                 collapsed: true,
+                 autoZIndex: true
+                }).addTo(map_678947a09a014a6999d24e1a45ab4677);
+        
+    
+            L.control.fullscreen({
+                position: 'topleft',
+                title: 'Full Screen',
+                titleCancel: 'Exit Full Screen',
+                forceSeparateButton: false,
+                }).addTo(map_678947a09a014a6999d24e1a45ab4677);
+            map_678947a09a014a6999d24e1a45ab4677.on('enterFullscreen', function(){
+                console.log('entered fullscreen');
+            });
+
+        
+</script>

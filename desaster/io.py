@@ -53,6 +53,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                 
                 residence = SingleFamilyResidential(
                                     occupancy = entities_df.iloc[i]['Occupancy'],
+                                    tenure = entities_df.iloc[i]['Tenure'],
                                     address = entities_df.iloc[i]['Address'],
                                     longitude = entities_df.iloc[i]['Longitude'],
                                     latitude = entities_df.iloc[i]['Latitude'],
@@ -86,6 +87,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                     'sfr', 'sfh', 'sfd', 'mobile home']:
                 real_property = SingleFamilyResidential(
                                             occupancy = entities_df.iloc[i]['Occupancy'],
+                                            tenure = entities_df.iloc[i]['Tenure'],
                                             address = entities_df.iloc[i]['Address'],
                                             longitude = entities_df.iloc[i]['Longitude'],
                                             latitude = entities_df.iloc[i]['Latitude'],
@@ -127,6 +129,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                     'sfr', 'sfh', 'sfd', 'mobile home']:                  
                 real_property = SingleFamilyResidential(
                                                     occupancy = entities_df.iloc[i]['Occupancy'],
+                                                    tenure = entities_df.iloc[i]['Tenure'],
                                                     address = entities_df.iloc[i]['Address'],
                                                     longitude = entities_df.iloc[i]['Longitude'],
                                                     latitude = entities_df.iloc[i]['Latitude'],
@@ -168,6 +171,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                     'sfr', 'sfh', 'sfd', 'mobile home']:                           
                 real_property = SingleFamilyResidential(
                                             occupancy = entities_df.iloc[i]['Occupancy'],
+                                            tenure = entities_df.iloc[i]['Tenure'],
                                             address = entities_df.iloc[i]['Address'],
                                             longitude = entities_df.iloc[i]['Longitude'],
                                             latitude = entities_df.iloc[i]['Latitude'],
@@ -216,6 +220,7 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
                                     'sfr', 'sfh', 'sfd', 'mobile home']: 
                 real_property = SingleFamilyResidential(
                                             occupancy = entities_df.iloc[i]['Occupancy'],
+                                            tenure = entities_df.iloc[i]['Tenure'],
                                             address = entities_df.iloc[i]['Address'],
                                             longitude = entities_df.iloc[i]['Longitude'],
                                             latitude = entities_df.iloc[i]['Latitude'],

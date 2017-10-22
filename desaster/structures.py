@@ -24,7 +24,7 @@ class Building(object):
     Functions:
     setDamageValue(self, building)
     """
-    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+    def __init__(self, owner = None, occupancy = None, tenure = None, address = None, longitude = None,
                     latitude = None, value = None, cost = None, area = None,
                     listed = False, damage_state = None, building_stock = None):
         """
@@ -52,6 +52,7 @@ class Building(object):
         self.damage_state = damage_state  # HAZUS damage state
         self.damage_state_start = damage_state  # Archive starting damage state
         self.occupancy = occupancy  # Occupancy type of building
+        self.tenure = tenure # Whether owner occupied, rental, shelter, hotel, condo, etc.
         self.area = area  # Floor area of building
         try:
             self.listed = distutils.util.strtobool(listed)
@@ -81,7 +82,7 @@ class SingleFamilyResidential(Building):
     just adds attribuees of bedrooms and bathroom and verifies a HAZUS-compatible
     residential building type is specified.
     """
-    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+    def __init__(self, owner = None, occupancy = None, tenure = None, address = None, longitude = None,
                     latitude = None, value = None, cost = None, area = None,
                     bedrooms = None, bathrooms = None, listed = False, damage_state = None,
                     building_stock = None):
@@ -108,7 +109,7 @@ class SingleFamilyResidential(Building):
         structures.Building
         """
 
-        Building.__init__(self, owner, occupancy, address, longitude,
+        Building.__init__(self, owner, occupancy, tenure, address, longitude,
                         latitude, value, cost, area,
                         listed, damage_state, building_stock) 
 

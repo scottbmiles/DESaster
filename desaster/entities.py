@@ -211,7 +211,7 @@ class OwnerHousehold(Owner, Household):
     (not necessarily it's property). Also includes methods to write stories.
 
     Methods:
-    replace_home(self, search_patience, building_stock)
+    find_home(self, search_patience, building_stock)
     occupy(self, duration, callbacks = None)
     changeListing(self, listed):
     writeInitiateOwnerHousehold(self): 
@@ -245,7 +245,7 @@ class OwnerHousehold(Owner, Household):
 
         self.writeInitiateOwnerHousehold()
 
-    def replace_home(self, search_stock, duration, down_payment_pct = 0.10, housing_ratio = 0.3,
+    def find_home(self, search_stock, duration, down_payment_pct = 0.10, housing_ratio = 0.3,
                         price_pct = 1.1, area_pct = 0.9, rooms_tol = 0,
                         search_patience = float('inf')):
         """A process (generator) representing entity search for permanent housing
@@ -442,7 +442,7 @@ class RenterHousehold(Household):
     assigned and unassigned to represent, e.g., evictions.
 
     Methods:
-    replace_home(self, search_patience, building_stock)
+    find_home(self, search_patience, building_stock)
     occupy(self, duration, callbacks = None)
     changeListing(self, listed):
     writeInitiateRenterHousehold(self): 
@@ -479,7 +479,7 @@ class RenterHousehold(Household):
 
         self.writeInitiateRenterHousehold()
 
-    def replace_home(self, search_stock, duration, move_in_ratio = 2.5, housing_ratio = 0.3,
+    def find_home(self, search_stock, duration, move_in_ratio = 2.5, housing_ratio = 0.3,
                 area_pct = 0.9, rooms_tol = 0, notice_time = 20.0,
                 search_patience = float('inf')):
 
