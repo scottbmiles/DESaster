@@ -152,8 +152,6 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
                     fill_alpha = 0.8, line_color = 'black')
     mapplot.add_glyph(mapsource, circle)
 
-    time = ColumnDataSource({'time':np.linspace(0, sim_time, num=sim_time)}) #incomplete
-
     # Javascript callback to enable and link interactivity between the two plots.
     callback = CustomJS(args=dict(s1=source, s2=mapsource), code="""
         console.log(' changed selected time', cb_obj.value);
