@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script>L_PREFER_CANVAS = false; L_NO_TOUCH = false; L_DISABLE_3D = false;</script>
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster-src.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://rawgit.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css" />
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <style> #map_bf86ceccd6754fb1a754ab270254377c {
+                position : relative;
+                width : 100.0%;
+                height: 100.0%;
+                left: 0.0%;
+                top: 0.0%;
+                }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css" />
+</head>
+<body>    
+    
+            <div class="folium-map" id="map_bf86ceccd6754fb1a754ab270254377c" ></div>
+        
+</body>
+<script>    
+    
+
+            
+                var southWest = L.latLng(-90, -180);
+                var northEast = L.latLng(90, 180);
+                var bounds = L.latLngBounds(southWest, northEast);
+            
+
+            var map_bf86ceccd6754fb1a754ab270254377c = L.map(
+                                  'map_bf86ceccd6754fb1a754ab270254377c',
+                                  {center: [43.223628,-90.294633],
+                                  zoom: 18,
+                                  maxBounds: bounds,
+                                  layers: [],
+                                  worldCopyJump: false,
+                                  crs: L.CRS.EPSG3857
+                                 });
+            
+        
+    
+            var tile_layer_cdb3a81d2f524c0089dc58d41ba836af = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+
+        
+    
+            var tile_layer_637774334c3b4a57bddc53518a230915 = L.tileLayer(
+                'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+
+        
+    
+            var tile_layer_011a66176c434609880f11a6b778f6c9 = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 18,
+                    minZoom: 1,
+                    continuousWorld: false,
+                    noWrap: false,
+                    attribution: 'Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+                    detectRetina: false
+                    }
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+
+        
+    
+            var feature_group_a1afade1403e495ebc1bcd1e8a02d120 = L.featureGroup(
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+
+            var marker_232fe272b54444e7b90b895d1e2d825d = L.marker(
+                [43.224344,-90.296127],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_a1afade1403e495ebc1bcd1e8a02d120);
+            
+    
+
+                var icon_7bf931c26fe6427e8f4615025e9a1f5a = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'darkred',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_232fe272b54444e7b90b895d1e2d825d.setIcon(icon_7bf931c26fe6427e8f4615025e9a1f5a);
+            
+    
+            var popup_eed2a31e1ebf42c6b192effa7d9c4b79 = L.popup({maxWidth: '300'});
+
+            
+                var html_e7bda499b5164400a6ccb07167aa7588 = $('<div id="html_e7bda499b5164400a6ccb07167aa7588" style="width: 100.0%; height: 100.0%;">Alfred resides at 62 That St. Alfred owns and lives in a 1 room mobile home at 62 That St worth $306,900. </div>')[0];
+                popup_eed2a31e1ebf42c6b192effa7d9c4b79.setContent(html_e7bda499b5164400a6ccb07167aa7588);
+            
+
+            marker_232fe272b54444e7b90b895d1e2d825d.bindPopup(popup_eed2a31e1ebf42c6b192effa7d9c4b79);
+
+            
+        
+    
+            var feature_group_cce6910c285241d1a235e69f31d82e94 = L.featureGroup(
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+
+            var marker_2a0de81e07924f25b087d8d670af198e = L.marker(
+                [43.223984,-90.296706],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_cce6910c285241d1a235e69f31d82e94);
+            
+    
+
+                var icon_14c8c63b0aad45f989b3973a477edfd4 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'red',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_2a0de81e07924f25b087d8d670af198e.setIcon(icon_14c8c63b0aad45f989b3973a477edfd4);
+            
+    
+            var popup_b5fbb37b0c1a410491ba436c67c39148 = L.popup({maxWidth: '300'});
+
+            
+                var html_dddaacbb6b59429fbb0a87059dc50889 = $('<div id="html_dddaacbb6b59429fbb0a87059dc50889" style="width: 100.0%; height: 100.0%;">Selena resides at 1001 Other Ave. Selena owns and lives in a 2 room single family dwelling at 1001 Other Ave worth $209,250. </div>')[0];
+                popup_b5fbb37b0c1a410491ba436c67c39148.setContent(html_dddaacbb6b59429fbb0a87059dc50889);
+            
+
+            marker_2a0de81e07924f25b087d8d670af198e.bindPopup(popup_b5fbb37b0c1a410491ba436c67c39148);
+
+            
+        
+    
+            var feature_group_d8f9dad6503f4bcc8334bafd2d5d4534 = L.featureGroup(
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+
+            var marker_5b504b50067744749cfffb6681517a42 = L.marker(
+                [43.224219,-90.295697],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_d8f9dad6503f4bcc8334bafd2d5d4534);
+            
+    
+
+                var icon_617165141bd542bfb0660aa4c7fcc92a = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'orange',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_5b504b50067744749cfffb6681517a42.setIcon(icon_617165141bd542bfb0660aa4c7fcc92a);
+            
+    
+            var popup_e226d4d4a5984cb2a5b394cfdcd1f437 = L.popup({maxWidth: '300'});
+
+            
+                var html_7bf8290613cd499f88b62307933d5567 = $('<div id="html_7bf8290613cd499f88b62307933d5567" style="width: 100.0%; height: 100.0%;">Bruce resides at 720 This Rd. Bruce owns and lives in a 4 room single family dwelling at 720 This Rd worth $837,000. </div>')[0];
+                popup_e226d4d4a5984cb2a5b394cfdcd1f437.setContent(html_7bf8290613cd499f88b62307933d5567);
+            
+
+            marker_5b504b50067744749cfffb6681517a42.bindPopup(popup_e226d4d4a5984cb2a5b394cfdcd1f437);
+
+            
+        
+    
+            var feature_group_df6804b727f549b19f0187971a5a5ca6 = L.featureGroup(
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+
+            var marker_6bde5c7817bd43728556ee6bb12cf39b = L.marker(
+                [43.22375,-90.296642],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_df6804b727f549b19f0187971a5a5ca6);
+            
+    
+
+                var icon_0ba95d5a19354cfb849d364396bb9493 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'lightgreen',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_6bde5c7817bd43728556ee6bb12cf39b.setIcon(icon_0ba95d5a19354cfb849d364396bb9493);
+            
+    
+            var popup_61ca569c304d4e25b4246e9c5e72139b = L.popup({maxWidth: '300'});
+
+            
+                var html_aa7c6494cf724a8b8eca73f72f576ffe = $('<div id="html_aa7c6494cf724a8b8eca73f72f576ffe" style="width: 100.0%; height: 100.0%;">Fish resides at 26000 Out There Lane. Fish owns and lives in a 3 room single family dwelling at 26000 Out There Lane worth $558,000. </div>')[0];
+                popup_61ca569c304d4e25b4246e9c5e72139b.setContent(html_aa7c6494cf724a8b8eca73f72f576ffe);
+            
+
+            marker_6bde5c7817bd43728556ee6bb12cf39b.bindPopup(popup_61ca569c304d4e25b4246e9c5e72139b);
+
+            
+        
+    
+            var feature_group_6de89bcc02934b04a8167f3a015df785 = L.featureGroup(
+                ).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+
+            var marker_79a61a36b6214ec085aa027d978c9651 = L.marker(
+                [43.224375,-90.295054],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_6de89bcc02934b04a8167f3a015df785);
+            
+    
+
+                var icon_8982fe29d0714eb787f131b50f0c5c51 = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_79a61a36b6214ec085aa027d978c9651.setIcon(icon_8982fe29d0714eb787f131b50f0c5c51);
+            
+    
+            var popup_a19b44eda99644cb88bc92c95a57c583 = L.popup({maxWidth: '300'});
+
+            
+                var html_f300b72b0f4544f392667d9ae83aaee7 = $('<div id="html_f300b72b0f4544f392667d9ae83aaee7" style="width: 100.0%; height: 100.0%;">Jerome resides at 100 New Ave. Jerome owns and lives in a 1 room mobile home at 100 New Ave worth $300,000. </div>')[0];
+                popup_a19b44eda99644cb88bc92c95a57c583.setContent(html_f300b72b0f4544f392667d9ae83aaee7);
+            
+
+            marker_79a61a36b6214ec085aa027d978c9651.bindPopup(popup_a19b44eda99644cb88bc92c95a57c583);
+
+            
+        
+    
+
+            var marker_b058359ea78d4764b104a57e51cddfc0 = L.marker(
+                [43.224391,-90.294539],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_6de89bcc02934b04a8167f3a015df785);
+            
+    
+
+                var icon_5950a3f97fb74d64804515b768e475ac = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_b058359ea78d4764b104a57e51cddfc0.setIcon(icon_5950a3f97fb74d64804515b768e475ac);
+            
+    
+            var popup_af8cf8e59483429d985383520ccfff4d = L.popup({maxWidth: '300'});
+
+            
+                var html_5c399fbf57554feeb007becebcd01b07 = $('<div id="html_5c399fbf57554feeb007becebcd01b07" style="width: 100.0%; height: 100.0%;">Barbara resides at 101 New Ave. Barbara owns and lives in a 4 room single family dwelling at 101 New Ave worth $800,000. </div>')[0];
+                popup_af8cf8e59483429d985383520ccfff4d.setContent(html_5c399fbf57554feeb007becebcd01b07);
+            
+
+            marker_b058359ea78d4764b104a57e51cddfc0.bindPopup(popup_af8cf8e59483429d985383520ccfff4d);
+
+            
+        
+    
+
+            var marker_981aed24e3404632b69e6397c58b724d = L.marker(
+                [43.223953,-90.295225],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_6de89bcc02934b04a8167f3a015df785);
+            
+    
+
+                var icon_1c99fab327dd401fb7c178b40cf7ba7b = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_981aed24e3404632b69e6397c58b724d.setIcon(icon_1c99fab327dd401fb7c178b40cf7ba7b);
+            
+    
+            var popup_14fd55a4bf4a4b3cab1c577f5aab7460 = L.popup({maxWidth: '300'});
+
+            
+                var html_db363e9b7ac14009ad08fe8614c2c207 = $('<div id="html_db363e9b7ac14009ad08fe8614c2c207" style="width: 100.0%; height: 100.0%;">Lucius resides at 102 New Ave. Lucius owns and lives in a 2 room single family dwelling at 102 New Ave worth $300,000. </div>')[0];
+                popup_14fd55a4bf4a4b3cab1c577f5aab7460.setContent(html_db363e9b7ac14009ad08fe8614c2c207);
+            
+
+            marker_981aed24e3404632b69e6397c58b724d.bindPopup(popup_14fd55a4bf4a4b3cab1c577f5aab7460);
+
+            
+        
+    
+
+            var marker_c232d98f309040d18f039a6b6a62037f = L.marker(
+                [43.223718,-90.295225],
+                {
+                    icon: new L.Icon.Default()
+                    }
+                )
+                .addTo(feature_group_6de89bcc02934b04a8167f3a015df785);
+            
+    
+
+                var icon_12564e6d54d943a6931887a7592a07ec = L.AwesomeMarkers.icon({
+                    icon: 'home',
+                    iconColor: 'white',
+                    markerColor: 'green',
+                    prefix: 'glyphicon',
+                    extraClasses: 'fa-rotate-0'
+                    });
+                marker_c232d98f309040d18f039a6b6a62037f.setIcon(icon_12564e6d54d943a6931887a7592a07ec);
+            
+    
+            var popup_dae03456ca2441f68b82192d8bd67e47 = L.popup({maxWidth: '300'});
+
+            
+                var html_cd4ffbaa032b4ef8b2fb8185f31c73d2 = $('<div id="html_cd4ffbaa032b4ef8b2fb8185f31c73d2" style="width: 100.0%; height: 100.0%;">Dick resides at 103 New Ave. Dick owns and lives in a 3 room single family dwelling at 103 New Ave worth $500,000. </div>')[0];
+                popup_dae03456ca2441f68b82192d8bd67e47.setContent(html_cd4ffbaa032b4ef8b2fb8185f31c73d2);
+            
+
+            marker_c232d98f309040d18f039a6b6a62037f.bindPopup(popup_dae03456ca2441f68b82192d8bd67e47);
+
+            
+        
+    
+            var layer_control_9c6b47888c7c40e4b707c6331cece89c = {
+                base_layers : { "stamenterrain" : tile_layer_637774334c3b4a57bddc53518a230915,"openstreetmap" : tile_layer_011a66176c434609880f11a6b778f6c9, },
+                overlays : { "Complete Damage" : feature_group_a1afade1403e495ebc1bcd1e8a02d120,"Extensive Damage" : feature_group_cce6910c285241d1a235e69f31d82e94,"Moderate Damage" : feature_group_d8f9dad6503f4bcc8334bafd2d5d4534,"Slight Damage" : feature_group_df6804b727f549b19f0187971a5a5ca6,"No Damage" : feature_group_6de89bcc02934b04a8167f3a015df785, }
+                };
+            L.control.layers(
+                layer_control_9c6b47888c7c40e4b707c6331cece89c.base_layers,
+                layer_control_9c6b47888c7c40e4b707c6331cece89c.overlays,
+                {position: 'topright',
+                 collapsed: true,
+                 autoZIndex: true
+                }).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+        
+    
+            L.control.fullscreen({
+                position: 'topleft',
+                title: 'Full Screen',
+                titleCancel: 'Exit Full Screen',
+                forceSeparateButton: false,
+                }).addTo(map_bf86ceccd6754fb1a754ab270254377c);
+            map_bf86ceccd6754fb1a754ab270254377c.on('enterFullscreen', function(){
+                console.log('entered fullscreen');
+            });
+
+        
+</script>
