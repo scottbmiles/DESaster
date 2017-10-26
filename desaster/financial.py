@@ -7,7 +7,6 @@
 from simpy import Interrupt
 from simpy import Resource, Container
 import numpy as np
-from desaster.distributions import DurationDistributionHomeLoanSBA
 
 
 class FinancialRecoveryProgram(object):
@@ -28,12 +27,12 @@ class FinancialRecoveryProgram(object):
     
     
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), budget=float('inf')):
         """Initiate financial recovery program attributes.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
@@ -47,7 +46,7 @@ class FinancialRecoveryProgram(object):
         self.env = env
         self.staff = Resource(self.env, capacity=staff)
         self.budget = Container(self.env, init=budget)
-        self.duration_distribution = duration_distribution
+        self.duration = duration
 
     def process(self, entity = None, callbacks = None):
         """Define generic financial recovery program process for entity.
@@ -73,7 +72,7 @@ class FinancialRecoveryProgram(object):
         yield staff_request
 
         # Yield timeout equivalent to program's process duration
-        yield self.env.timeout(self.duration_distribution.value())
+        yield self.env.timeout(self.duration.rvs())
 
         # Release release staff after process duation is complete.
         self.staff.release(staff_request)
@@ -127,18 +126,18 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
     writeReceived(self, entity):
 
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
-                max_outlay=float('inf'), declaration_duration=0, deadline=540):
+    def __init__(self, env, duration, staff=float('inf'), budget=float('inf'),
+                max_outlay=float('inf'), declaration=0, deadline=540):
         """Initiate FEMA individual assistance recovery program attributes.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the program
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program.
         max_outlay -- The maximum amount ($) of assistance that any one entity can receive
-        declaration_duration -- A value indicating how many days after the event
+        declaration -- A value indicating how many days after the event
                                 a federal disaster was declared.
         deadline -- A value indicating how many days after the
                                 federal disaster declaration was made the applications
@@ -147,12 +146,12 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
         Inheritance:
         Subclass of financial.FinancialRecoveryProgram()
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
+        FinancialRecoveryProgram.__init__(self, env, duration, staff, budget)
 
         # Set attributes
         self.max_outlay = max_outlay
         self.deadline = deadline
-        self.declaration_duration = declaration_duration
+        self.declaration = declaration
 
     def process(self, entity, callbacks = None):
         """Define process for entity to submit request for FEMA individual assistance.
@@ -181,8 +180,8 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
                 return
             
             # Check to see declaration has occurred; if not, wait
-            if self.env.now < self.declaration_duration:
-                yield self.env.timeout(self.declaration_duration - self.env.now)
+            if self.env.now < self.declaration:
+                yield self.env.timeout(self.declaration - self.env.now)
             
             # Record time requests FEMA assistance.
             entity.fema_put = self.env.now
@@ -199,7 +198,7 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
             yield request
             
             # Yield timeout for duration necessary to process FEMA aid request.
-            yield self.env.timeout(self.duration_distribution.value())
+            yield self.env.timeout(self.duration.rvs())
             
             # Release FEMA processors.
             self.staff.release(request)
@@ -239,7 +238,7 @@ class HousingAssistanceFEMA(FinancialRecoveryProgram):
             entity.story.append(
                 '{0} requested ${1:,.0f} from FEMA {2} days after the event. Their application was rejected because it was submitted after the {3}-day deadline after the disaster declaration that was made on day {4}'.format(
                     entity.name.title(), entity.fema_amount, entity.fema_put, 
-                    self.deadline, self.declaration_duration)
+                    self.deadline, self.declaration)
                 )
     
     def writeRequest(self, entity):
@@ -274,13 +273,13 @@ class OwnersInsurance(FinancialRecoveryProgram):
     Inheritance:
     financial.FinancialRecoveryProgram
     """
-    def __init__(self, env, duration_distribution, staff=float('inf'), budget=float('inf'),
+    def __init__(self, env, duration, staff=float('inf'), budget=float('inf'),
                 deductible=0.0):
         """Initiate owners insurance recovery program.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
         budget -- Integer or float, indicating the initial budget available from
                     the recovery program. *** Not currently used, but could be used
@@ -290,7 +289,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                         as a deductible before receiving a claim payout.
 
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_distribution, staff, budget)
+        FinancialRecoveryProgram.__init__(self, env, duration, staff, budget)
 
         self.deductible = deductible
 
@@ -340,7 +339,7 @@ class OwnersInsurance(FinancialRecoveryProgram):
                 yield request
 
                 # Timeout process to simulate claims processing duration.
-                yield self.env.timeout(self.duration_distribution.value())
+                yield self.env.timeout(self.duration.rvs())
 
                 # Release insurance adjusters so they can process other claims.
                 self.staff.release(request)
@@ -415,16 +414,16 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
     Inheritance:
     financial.FinancialRecoveryProgram
     """
-    def __init__(self, env, duration_distribution, inspectors=float('inf'),
+    def __init__(self, env, duration, inspectors=float('inf'),
                 officers=float('inf'), budget = float('inf'), max_loan = float('inf'),
                 min_credit = 0, debt_income_ratio = 0.2, loan_term = 30.0,
-                interest_rate = 0.04, declaration_duration = 0, deadline = 60):
+                interest_rate = 0.04, declaration = 0, deadline = 60):
 
         """Initiate SBA real property loan recovery program.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
-        duration_distribution -- io.ProbabilityDistribution() object
+        duration -- io.ProbabilityDistribution() object
         inspectors -- Integer, indicating number of building inspectors assigned to the programs
         officers -- Number of program staff that reviews and approves loan applications
         budget -- Integer or float, indicating the initial budget available from
@@ -433,14 +432,14 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
         debt_income_ratio -- Monthly SBA loan payment / entity income ; used to estimate
                                 loan amount.
         min_credit -- A FICO-like credit score used as threshold for approving loan.
-        declaration_duration -- A value indicating how many days after the event
+        declaration -- A value indicating how many days after the event
                                 a federal disaster was declared.
         deadline -- A value indicating how many days after the
                                 federal disaster declaration was made the applications
                                 must be submitted.
 
         """
-        FinancialRecoveryProgram.__init__(self, env, duration_distribution, budget)
+        FinancialRecoveryProgram.__init__(self, env, duration, budget)
 
         # Define staff/personnel specific to this class
         self.officers = Resource(self.env, capacity=officers)
@@ -453,7 +452,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
         self.max_loan = max_loan
         self.interest_rate = interest_rate # annual rate
         self.deadline = deadline
-        self.declaration_duration = declaration_duration
+        self.declaration = declaration
 
     def process(self, entity, callbacks = None):
         """Define process for entity to submit request for SBA loan.
@@ -472,8 +471,8 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
         # Exception handling in case interrupted by another process.
         try:
             # Check to see declaration has occurred; if not, wait
-            if self.env.now < self.declaration_duration:
-                yield self.env.timeout(self.declaration_duration - self.env.now)
+            if self.env.now < self.declaration:
+                yield self.env.timeout(self.declaration - self.env.now)
             
             # Record time application submitted.
             entity.sba_put = self.env.now
@@ -497,12 +496,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
             yield officer_request
 
             # # Yield process timeout for duration needed for officer to process application.
-            if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
-                yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
-                                                                        min_credit = self.min_credit)
-                                            )
-            else: # if not, it's ProbabilityDistribution
-                yield self.env.timeout(self.duration_distribution.value())
+            yield self.env.timeout(self.duration.rvs())
 
             if entity.credit < self.min_credit:
                 self.writeDeniedCredit(entity)
@@ -542,12 +536,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
                 # %%% FOR NOW: Yield another timeout equal to initial process application duration %%%
                 #
 
-                if type(self.duration_distribution) == DurationDistributionHomeLoanSBA:
-                    yield self.env.timeout(self.duration_distribution.value(credit = entity.credit,
-                                                                            min_credit = self.min_credit)
-                                                                            )
-                else: # if not, it's ProbabilityDistribution
-                    yield self.env.timeout(self.duration_distribution.value())
+                yield self.env.timeout(self.duration.rvs())
 
                 # Update loan amount (in case other processes in parallel)
                 entity.sba_amount = self.setLoanAmount(entity)
@@ -597,7 +586,7 @@ class RealPropertyLoanSBA(FinancialRecoveryProgram):
         if entity.write_story:
             entity.story.append(
                 '{0} applied for a ${1:,.0f} SBA loan {2} days after the event. Their application was rejected because it was submitted after the {3}-day deadline after the disaster declaration made on day {4}. '.format(
-                    entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline, self.declaration_duration)
+                    entity.name.title(), entity.sba_amount, entity.sba_put, self.deadline, self.declaration)
                 )
                 
     def writeApplied(self, entity):

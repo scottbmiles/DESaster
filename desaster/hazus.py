@@ -12,10 +12,13 @@ can be revised to take different files for different lookup tables etc.
 @author: Scott Miles
 """
 import pandas as pd
+import os as os
+from scipy.stats import rv_discrete
 
 # Excel workbook with lookup tables from HAZUS-MH earthquake model technical
 # manual. (http://www.fema.gov/media-library/assets/documents/24609)
-hazus_parameters_file = "../config/hazus_building_lookup_tables.xlsx"
+module_path = os.path.dirname(os.path.abspath(__file__))
+hazus_parameters_file = module_path + "/config/hazus_building_lookup_tables.xlsx"
 
 # Building repair time lookup table from HAZUS-MH earthquake model technical
 # manual Table 15.9 (http://www.fema.gov/media-library/assets/documents/24609)
@@ -41,6 +44,12 @@ drift_damage_ratios = pd.read_excel(hazus_parameters_file,
                         sheetname='Deflect non-struc repair cost', 
                         index_col='Occupancy')
     
+# A conditional probability table to map HAZUS damage states to Burton et al.
+# recovery-based limit states.
+recovery_limit_states = pd.read_excel(hazus_parameters_file, 
+                        sheetname='Recovery limit states', 
+                        index_col='Damage State')
+
 def setStructuralDamageValueHAZUS(building):
     """Calculate damage value for building based on occupancy type and
     HAZUS damage state.
@@ -60,7 +69,7 @@ def setStructuralDamageValueHAZUS(building):
     accel_repair_ratio = acceleration_damage_ratios.ix[building.occupancy][building.damage_state] / 100.0
     drift_repair_ratio = drift_damage_ratios.ix[building.occupancy][building.damage_state] / 100.0
     
-    return building.value * (struct_repair_ratio + accel_repair_ratio + drift_repair_ratio)
+    building.damage_value = building.value * (struct_repair_ratio + accel_repair_ratio + drift_repair_ratio)
     
 
 def setContentsDamageValueHAZUS(building):
@@ -74,6 +83,10 @@ def setContentsDamageValueHAZUS(building):
 
     NOTE: Unlike structural damage, HAZUS uses the same contents damage ratio
     for all occupancy type. Hence, no lookup table  is imported below.
+    
+    *** NOT BEING USED RIGHT NOW. IF DO EVENTUALLY START USING REVISE SO THAT 
+    building.content_damage_value (OR WHATEVER CALLED) IS SET DIRECTLY RATHER
+    THAN VIA A RETURN. ***
     """
     if building.damage_state.lower() == 'none':
         return 0.0*(building.area*30)
@@ -85,3 +98,23 @@ def setContentsDamageValueHAZUS(building):
         return 0.25*(building.area*30)
     if building.damage_state.lower() == 'complete':
         return 0.5*(building.area*30)
+
+def setRecoveryLimitState(building):
+    """ A function to set a building's recovery-based limit state.
+    
+    The function take a building's HAZUS-based damage state and maps it to a 
+    Burton et al. recovery-based limit state based on a specified conditional
+    probability table (imported above).
+    
+    Arguments:
+    building -- a desaster.structures.Building object
+    
+    Attribute Changes:
+    building.recovery_limit_state
+    
+    """
+    recovery_limit_state_dist = rv_discrete(values=([0, 1, 2, 3, 4],
+                                recovery_limit_states.loc[building.damage_state].values))
+    recovery_limit_state_code = recovery_limit_state_dist.rvs()
+    code_label_lookup = {0: 'Functional', 1: 'Disfunctional', 2: 'Unsafe', 3: 'Irreparable', 4: 'Collapse'}
+    building.recovery_limit_state = code_label_lookup[recovery_limit_state_code]

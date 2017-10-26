@@ -1,0 +1,29 @@
+No.,Label,Occupancy Class,Slight,Moderate,Extensive,Complete
+1,RES1,Single Family Dwelling,0.50,2.30,11.70,23.40
+2,RES2,Mobile Home,0.40,2.40,7.30,24.40
+3-8,"RES3a-f",Multi Family Dwelling,0.30,1.40,6.90,13.80
+9,RES4,Temporary Lodging,0.20,1.40,6.80,13.60
+10,RES5,Institutional Dormitory,0.40,1.90,9.40,18.80
+11,RES6,Nursing Home,0.40,1.80,9.20,18.40
+12,COM1,Retail Trade,0.60,2.90,14.70,29.40
+13,COM2,Wholesale Trade,0.60,3.20,16.20,32.40
+14,COM3,Personal and Repair Services,0.30,1.60,8.10,16.20
+15,COM4,"Professional/Technical/ Business  Services",0.40,1.90,9.60,19.20
+16,COM5,Banks/Financial Institutions,0.30,1.40,6.90,13.80
+17,COM6,Hospital,0.20,1.40,7.00,14.00
+18,COM7,Medical Office/Clinic,0.30,1.40,7.20,14.40
+19,COM8,Entertainment & Recreation,0.20,1.00,5.00,10.00
+20,COM9,Theaters,0.30,1.20,6.10,12.20
+21,COM10,Parking,1.30,6.10,30.40,60.90
+22,IND1,Heavy,0.40,1.60,7.80,15.70
+23,IND2,Light,0.40,1.60,7.80,15.70
+24,IND3,Food/Drugs/Chemicals,0.40,1.60,7.80,15.70
+25,IND4,Metals/Minerals Processing,0.40,1.60,7.80,15.70
+26,IND5,High Technology,0.40,1.60,7.80,15.70
+27,IND6,Construction,0.40,1.60,7.80,15.70
+28,AGR1,Agriculture,0.80,4.60,23.10,46.20
+29,REL1,"Church/Membership Organization",0.30,2.00,9.90,19.80
+30,GOV1,General Services,0.30,1.80,9.00,17.90
+31,GOV2,Emergency Response,0.30,1.50,7.70,15.30
+32,EDU1,Schools/Libraries,0.40,1.90,9.50,18.90
+33,EDU2,Colleges/Universities,0.20,1.10,5.50,11.00

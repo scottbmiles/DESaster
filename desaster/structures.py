@@ -10,7 +10,7 @@ SingleFamilyResidential(Building)
 @author: Scott Miles (milessb@uw.edu)
 """
 
-from desaster.hazus import setStructuralDamageValueHAZUS
+from desaster.hazus import setStructuralDamageValueHAZUS, setRecoveryLimitState
 import pandas as pd
 import warnings, sys, distutils.util
 
@@ -24,7 +24,7 @@ class Building(object):
     Functions:
     setDamageValue(self, building)
     """
-    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+    def __init__(self, owner = None, occupancy = None, tenure = None, address = None, longitude = None,
                     latitude = None, value = None, cost = None, area = None,
                     listed = False, damage_state = None, building_stock = None):
         """
@@ -52,6 +52,7 @@ class Building(object):
         self.damage_state = damage_state  # HAZUS damage state
         self.damage_state_start = damage_state  # Archive starting damage state
         self.occupancy = occupancy  # Occupancy type of building
+        self.tenure = tenure # Whether owner occupied, rental, shelter, hotel, condo, etc.
         self.area = area  # Floor area of building
         try:
             self.listed = distutils.util.strtobool(listed)
@@ -68,8 +69,12 @@ class Building(object):
         self.assessment = False  # Whether the building has had engineering assessment
         
         # Use HAZUS lookup tables to assign damage value.
-        self.damage_value = setStructuralDamageValueHAZUS(self)
+        setStructuralDamageValueHAZUS(self)
         self.damage_value_start = self.damage_value # Archive original damage value
+        
+        # Set Burton et al. recovery-based limit state
+        setRecoveryLimitState(self)
+        self.recovery_limit_state_start = self.recovery_limit_state # Archive original damage value
 
 class SingleFamilyResidential(Building):
     """Define class that inherits from Building() for representing the
@@ -77,7 +82,7 @@ class SingleFamilyResidential(Building):
     just adds attribuees of bedrooms and bathroom and verifies a HAZUS-compatible
     residential building type is specified.
     """
-    def __init__(self, owner = None, occupancy = None, address = None, longitude = None,
+    def __init__(self, owner = None, occupancy = None, tenure = None, address = None, longitude = None,
                     latitude = None, value = None, cost = None, area = None,
                     bedrooms = None, bathrooms = None, listed = False, damage_state = None,
                     building_stock = None):
@@ -104,7 +109,7 @@ class SingleFamilyResidential(Building):
         structures.Building
         """
 
-        Building.__init__(self, owner, occupancy, address, longitude,
+        Building.__init__(self, owner, occupancy, tenure, address, longitude,
                         latitude, value, cost, area,
                         listed, damage_state, building_stock) 
 
