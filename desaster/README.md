@@ -1,20 +1,4 @@
-![Alt text](https://g.gravizo.com/svg?
-  digraph G {
-    aize ="4,4";
-    main [shape=box];
-    main -> parse [weight=8];
-    parse -> execute;
-    main -> init [style=dotted];
-    main -> cleanup;
-    execute -> { make_string; printf}
-    init -> make_string;
-    edge [color=red];
-    main -> printf [style=bold,label="100 times"];
-    make_string [label="make a string"];
-    node [shape=box,style=filled,color=".7 .3 1.0"];
-    execute -> compare;
-  }
-)
+![Alt text](https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?h=350&dpr=2&auto=compress&cs=tinysrgb)
 
 # UNFORTUNATELY THIS IS WELL OUT OF DATE. BUT IT GIVES THE GIST
 
