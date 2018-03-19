@@ -23,8 +23,8 @@
 
 `io.py` **Module of functions for input/output related to DESaster.**
 
-'hazus.py' ** Module of functions and variable declarations for importing Hazus fragility curves and other related parameters.
+`hazus.py` **Module of functions and variable declarations for importing Hazus fragility curves and other related parameters.**
 
-'visualize.py' ** Module for creating static and interactive visualization of DESaster inputs and outputs.
+`visualize.py` **Module for creating static and interactive visualization of DESaster inputs and outputs.**
 
 
