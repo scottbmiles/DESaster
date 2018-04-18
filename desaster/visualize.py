@@ -13,6 +13,8 @@ Copyright (C) 2018  Scott B. Miles, milessb@uw.edu, scott.miles@resilscience.com
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+    New line of comments!
 '''
 
 from bokeh.plotting import figure
