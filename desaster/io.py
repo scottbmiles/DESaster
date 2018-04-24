@@ -396,7 +396,7 @@ def households_to_df(entities):
         for attribute in attributes: 
             try:
                 new_column[attribute] = i.__getattribute__(attribute)      
-            except valueError:
+            except ValueError:
                 new_column[attribute] = np.nan
             except AttributeError as e:
                 new_column[attribute] = np.nan

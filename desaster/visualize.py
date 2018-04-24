@@ -20,7 +20,7 @@ from bokeh.layouts import column, widgetbox, row, gridplot, layout
 from bokeh.models import CustomJS, Slider, ColumnDataSource, ranges
 from bokeh.io import output_file, show
 import bokeh.palettes
-from bokeh.models import (GMapPlot, GMapOptions, Circle, DataRange1d,
+from bokeh.models import (GMapPlot, GMapOptions, Circle, Range1d,
                             PanTool, WheelZoomTool, HoverTool, SaveTool, ResetTool)
 import numpy as np
 import pandas as pd
@@ -131,7 +131,7 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     lon = -90.294633
     #Map Setup
     map_options = GMapOptions(lat = lat, lng = lon, scale_control = True, map_type = "roadmap", zoom = 16)
-    mapplot = GMapPlot(x_range=DataRange1d(), y_range=DataRange1d(), map_options=map_options)
+    mapplot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
     mapplot.title.text = "Locations of Modeled Homes (Marker Size Proportional to Original Damage State; Colors Defined Below)"
 
     # Set up tool tip with household stories
@@ -143,7 +143,7 @@ def dashboard(df, sim_time = 180, lat = 43.223628, lon = -90.294633,
     mapplot.min_border_bottom = 0
 
     #set Google Maps API key
-    mapplot.api_key = "AIzaSyBIwu-YI4jgBfzconosHqtQoeZ40oH-bhU"
+    mapplot.api_key = "AIzaSyDedFXgNZ71_xOGmVE_eAhElFJOuVweB1Y"
 
     #data wrangling for JS interaction
     home_status_formap = pd.concat([home_status_colors.copy(), df['latitude'], df['longitude']], axis=1)
