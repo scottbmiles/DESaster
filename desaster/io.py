@@ -62,32 +62,32 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
         # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
             
-            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+            if entities_df.iloc[i]['occupancy'].lower() in ['single family house', 'single family home', 
                                     'single family dwelling', 'single family residence',
                                     'sfr', 'sfh', 'sfd', 'mobile home']:
                 
                 residence = SingleFamilyResidential(
-                                    occupancy = entities_df.iloc[i]['Occupancy'],
-                                    tenure = entities_df.iloc[i]['Tenure'],
-                                    address = entities_df.iloc[i]['Address'],
-                                    longitude = entities_df.iloc[i]['Longitude'],
-                                    latitude = entities_df.iloc[i]['Latitude'],
-                                    value = entities_df.iloc[i]['Value'],
-                                    cost = entities_df.iloc[i]['Monthly Cost'],
-                                    area = entities_df.iloc[i]['Area'],
-                                    bedrooms = entities_df.iloc[i]['Bedrooms'],
-                                    bathrooms = entities_df.iloc[i]['Bathrooms'],
-                                    listed = entities_df.iloc[i]['Listed'],
-                                    damage_state = entities_df.iloc[i]['Damage State'],
+                                    occupancy = entities_df.iloc[i]['occupancy'],
+                                    tenure = entities_df.iloc[i]['tenure'],
+                                    address = entities_df.iloc[i]['address'],
+                                    longitude = entities_df.iloc[i]['longitude'],
+                                    latitude = entities_df.iloc[i]['latitude'],
+                                    value = entities_df.iloc[i]['value'],
+                                    cost = entities_df.iloc[i]['monthly_cost'],
+                                    area = entities_df.iloc[i]['area'],
+                                    bedrooms = entities_df.iloc[i]['bedrooms'],
+                                    bathrooms = entities_df.iloc[i]['bathrooms'],
+                                    listed = entities_df.iloc[i]['listed'],
+                                    damage_state = entities_df.iloc[i]['damage_state'],
                                     building_stock = building_stock
                                     )
             else:
-                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['occupancy'], entities_df.iloc[i]['name']))
                 return
             
             entity = Household(env, 
-                                name = entities_df.iloc[i]['Name'],
-                                income = entities_df.iloc[i]['Income'],
+                                name = entities_df.iloc[i]['name'],
+                                income = entities_df.iloc[i]['income'],
                                 write_story = write_story,
                                 residence = residence
                                 )
@@ -97,36 +97,36 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
     elif entity_type.lower() == 'owner':
         # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
-            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+            if entities_df.iloc[i]['occupancy'].lower() in ['single family house', 'single family home', 
                                     'single family dwelling', 'single family residence',
                                     'sfr', 'sfh', 'sfd', 'mobile home']:
                 real_property = SingleFamilyResidential(
-                                            occupancy = entities_df.iloc[i]['Occupancy'],
-                                            tenure = entities_df.iloc[i]['Tenure'],
-                                            address = entities_df.iloc[i]['Address'],
-                                            longitude = entities_df.iloc[i]['Longitude'],
-                                            latitude = entities_df.iloc[i]['Latitude'],
-                                            value = entities_df.iloc[i]['Value'],
-                                            cost = entities_df.iloc[i]['Monthly Cost'],
-                                            area = entities_df.iloc[i]['Area'],
-                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
-                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
-                                            listed = entities_df.iloc[i]['Listed'],
-                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            occupancy = entities_df.iloc[i]['occupancy'],
+                                            tenure = entities_df.iloc[i]['tenure'],
+                                            address = entities_df.iloc[i]['address'],
+                                            longitude = entities_df.iloc[i]['longitude'],
+                                            latitude = entities_df.iloc[i]['latitude'],
+                                            value = entities_df.iloc[i]['value'],
+                                            cost = entities_df.iloc[i]['monthly_cost'],
+                                            area = entities_df.iloc[i]['area'],
+                                            bedrooms = entities_df.iloc[i]['bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['bathrooms'],
+                                            listed = entities_df.iloc[i]['listed'],
+                                            damage_state = entities_df.iloc[i]['damage_state'],
                                             building_stock = building_stock
                                                     )
                                                     
                 
             
             else:
-                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['occupancy'], entities_df.iloc[i]['name']))
                 return
                 
             entity = Owner(env, 
-                            name = entities_df.iloc[i]['Name'],
-                            savings = entities_df.iloc[i]['Owner Savings'],
-                            insurance = entities_df.iloc[i]['Owner Insurance'],
-                            credit = entities_df.iloc[i]['Owner Credit'],
+                            name = entities_df.iloc[i]['name'],
+                            savings = entities_df.iloc[i]['savings'],
+                            insurance = entities_df.iloc[i]['insurance'],
+                            credit = entities_df.iloc[i]['credit'],
                             write_story = write_story,
                             real_property = real_property
                             )
@@ -139,37 +139,37 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
     elif entity_type.lower() == 'ownerhousehold' or entity_type.lower() == 'owner household':
         # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
-            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+            if entities_df.iloc[i]['occupancy'].lower() in ['single family house', 'single family home', 
                                     'single family dwelling', 'single family residence',
                                     'sfr', 'sfh', 'sfd', 'mobile home']:                  
                 real_property = SingleFamilyResidential(
-                                                    occupancy = entities_df.iloc[i]['Occupancy'],
-                                                    tenure = entities_df.iloc[i]['Tenure'],
-                                                    address = entities_df.iloc[i]['Address'],
-                                                    longitude = entities_df.iloc[i]['Longitude'],
-                                                    latitude = entities_df.iloc[i]['Latitude'],
-                                                    value = entities_df.iloc[i]['Value'],
-                                                    cost = entities_df.iloc[i]['Monthly Cost'],
-                                                    area = entities_df.iloc[i]['Area'],
-                                                    bedrooms = entities_df.iloc[i]['Bedrooms'],
-                                                    bathrooms = entities_df.iloc[i]['Bathrooms'],
-                                                    listed = entities_df.iloc[i]['Listed'],
-                                                    damage_state = entities_df.iloc[i]['Damage State'],
+                                                    occupancy = entities_df.iloc[i]['occupancy'],
+                                                    tenure = entities_df.iloc[i]['tenure'],
+                                                    address = entities_df.iloc[i]['address'],
+                                                    longitude = entities_df.iloc[i]['longitude'],
+                                                    latitude = entities_df.iloc[i]['latitude'],
+                                                    value = entities_df.iloc[i]['value'],
+                                                    cost = entities_df.iloc[i]['monthly_cost'],
+                                                    area = entities_df.iloc[i]['area'],
+                                                    bedrooms = entities_df.iloc[i]['bedrooms'],
+                                                    bathrooms = entities_df.iloc[i]['bathrooms'],
+                                                    listed = entities_df.iloc[i]['listed'],
+                                                    damage_state = entities_df.iloc[i]['damage_state'],
                                                     building_stock = building_stock
                                                     )
                 
                 
                 
             else:
-                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['occupancy'], entities_df.iloc[i]['name']))
                 return
             
             entity = OwnerHousehold(env, 
-                                    name = entities_df.iloc[i]['Name'],
-                                    income = entities_df.iloc[i]['Income'],
-                                    savings = entities_df.iloc[i]['Owner Savings'],
-                                    insurance = entities_df.iloc[i]['Owner Insurance'],
-                                    credit = entities_df.iloc[i]['Owner Credit'],
+                                    name = entities_df.iloc[i]['name'],
+                                    income = entities_df.iloc[i]['income'],
+                                    savings = entities_df.iloc[i]['savings'],
+                                    insurance = entities_df.iloc[i]['insurance'],
+                                    credit = entities_df.iloc[i]['credit'],
                                     real_property = real_property,
                                     write_story = write_story
                                     )
@@ -181,43 +181,43 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
     elif entity_type.lower() == 'renterhousehold' or entity_type.lower() == 'renter household':
         # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
-            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+            if entities_df.iloc[i]['occupancy'].lower() in ['single family house', 'single family home', 
                                     'single family dwelling', 'single family residence',
                                     'sfr', 'sfh', 'sfd', 'mobile home']:                           
                 real_property = SingleFamilyResidential(
-                                            occupancy = entities_df.iloc[i]['Occupancy'],
-                                            tenure = entities_df.iloc[i]['Tenure'],
-                                            address = entities_df.iloc[i]['Address'],
-                                            longitude = entities_df.iloc[i]['Longitude'],
-                                            latitude = entities_df.iloc[i]['Latitude'],
-                                            value = entities_df.iloc[i]['Value'],
-                                            cost = entities_df.iloc[i]['Monthly Cost'],
-                                            area = entities_df.iloc[i]['Area'],
-                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
-                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
-                                            listed = entities_df.iloc[i]['Listed'],
-                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            occupancy = entities_df.iloc[i]['occupancy'],
+                                            tenure = entities_df.iloc[i]['tenure'],
+                                            address = entities_df.iloc[i]['address'],
+                                            longitude = entities_df.iloc[i]['longitude'],
+                                            latitude = entities_df.iloc[i]['latitude'],
+                                            value = entities_df.iloc[i]['value'],
+                                            cost = entities_df.iloc[i]['monthly_cost'],
+                                            area = entities_df.iloc[i]['area'],
+                                            bedrooms = entities_df.iloc[i]['bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['bathrooms'],
+                                            listed = entities_df.iloc[i]['listed'],
+                                            damage_state = entities_df.iloc[i]['damage_state'],
                                             building_stock = building_stock
                                                         )
             else:
-                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['occupancy'], entities_df.iloc[i]['name']))
                 return                      
 
             entity = RenterHousehold(env, 
-                                        name = entities_df.iloc[i]['Name'],
-                                        income = entities_df.iloc[i]['Income'],
-                                        savings = entities_df.iloc[i]['Tenant Savings'],
-                                        insurance = entities_df.iloc[i]['Tenant Insurance'],
-                                        credit = entities_df.iloc[i]['Tenant Credit'],
+                                        name = entities_df.iloc[i]['name'],
+                                        income = entities_df.iloc[i]['income'],
+                                        savings = entities_df.iloc[i]['savings'],
+                                        insurance = entities_df.iloc[i]['insurance'],
+                                        credit = entities_df.iloc[i]['credit'],
                                         write_story = write_story,
                                         residence = real_property
                                         )
             
             entity.landlord = Landlord(env, 
-                                        name = entities_df.iloc[i]['Landlord'],
-                                        savings = entities_df.iloc[i]['Owner Savings'],
-                                        insurance = entities_df.iloc[i]['Owner Insurance'],
-                                        credit = entities_df.iloc[i]['Owner Credit'],
+                                        name = entities_df.iloc[i]['landlord'],
+                                        savings = entities_df.iloc[i]['landlord_savings'],
+                                        insurance = entities_df.iloc[i]['landlord_insurance'],
+                                        credit = entities_df.iloc[i]['landlord_credit'],
                                         real_property = real_property,
                                         write_story = write_story
                                         )
@@ -230,34 +230,34 @@ def importEntities(env, entities_df, entity_type, building_stock = None, write_s
     elif entity_type.lower() == 'landlord':
         # Populate the env with entities from the entities dataframe
         for i in entities_df.index:
-            if entities_df.iloc[i]['Occupancy'].lower() in ['single family house', 'single family home', 
+            if entities_df.iloc[i]['occupancy'].lower() in ['single family house', 'single family home', 
                                     'single family dwelling', 'single family residence',
                                     'sfr', 'sfh', 'sfd', 'mobile home']: 
                 real_property = SingleFamilyResidential(
-                                            occupancy = entities_df.iloc[i]['Occupancy'],
-                                            tenure = entities_df.iloc[i]['Tenure'],
-                                            address = entities_df.iloc[i]['Address'],
-                                            longitude = entities_df.iloc[i]['Longitude'],
-                                            latitude = entities_df.iloc[i]['Latitude'],
-                                            value = entities_df.iloc[i]['Value'],
-                                            cost = entities_df.iloc[i]['Monthly Cost'],
-                                            area = entities_df.iloc[i]['Area'],
-                                            bedrooms = entities_df.iloc[i]['Bedrooms'],
-                                            bathrooms = entities_df.iloc[i]['Bathrooms'],
-                                            listed = entities_df.iloc[i]['Listed'],
-                                            damage_state = entities_df.iloc[i]['Damage State'],
+                                            occupancy = entities_df.iloc[i]['occupancy'],
+                                            tenure = entities_df.iloc[i]['tenure'],
+                                            address = entities_df.iloc[i]['address'],
+                                            longitude = entities_df.iloc[i]['longitude'],
+                                            latitude = entities_df.iloc[i]['latitude'],
+                                            value = entities_df.iloc[i]['value'],
+                                            cost = entities_df.iloc[i]['monthly_cost'],
+                                            area = entities_df.iloc[i]['area'],
+                                            bedrooms = entities_df.iloc[i]['bedrooms'],
+                                            bathrooms = entities_df.iloc[i]['bathrooms'],
+                                            listed = entities_df.iloc[i]['listed'],
+                                            damage_state = entities_df.iloc[i]['damage_state'],
                                             building_stock = building_stock
                                                         )
                 
             else:
-                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['Occupancy'], entities_df.iloc[i]['Name']))
+                raise AttributeError("Specified occupancy type ({0}) associated with entity \'{1}\' not supported. Can't complete import.".format(entities_df.iloc[i]['occupancy'], entities_df.iloc[i]['name']))
                 return
                                                         
             entity = Landlord(env, 
-                                        name = entities_df.iloc[i]['Landlord'],
-                                        savings = entities_df.iloc[i]['Owner Savings'],
-                                        insurance = entities_df.iloc[i]['Owner Insurance'],
-                                        credit = entities_df.iloc[i]['Owner Credit'],
+                                        name = entities_df.iloc[i]['landlord'],
+                                        savings = entities_df.iloc[i]['landlord_savings'],
+                                        insurance = entities_df.iloc[i]['landlord_insurance'],
+                                        credit = entities_df.iloc[i]['landlord_credit'],
                                         real_property = real_property,
                                         write_story = write_story
                                         )
@@ -396,7 +396,7 @@ def households_to_df(entities):
         for attribute in attributes: 
             try:
                 new_column[attribute] = i.__getattribute__(attribute)      
-            except ValueError:
+            except valueError:
                 new_column[attribute] = np.nan
             except AttributeError as e:
                 new_column[attribute] = np.nan
