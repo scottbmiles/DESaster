@@ -455,7 +455,6 @@ class RepairProgram(TechnicalRecoveryProgram):
             # Rebuild time is based on occupancy type and damage state.
             # Set the program's distribution.loc (e.g., mean) to repair time
             self.duration.loc = building_repair_times.ix[structure.occupancy][structure.damage_state]
-            self.duration.scale = self.duration.loc * 0.1 # Wild assumption for monte carlo runs
 
             # Obtain necessary construction materials from regional inventory.
             # materials_cost_pct is % of damage value related to building materials
