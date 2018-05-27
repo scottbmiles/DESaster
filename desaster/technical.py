@@ -44,31 +44,27 @@ class TechnicalRecoveryProgram(object):
     subclass of TechnicalRecoveryProgram.
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, entity = None)
     writeCompleted(self):
     """
-    def __init__(self, env, duration, staff=float('inf'), until=100):
+    def __init__(self, env, duration, staff):
         """Initiate a TechnicalRecoveryProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration -- distributions.ProbabilityDistribution() object
-        staff -- Integer, indicating number of staff assigned to the programs
+        staff -- A simpy.Container() object with a init == staff arg
         until -- Number of days to run the simulation
 
         Attribute Changes:
-        self.staff -- A simpy.Resource() object with a capacity == staff arg
+        self.staff -- A simpy.Container() object with a init == staff arg
         self.duration -- A function that is used to calculate random durations
                             for the program process
         """
         self.env = env
         
-        
-        if (type(staff) == np.ndarray or type(staff) == list):
-            self.staff = Container(env, capacity=inf, level=staff[0])
-        else:
-            self.staff = Container(env, capacity=inf, level=staff)
+        self.staff = Container(env, init=staff)
         self.duration = duration
 
     def process(self, structure):
@@ -131,11 +127,11 @@ class InspectionProgram(TechnicalRecoveryProgram):
     based on inputted damage_state and HAZUS lookup tables.
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, structure, entity, callbacks = None)
     writeInspected(self, entity, structure):
     """
-    def __init__(self, env, duration, staff=float('inf'), until=100):
+    def __init__(self, env, duration, staff):
         """Initiate an InspectionProgram object.
 
         Keyword Arguments:
@@ -146,7 +142,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Process to allocate staff and simulate duration associated
@@ -170,7 +166,8 @@ class InspectionProgram(TechnicalRecoveryProgram):
         entity.inspection_put = self.env.now
 
         # Request inspectors
-        staff_request = self.staff[int(self.env.now)].request()
+        print('Time: ', self.env.now, 'Staff level: ', self.staff.level, entity.name)
+        staff_request = self.staff.get(1)
         yield staff_request
         
         # Get the entity's building/structure so that the building stock's 
@@ -182,12 +179,14 @@ class InspectionProgram(TechnicalRecoveryProgram):
         
         # Yield timeout equivalent to time from hazard event to end of inspection.
         yield self.env.timeout(self.duration.rvs())
-
+        
         # Set attribute of structure to indicate its been inspected.
         structure.inspected = True
 
         # Release inspectors now that inspection is complete.
-        self.staff[int(self.env.now)].release(staff_request)
+        self.staff.put(1)
+        
+        print('Time: ', self.env.now, 'Staff level: ', self.staff.level, entity.name)
         
         # Put the property back in the building stock to register attribute change.
         yield structure.stock.put(get_structure)
@@ -227,11 +226,11 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
     based on inputted damage_state and HAZUS lookup tables.
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, structure, entity, callbacks = None)
     writeAssessed(self, entity):
     """
-    def __init__(self, env, duration, staff=float('inf'), until=100):
+    def __init__(self, env, duration, staff):
         """Initiate EngineeringAssessment object.
 
         Keyword Arguments:
@@ -242,7 +241,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request an engineering assessment of their
@@ -307,11 +306,11 @@ class PermitProgram(TechnicalRecoveryProgram):
     repairs or construction.
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, structure, entity, callbacks = None)
     writePermitted(self, entity):
     """
-    def __init__(self, env, duration, staff=float('inf'), until=100):
+    def __init__(self, env, duration, staff):
         """Initiate PermitProgram object.
 
         Keyword Arguments:
@@ -322,7 +321,7 @@ class PermitProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request a building permit for their
@@ -392,12 +391,12 @@ class RepairProgram(TechnicalRecoveryProgram):
     wood, metal, aggregate, etc.)***
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, structure, entity, callbacks = None)
     writeRepaired(self, entity, structure):
     writeGaveUp(self, entity, now):
     """
-    def __init__(self, env, duration, staff=float('inf'), materials=float('inf'), until=100):
+    def __init__(self, env, duration, staff, materials=float('inf')):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
@@ -408,7 +407,7 @@ class RepairProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
         # Simpy Container to represent bulding materials as inventory dollar value
         # of undifferented materials.
@@ -516,11 +515,11 @@ class DemolitionProgram(TechnicalRecoveryProgram):
     building demolition.
 
     Methods:
-    __init__(self, env, duration, staff=float('inf'))
+    __init__(self, env, duration, staff)
     process(self, structure, entity, callbacks = None)
     writeDemolished(self, entity, structure):
     """
-    def __init__(self, env, duration, staff=float('inf'), until=100):
+    def __init__(self, env, duration, staff):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
@@ -531,7 +530,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
 
     def process(self, structure, entity, callbacks = None):
         """A process to demolition a building structure based on available contractors.
