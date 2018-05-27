@@ -29,7 +29,9 @@ DemolitionProgram
 """
 from desaster.hazus import building_repair_times
 import random
+from inspect import isfunction
 from simpy import Interrupt
+import numpy as np
 from simpy import Resource, Container
 
 class TechnicalRecoveryProgram(object):
@@ -46,13 +48,14 @@ class TechnicalRecoveryProgram(object):
     process(self, entity = None)
     writeCompleted(self):
     """
-    def __init__(self, env, duration, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), until=100):
         """Initiate a TechnicalRecoveryProgram object.
 
         Keyword Arguments:
         env -- simpy.Envionment() object
         duration -- distributions.ProbabilityDistribution() object
         staff -- Integer, indicating number of staff assigned to the programs
+        until -- Number of days to run the simulation
 
         Attribute Changes:
         self.staff -- A simpy.Resource() object with a capacity == staff arg
@@ -60,9 +63,13 @@ class TechnicalRecoveryProgram(object):
                             for the program process
         """
         self.env = env
-        self.staff = Resource(self.env, capacity=staff)
+        
+        
+        if (type(staff) == np.ndarray or type(staff) == list):
+            self.staff = Container(env, capacity=inf, level=staff[0])
+        else:
+            self.staff = Container(env, capacity=inf, level=staff)
         self.duration = duration
-        # self.duration = duration.duration()
 
     def process(self, structure):
         """The process for TechnicalRecoveryProgram for requesting staff and issuing
@@ -79,7 +86,7 @@ class TechnicalRecoveryProgram(object):
         ###
 
         # Request staff
-        staff_request = self.staff.request()
+        staff_request = self.staff[int(self.env.now)].request()
         yield staff_request
         
         # Get the entity's building/structure so that the building stock's 
@@ -93,7 +100,7 @@ class TechnicalRecoveryProgram(object):
         yield self.env.timeout(self.duration())
 
         # Release release staff after process duation is complete.
-        self.staff.release(staff_request)
+        self.staff[int(self.env.now)].release(staff_request)
         
 
         material_cost = 1 # Cost of materials needed (e.g., for RepairProgram)
@@ -128,7 +135,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
     process(self, structure, entity, callbacks = None)
     writeInspected(self, entity, structure):
     """
-    def __init__(self, env, duration, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), until=100):
         """Initiate an InspectionProgram object.
 
         Keyword Arguments:
@@ -139,7 +146,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
 
     def process(self, structure, entity, callbacks = None):
         """Process to allocate staff and simulate duration associated
@@ -163,7 +170,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         entity.inspection_put = self.env.now
 
         # Request inspectors
-        staff_request = self.staff.request()
+        staff_request = self.staff[int(self.env.now)].request()
         yield staff_request
         
         # Get the entity's building/structure so that the building stock's 
@@ -180,7 +187,7 @@ class InspectionProgram(TechnicalRecoveryProgram):
         structure.inspected = True
 
         # Release inspectors now that inspection is complete.
-        self.staff.release(staff_request)
+        self.staff[int(self.env.now)].release(staff_request)
         
         # Put the property back in the building stock to register attribute change.
         yield structure.stock.put(get_structure)
@@ -224,7 +231,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
     process(self, structure, entity, callbacks = None)
     writeAssessed(self, entity):
     """
-    def __init__(self, env, duration, staff=float('inf'), ):
+    def __init__(self, env, duration, staff=float('inf'), until=100):
         """Initiate EngineeringAssessment object.
 
         Keyword Arguments:
@@ -235,7 +242,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request an engineering assessment of their
@@ -258,7 +265,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         entity.assessment_put = self.env.now
 
         # Request an engineer.
-        staff_request = self.staff.request()
+        staff_request = self.staff[int(self.env.now)].request()
         yield staff_request
         
         # Get the entity's building/structure to register attribute changes w/ FilterStore
@@ -270,7 +277,7 @@ class EngineeringAssessment(TechnicalRecoveryProgram):
         yield self.env.timeout(self.duration.rvs())
 
         # Release engineer so it can assess other structures.
-        self.staff.release(staff_request)
+        self.staff[int(self.env.now)].release(staff_request)
 
         structure.assessment = True
         
@@ -304,7 +311,7 @@ class PermitProgram(TechnicalRecoveryProgram):
     process(self, structure, entity, callbacks = None)
     writePermitted(self, entity):
     """
-    def __init__(self, env, duration, staff=float('inf'), ):
+    def __init__(self, env, duration, staff=float('inf'), until=100):
         """Initiate PermitProgram object.
 
         Keyword Arguments:
@@ -315,7 +322,7 @@ class PermitProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
 
     def process(self, structure, entity, callbacks = None):
         """Define process for entity to request a building permit for their
@@ -338,7 +345,7 @@ class PermitProgram(TechnicalRecoveryProgram):
         entity.permit_put = self.env.now
 
         # Request permit processor / building official.
-        staff_request = self.staff.request()
+        staff_request = self.staff[int(self.env.now)].request()
         yield staff_request
         
         # Get the entity's building/structure to register attribute changes w/ FilterStore
@@ -350,7 +357,7 @@ class PermitProgram(TechnicalRecoveryProgram):
         yield self.env.timeout(self.duration.rvs())
 
         # Release permit process to allow them to review other requests.
-        self.staff.release(staff_request)
+        self.staff[int(self.env.now)].release(staff_request)
 
         structure.permit = True
         
@@ -390,7 +397,7 @@ class RepairProgram(TechnicalRecoveryProgram):
     writeRepaired(self, entity, structure):
     writeGaveUp(self, entity, now):
     """
-    def __init__(self, env, duration, staff=float('inf'), materials=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), materials=float('inf'), until=100):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
@@ -401,7 +408,7 @@ class RepairProgram(TechnicalRecoveryProgram):
         Inheritance:
         technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
 
         # Simpy Container to represent bulding materials as inventory dollar value
         # of undifferented materials.
@@ -442,7 +449,7 @@ class RepairProgram(TechnicalRecoveryProgram):
             yield entity.recovery_funds.get(structure.damage_value)
 
             # Put in request for contractors to repair home.
-            staff_request = self.staff.request()
+            staff_request = self.staff[int(self.env.now)].request()
             yield staff_request
             
             # Get the entity's building/structure to register attribute changes w/ FilterStore
@@ -465,7 +472,7 @@ class RepairProgram(TechnicalRecoveryProgram):
             yield self.env.timeout(self.duration.rvs())
 
             # Release contractors.
-            self.staff.release(staff_request)
+            self.staff[int(self.env.now)].release(staff_request)
 
             # After successful repair, set damage to None & $0.
             structure.damage_state = 'None'
@@ -513,7 +520,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
     process(self, structure, entity, callbacks = None)
     writeDemolished(self, entity, structure):
     """
-    def __init__(self, env, duration, staff=float('inf')):
+    def __init__(self, env, duration, staff=float('inf'), until=100):
         """Initiate RepairProgram object.
 
         Keyword Arguments:
@@ -524,7 +531,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         Inheritance:
         Subclass of technical.TechnicalRecoveryProgram()
         """
-        TechnicalRecoveryProgram.__init__(self, env, duration, staff)
+        TechnicalRecoveryProgram.__init__(self, env, duration, staff, until=100)
 
     def process(self, structure, entity, callbacks = None):
         """A process to demolition a building structure based on available contractors.
@@ -546,7 +553,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         entity.demolition_put = self.env.now
 
         # Put in request for contractors to repair home.
-        staff_request = self.staff.request()
+        staff_request = self.staff[int(self.env.now)].request()
         yield staff_request
         
         # Get the entity's building/structure to register attribute changes w/ FilterStore
@@ -558,7 +565,7 @@ class DemolitionProgram(TechnicalRecoveryProgram):
         yield self.env.timeout(self.duration.rvs())
 
         # Release contractors.
-        self.staff.release(staff_request)
+        self.staff[int(self.env.now)].release(staff_request)
 
         # After successful repair, set damage to Complete.
         structure.damage_state = 'Complete'
